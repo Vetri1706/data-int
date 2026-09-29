@@ -66,7 +66,19 @@ if [[ "${LLM_PROVIDER:-local}" == "local" || "${LLM_FALLBACK_PROVIDER:-}" == "lo
     fi
 fi
 
-# ── 4. Intelligence Service (LangGraph) ──────────────────────────────────────
+# ── 4. Scrapling Service (Adaptive Extraction) ──────────────────────────────
+log "Starting Scrapling Service (port 8001)..."
+cd "$ROOT/services/scrapling"
+if [ ! -d ".venv" ]; then
+    python3 -m venv .venv
+    .venv/bin/pip install -q -r requirements.txt
+fi
+SCRAPLING_PORT="${SCRAPLING_PORT:-8001}" \
+.venv/bin/python main.py &
+SCRAPLING_PID=$!
+ok "Scrapling Service PID=$SCRAPLING_PID on http://127.0.0.1:$SCRAPLING_PORT"
+
+# ── 5. Intelligence Service (LangGraph) ──────────────────────────────────────
 log "Starting Intelligence Service (port 7000)..."
 cd "$ROOT/services/intelligence"
 if [ ! -d ".venv" ]; then
@@ -75,6 +87,7 @@ if [ ! -d ".venv" ]; then
 fi
 RUST_API_BASE="${RUST_API_BASE:-http://127.0.0.1:3000/v1}" \
 SEARXNG_URL="${SEARXNG_URL:-http://127.0.0.1:8888}" \
+SCRAPLING_URL="${SCRAPLING_URL:-http://127.0.0.1:8001}" \
 INTELLIGENCE_PORT="${INTELLIGENCE_PORT:-7000}" \
 .venv/bin/python graph.py &
 INTEL_PID=$!
@@ -116,8 +129,9 @@ echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━
 echo -e "  Frontend:         ${CYAN}http://localhost:3001${NC}"
 echo -e "  Rust API:         ${CYAN}http://127.0.0.1:3000/v1/health${NC}"
 echo -e "  Intelligence:     ${CYAN}http://127.0.0.1:7000/health${NC}"
+echo -e "  Scrapling:        ${CYAN}http://127.0.0.1:8001/health${NC}"
 echo -e "  SearXNG:          ${CYAN}http://127.0.0.1:8888${NC}"
 echo ""
 echo "  Press Ctrl+C to stop all services"
 
-wait
+wait $SCRAPLING_PID $INTEL_PID $API_PID ${FE_PID:-}

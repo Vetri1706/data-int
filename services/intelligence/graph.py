@@ -41,6 +41,7 @@ logger = logging.getLogger("datavault.intelligence")
 RUST_API_BASE     = os.getenv("RUST_API_BASE",     "http://127.0.0.1:3000/v1")
 INTELLIGENCE_PORT = int(os.getenv("INTELLIGENCE_PORT", "7000"))
 SEARXNG_URL       = os.getenv("SEARXNG_URL", "http://127.0.0.1:8888")
+SCRAPLING_URL     = os.getenv("SCRAPLING_URL", "http://127.0.0.1:8001")
 WORKFLOW_TIMEOUT = float(os.getenv("WORKFLOW_TIMEOUT_SECONDS", "300"))
 
 # Defaults to local-only; NVIDIA requires explicit provider selection and key.
@@ -48,6 +49,18 @@ llm = ModelGateway()
 
 # Track in-flight workflow state for salvage on timeout
 ACTIVE_RUN_STATES: Dict[str, Any] = {}
+
+# Schema types supported by Scrapling service
+SCHEMA_TYPES = {
+    "JobPosting": ["title", "hiringOrganization", "jobLocation", "baseSalary", "employmentType", "datePosted", "validThrough", "description", "identifier", "url"],
+    "Product": ["name", "brand", "offers", "description", "sku", "gtin", "aggregateRating", "review", "url"],
+    "Hotel": ["name", "brand", "address", "geo", "starRating", "description", "amenityFeature", "checkInTime", "checkOutTime", "url"],
+    "Organization": ["name", "url", "logo", "address", "contactPoint", "sameAs", "foundingDate", "description"],
+    "LocalBusiness": ["name", "address", "geo", "telephone", "openingHours", "priceRange", "currenciesAccepted", "paymentAccepted", "url"],
+    "Event": ["name", "startDate", "endDate", "location", "description", "organizer", "performer", "offers", "url"],
+    "Article": ["headline", "author", "datePublished", "dateModified", "publisher", "description", "articleBody", "url"],
+    "Person": ["name", "jobTitle", "worksFor", "affiliation", "email", "telephone", "url", "sameAs"],
+}
 
 # ─── State ────────────────────────────────────────────────────────────────────
 
@@ -98,6 +111,35 @@ async def post_run_event(run_id: str, event_type: str, **kwargs):
     })
     if event_type in {"run.completed", "run.failed"} and not result.get("ok"):
         raise RuntimeError(f"The API did not persist terminal event {event_type}")
+
+async def scrapling_extract(urls: list[str], contract: dict) -> list[dict]:
+    """Call Scrapling service for structured extraction (JSON-LD + DOM selectors)."""
+    if not urls:
+        return []
+    entity_type = contract.get("entity_type", "").lower()
+    preset_map = {
+        "job": "job", "job_opening": "job", "position": "job",
+        "product": "product", "item": "product",
+        "hotel": "hotel", "accommodation": "hotel",
+        "company": "company", "organization": "company", "business": "company", "startup": "company",
+    }
+    selector_preset = preset_map.get(entity_type, "generic")
+    schema_types = list(SCHEMA_TYPES.keys())
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(f"{SCRAPLING_URL}/extract", json={
+                "urls": urls,
+                "schema_types": schema_types,
+                "selector_preset": selector_preset,
+                "follow_redirects": True,
+                "max_redirects": 5,
+            })
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get("results", [])
+    except Exception as e:
+        logger.warning(f"Scrapling extraction failed: {e}")
+    return []
 
 # ─── LangGraph Nodes ──────────────────────────────────────────────────────────
 
@@ -228,8 +270,51 @@ async def execute_search(state: WorkflowState) -> WorkflowState:
     chunks.update({c["chunk_id"]: c for c in selected})
     await post_run_event(state["run_id"], "search.completed",
                          payload={"candidate_count": len(candidates), "reachable_count": len(fresh),
-                                  "result_count": len(sources), "retrieved_chunks": len(chunks)})
+                                   "result_count": len(sources), "retrieved_chunks": len(chunks)})
     return {**state, "search_results": sources, "retrieved_chunks": list(chunks.values())}
+
+
+async def scrapling_extraction(state: WorkflowState) -> WorkflowState:
+    """
+    Node 4a: Structured extraction via Scrapling service (JSON-LD + DOM selectors).
+    Runs in parallel with LLM extraction for higher coverage.
+    """
+    logger.info(f"[scrapling_extraction] run={state['run_id']}")
+    await post_run_event(state["run_id"], "stage.updated", stage="extracting", progress=45)
+
+    sources = state.get("search_results", [])
+    if not sources:
+        return {**state, "scrapling_records": []}
+
+    urls = [s["url"] for s in sources if s.get("url") and s.get("http_status") == 200]
+    if not urls:
+        return {**state, "scrapling_records": []}
+
+    scrapling_results = await scrapling_extract(urls, state["data_contract"])
+
+    records = []
+    for result in scrapling_results:
+        if not result.get("success"):
+            continue
+        schema_data = result.get("schema_data", {})
+        selector_data = result.get("selector_data", {})
+
+        record = {"source_url": result.get("url"), "extraction_method": result.get("extraction_method", "scrapling")}
+        if schema_data:
+            for k, v in schema_data.items():
+                if k != "@type" and v:
+                    record[k] = v
+        for field, values in selector_data.items():
+            if values and field not in record:
+                record[field] = values[0]["value"] if isinstance(values[0], dict) else values[0]
+
+        if record.get("source_url"):
+            record["canonical_name"] = record.get("name") or record.get("title") or record.get("headline") or ""
+            records.append(record)
+
+    logger.info(f"  Scrapling extracted {len(records)} records from {len(urls)} URLs")
+    await post_run_event(state["run_id"], "scrapling.completed", payload={"records_found": len(records)})
+    return {**state, "scrapling_records": records}
 
 
 async def extract_and_normalize(state: WorkflowState) -> WorkflowState:
@@ -346,6 +431,10 @@ Only extract real entities with a canonical name. Skip generic pages.
         records_found=len(all_records),
         payload={"count": len(all_records)},
     )
+    scrapling_records = state.get("scrapling_records", [])
+    if scrapling_records:
+        logger.info(f"  Merging {len(scrapling_records)} Scrapling records")
+        all_records.extend(scrapling_records)
     return {**state, "extracted_records": all_records, "processed_chunks": sorted(processed)}
 
 
@@ -507,6 +596,7 @@ def build_graph() -> StateGraph:
     g.add_node("parse_requirement",     parse_requirement)
     g.add_node("build_plan",            build_plan)
     g.add_node("execute_search",        execute_search)
+    g.add_node("scrapling_extraction",  scrapling_extraction)
     g.add_node("extract_and_normalize", extract_and_normalize)
     g.add_node("validate_records",      validate_records)
     g.add_node("evaluate_coverage",     evaluate_coverage)
@@ -516,7 +606,8 @@ def build_graph() -> StateGraph:
     g.add_edge(START,                    "parse_requirement")
     g.add_edge("parse_requirement",      "build_plan")
     g.add_edge("build_plan",             "execute_search")
-    g.add_edge("execute_search",         "extract_and_normalize")
+    g.add_edge("execute_search",         "scrapling_extraction")
+    g.add_edge("scrapling_extraction",   "extract_and_normalize")
     g.add_edge("extract_and_normalize",  "validate_records")
     g.add_edge("validate_records",       "evaluate_coverage")
     g.add_conditional_edges(
