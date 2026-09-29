@@ -187,7 +187,7 @@ impl GroundingPipeline {
 
         let workflow_stats = WorkflowStats {
             workflow_id: workflow_id.clone(),
-            state: "COMPLETED".to_string(),
+            state: crate::models::WorkflowState::Completed,
             domains_discovered,
             domains_accepted: blended.citations.len(),
             pages_collected: blended.citations.len(),
@@ -195,6 +195,7 @@ impl GroundingPipeline {
             records_validated,
             records_final,
             dag_summary,
+            loop_iterations: 1,
         };
 
         GroundingResponse {

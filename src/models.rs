@@ -108,10 +108,24 @@ pub struct StructuredRecord {
     pub source_type: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum WorkflowState {
+    Draft,
+    Planning,
+    Discovering,
+    Collecting,
+    Extracting,
+    Validating,
+    Deduplicating,
+    Finalizing,
+    Completed,
+    Failed,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowStats {
     pub workflow_id: String,
-    pub state: String, // "DRAFT" -> "PLANNING" -> "DISCOVERING" -> "COLLECTING" -> "EXTRACTING" -> "NORMALIZING" -> "VALIDATING" -> "DEDUPLICATING" -> "FINALIZING" -> "COMPLETED"
+    pub state: WorkflowState,
     pub domains_discovered: usize,
     pub domains_accepted: usize,
     pub pages_collected: usize,
@@ -119,6 +133,7 @@ pub struct WorkflowStats {
     pub records_validated: usize,
     pub records_final: usize,
     pub dag_summary: String,
+    pub loop_iterations: usize,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

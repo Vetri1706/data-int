@@ -46,6 +46,9 @@ async fn main() {
 
     let api_routes = Router::new()
         .route("/grounded-search", post(handle_grounded_search))
+        .route("/ground", post(handle_grounded_search))
+        .route("/ai-search", post(handle_grounded_search))
+        .route("/internal/search", post(handle_internal_search))
         .route("/tasks", get(handle_get_tasks))
         .route("/tasks/{id}", get(handle_get_task_by_id))
         .route("/tasks/{id}/export/csv", get(handle_export_csv))
@@ -149,6 +152,21 @@ async fn handle_export_json(
     } else {
         (StatusCode::NOT_FOUND, "Task not found").into_response()
     }
+}
+
+#[derive(serde::Deserialize)]
+pub struct InternalSearchQuery {
+    pub query: String,
+    pub limit: Option<usize>,
+}
+
+async fn handle_internal_search(
+    State(state): State<AppState>,
+    Json(payload): Json<InternalSearchQuery>,
+) -> Response {
+    let limit = payload.limit.unwrap_or(8);
+    let results = pipeline::stage3_retriever::RetrieverStage::retrieve(&[payload.query], &state.config, limit).await;
+    (StatusCode::OK, Json(results)).into_response()
 }
 
 async fn handle_index_fallback() -> Html<String> {
