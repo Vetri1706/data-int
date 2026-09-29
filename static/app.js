@@ -221,8 +221,11 @@ document.addEventListener("DOMContentLoaded", () => {
     data.grounding_metadata.sources.forEach(s => {
       const card = document.createElement("div");
       card.className = "source-card";
+      const liveBadge = s.is_live 
+        ? `<span style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">● 200 OK Verified</span>`
+        : ``;
       card.innerHTML = `
-        <div class="source-domain">${s.domain} • Anchor [${s.index}]</div>
+        <div class="source-domain">${s.domain} • Anchor [${s.index}] ${liveBadge}</div>
         <div class="source-title"><a href="${s.url}" target="_blank" rel="noopener" style="color: #fff; text-decoration: none;">${escapeHtml(s.title)} ↗</a></div>
         <div class="source-snippet">${escapeHtml(s.snippet)}</div>
       `;

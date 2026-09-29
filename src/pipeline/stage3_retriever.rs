@@ -1,8 +1,10 @@
 use crate::config::AppConfig;
 use crate::models::SearchResultItem;
+use crate::pipeline::scrapler::LiveScraper;
 use reqwest::Client;
 use serde_json::json;
 use std::time::Duration;
+use tracing::info;
 use url::Url;
 
 pub struct RetrieverStage;
@@ -14,39 +16,89 @@ impl RetrieverStage {
         max_results: usize,
     ) -> Vec<SearchResultItem> {
         let client = Client::builder()
-            .timeout(Duration::from_secs(3))
+            .timeout(Duration::from_millis(4000))
             .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
             .build()
             .unwrap_or_default();
 
-        let mut aggregated = Vec::new();
+        let mut raw_candidates = Vec::new();
+        let searxng_endpoint = config.searxng_url.clone().unwrap_or_else(|| "http://127.0.0.1:8888".to_string());
 
-        // 1. Concurrent queries across public sources
-        for q in queries {
-            // Wikipedia OpenSearch
-            if let Ok(wiki_items) = Self::fetch_wikipedia(&client, q, 3).await {
-                aggregated.extend(wiki_items);
-            }
-
-            // SearXNG if available
-            if let Some(ref endpoint) = config.searxng_url {
-                if let Ok(searx_items) = Self::fetch_searxng(&client, endpoint, q, 4).await {
-                    aggregated.extend(searx_items);
+        // 1. Primary: Query SearXNG meta-search engine
+        for q in queries.iter().take(2) {
+            info!("Querying SearXNG for: {}", q);
+            if let Ok(searx_items) = Self::fetch_searxng(&client, &searxng_endpoint, q, max_results).await {
+                if !searx_items.is_empty() {
+                    info!("SearXNG returned {} results for '{}'", searx_items.len(), q);
+                    raw_candidates.extend(searx_items);
                 }
             }
         }
 
-        // 2. High-Precision Grounded Web Synthesis Fallback if external engines rate-limit
-        if aggregated.len() < 3 {
+        // 2. Secondary: Query Wikipedia OpenSearch Index for verified documentation & entities
+        if let Some(primary_q) = queries.first() {
+            if let Ok(wiki_items) = Self::fetch_wikipedia(&client, primary_q, 3).await {
+                raw_candidates.extend(wiki_items);
+            }
+        }
+
+        // 3. Fallback Grounded Knowledge retrieval if SearXNG returned < 3 items
+        if raw_candidates.len() < 3 {
             if let Some(ref key) = config.groq_api_key {
                 let primary_query = queries.first().cloned().unwrap_or_default();
                 if let Ok(llm_items) = Self::fetch_grounded_web_snippets(&client, key, &primary_query, max_results).await {
-                    aggregated.extend(llm_items);
+                    raw_candidates.extend(llm_items);
                 }
             }
         }
 
-        aggregated
+        // 4. Live Web Scraping & Health-Check (The RAG Layer):
+        // Concurrently fetches live web pages, extracts real paragraph text, and purges any 404 dead links
+        LiveScraper::scrape_and_verify(raw_candidates, 6).await
+    }
+
+    async fn fetch_searxng(
+        client: &Client,
+        endpoint: &str,
+        query: &str,
+        max_results: usize,
+    ) -> Result<Vec<SearchResultItem>, reqwest::Error> {
+        let base = endpoint.trim_end_matches('/');
+        let url = format!("{}/search?q={}&format=json", base, urlencoding::encode(query));
+        let res = client.get(&url).send().await?;
+
+        if let Ok(json) = res.json::<serde_json::Value>().await {
+            let mut items = Vec::new();
+            if let Some(arr) = json.get("results").and_then(|r| r.as_array()) {
+                for (idx, item) in arr.iter().take(max_results).enumerate() {
+                    let url = item.get("url").and_then(|u| u.as_str()).unwrap_or("").to_string();
+                    let title = item.get("title").and_then(|t| t.as_str()).unwrap_or("").to_string();
+                    let content = item.get("content").and_then(|c| c.as_str()).unwrap_or("").to_string();
+                    let domain = Url::parse(&url)
+                        .map(|u| u.host_str().unwrap_or("").to_string())
+                        .unwrap_or_default();
+
+                    let engine = item.get("engine").and_then(|e| e.as_str()).unwrap_or("SearXNG");
+
+                    if !url.is_empty() && !title.is_empty() {
+                        items.push(SearchResultItem {
+                            url,
+                            title,
+                            snippet: content,
+                            domain,
+                            source_engine: format!("SearXNG ({})", engine),
+                            relevance_score: 0.95,
+                            rank: idx + 1,
+                            is_live: true,
+                            scraped_content: None,
+                        });
+                    }
+                }
+            }
+            return Ok(items);
+        }
+
+        Ok(Vec::new())
     }
 
     async fn fetch_wikipedia(
@@ -71,55 +123,18 @@ impl RetrieverStage {
                         results.push(SearchResultItem {
                             url,
                             title: title.clone(),
-                            snippet: format!("Authoritative verified documentation and entity overview for {}.", title),
+                            snippet: format!("Authoritative documentation and overview for {}.", title),
                             domain: "wikipedia.org".to_string(),
                             source_engine: "Wikipedia Verified Index".to_string(),
                             relevance_score: 0.90,
                             rank: i + 1,
+                            is_live: true,
+                            scraped_content: None,
                         });
                     }
                 }
                 return Ok(results);
             }
-        }
-
-        Ok(Vec::new())
-    }
-
-    async fn fetch_searxng(
-        client: &Client,
-        endpoint: &str,
-        query: &str,
-        max_results: usize,
-    ) -> Result<Vec<SearchResultItem>, reqwest::Error> {
-        let url = format!("{}/search?q={}&format=json", endpoint.trim_end_matches('/'), urlencoding::encode(query));
-        let res = client.get(&url).send().await?;
-
-        if let Ok(json) = res.json::<serde_json::Value>().await {
-            let mut items = Vec::new();
-            if let Some(arr) = json.get("results").and_then(|r| r.as_array()) {
-                for (idx, item) in arr.iter().take(max_results).enumerate() {
-                    let url = item.get("url").and_then(|u| u.as_str()).unwrap_or("").to_string();
-                    let title = item.get("title").and_then(|t| t.as_str()).unwrap_or("").to_string();
-                    let content = item.get("content").and_then(|c| c.as_str()).unwrap_or("").to_string();
-                    let domain = Url::parse(&url)
-                        .map(|u| u.host_str().unwrap_or("").to_string())
-                        .unwrap_or_default();
-
-                    if !url.is_empty() {
-                        items.push(SearchResultItem {
-                            url,
-                            title,
-                            snippet: content,
-                            domain,
-                            source_engine: "SearXNG Meta".to_string(),
-                            relevance_score: 0.92,
-                            rank: idx + 1,
-                        });
-                    }
-                }
-            }
-            return Ok(items);
         }
 
         Ok(Vec::new())
@@ -136,7 +151,7 @@ impl RetrieverStage {
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are a live web search retrieval engine indexer. Return a JSON array of real, factual web search results relevant to the inquiry. Each object must have keys: 'title', 'url' (a real domain/URL), 'domain', 'snippet' (informative snippet with factual attributes). Return ONLY valid JSON array with 4 to 6 items."
+                    "content": "You are a web search retrieval engine. Return a JSON object with key 'results' containing an array of authoritative web search results relevant to the inquiry. Each object must have keys: 'title', 'url' (a real domain/URL like https://rust-lang.org, https://github.com, https://in.indeed.com, etc.), 'domain', 'snippet' (informative snippet with factual attributes). Return ONLY valid JSON."
                 },
                 {
                     "role": "user",
@@ -182,6 +197,8 @@ impl RetrieverStage {
                             source_engine: "Grounded Web Retrieval".to_string(),
                             relevance_score: 0.95,
                             rank: idx + 1,
+                            is_live: false,
+                            scraped_content: None,
                         });
                     }
                 }

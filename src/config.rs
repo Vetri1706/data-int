@@ -21,7 +21,7 @@ impl AppConfig {
         let port = env::var("PORT")
             .ok()
             .and_then(|p| p.parse().ok())
-            .unwrap_or(8080);
+            .unwrap_or(3000);
 
         let groq_api_key = env::var("GROQ_API_KEY").ok().filter(|s| !s.is_empty());
         let gemini_api_key = env::var("GEMINI_API_KEY").ok().filter(|s| !s.is_empty());
@@ -30,7 +30,8 @@ impl AppConfig {
         let searxng_url = env::var("SEARXNG_URL")
             .or_else(|_| env::var("SEARXNG_ENDPOINT"))
             .ok()
-            .filter(|s| !s.is_empty());
+            .filter(|s| !s.is_empty())
+            .or_else(|| Some("http://127.0.0.1:8888".to_string()));
 
         let default_grounding_threshold = env::var("GROUNDING_THRESHOLD")
             .ok()

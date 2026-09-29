@@ -36,6 +36,8 @@ pub struct SearchResultItem {
     pub source_engine: String,
     pub relevance_score: f32,
     pub rank: usize,
+    pub is_live: bool,
+    pub scraped_content: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -45,6 +47,7 @@ pub struct Citation {
     pub title: String,
     pub domain: String,
     pub snippet: String,
+    pub is_live: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

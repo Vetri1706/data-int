@@ -3,6 +3,7 @@ pub mod stage2_rewriter;
 pub mod stage3_retriever;
 pub mod stage4_reranker;
 pub mod stage5_synthesizer;
+pub mod scrapler;
 
 use chrono::Utc;
 use std::time::Instant;
