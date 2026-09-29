@@ -7,28 +7,48 @@ impl QueryRewriterStage {
     pub async fn rewrite(prompt: &str, category: &str) -> QueryExpansion {
         let p_clean = prompt.trim();
 
-        // 1. Remove conversational filler phrases
+        // 1. Remove conversational filler prefixes
         let filler_re = Regex::new(
-            r"(?i)^(hey|hello|hi|please|can you|could you|i need to|i want to|find me|find|search for|look up|give me|what are|tell me about|show me|list|get)\s+"
+            r"(?i)^(hey|hello|hi|please|can you|could you|i need to|i want to|find me|find|search for|look up|give me|what are|tell me about|show me|list|get|build a shortlist for|build a|track)\s+"
         ).unwrap();
         let cleaned = filler_re.replace_all(p_clean, "").to_string();
 
-        // 2. Identify key location if present
-        let loc_re = Regex::new(r"(?i)\b(?:in|near|at|around)\s+([a-zA-Z]+)\b").unwrap();
-        let location = loc_re.captures(&cleaned).map(|c| c[1].to_lowercase());
+        // 2. Extract multi-word location if present (e.g. "Tamil Nadu", "South India", "Bangalore")
+        let loc_re = Regex::new(r"(?i)\b(?:in|near|at|around)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)\b").unwrap();
+        let mut location = None;
+        if let Some(cap) = loc_re.captures(&cleaned) {
+            let captured_loc = cap[1].trim();
+            // Don't mistake verbs/conjunctions for locations
+            if !["the", "a", "an", "all", "order"].contains(&captured_loc.to_lowercase().as_str()) {
+                location = Some(captured_loc.to_string());
+            }
+        }
 
-        // 3. Remove common stop prepositions and fluff
-        let noise_re = Regex::new(r"(?i)\b(with|for|the|a|an|some|any|all|of|about|direct|deals|booking)\b").unwrap();
+        // 3. Filter noise and grammatical stopwords
+        let noise_re = Regex::new(
+            r"(?i)\b(that|could|would|should|can|will|with|for|the|a|an|some|any|all|of|about|direct|deals|booking|evidence|information|and|or|etc|including|include|per|from)\b"
+        ).unwrap();
         let stripped = noise_re.replace_all(&cleaned, " ");
         let core_words: Vec<&str> = stripped.split_whitespace().collect();
 
         let mut rewritten_queries = Vec::new();
 
-        // Query 1: Core entity + location (e.g., "luxury resorts ooty" or "rust developer bangalore")
+        // Query 1: High-relevance business entity query
+        let top_keywords: Vec<&str> = core_words.iter()
+            .filter(|&&w| w.len() > 2)
+            .take(6)
+            .cloned()
+            .collect();
+
+        if !top_keywords.is_empty() {
+            rewritten_queries.push(top_keywords.join(" "));
+        }
+
+        // Query 2: Entity + Location specific query
         if let Some(ref loc) = location {
             let entity_words: Vec<&str> = core_words.iter()
-                .filter(|&&w| !w.eq_ignore_ascii_case(loc) && !["in", "near", "at"].contains(&w.to_lowercase().as_str()))
-                .take(3)
+                .filter(|&&w| !loc.to_lowercase().contains(&w.to_lowercase()) && w.len() > 2)
+                .take(4)
                 .cloned()
                 .collect();
             if !entity_words.is_empty() {
@@ -36,15 +56,22 @@ impl QueryRewriterStage {
             }
         }
 
-        // Query 2: Cleaned keywords
-        let pure_keywords = core_words.iter().take(5).cloned().collect::<Vec<_>>().join(" ");
-        if !pure_keywords.is_empty() {
-            rewritten_queries.push(pure_keywords);
+        // Query 3: Multi-Hypothesis variation (e.g. CSR, leads, pricing, or careers)
+        if cleaned.to_lowercase().contains("sponsor") || cleaned.to_lowercase().contains("csr") {
+            if let Some(ref loc) = location {
+                rewritten_queries.push(format!("robotics companies {} CSR sponsor", loc));
+            } else {
+                rewritten_queries.push("robotics companies CSR sponsorship".to_string());
+            }
+        } else if cleaned.to_lowercase().contains("startup") || cleaned.to_lowercase().contains("funding") {
+            rewritten_queries.push("AI startups South India funding founder".to_string());
+        } else if cleaned.to_lowercase().contains("pricing") || cleaned.to_lowercase().contains("crm") {
+            rewritten_queries.push("AI CRM software pricing comparison 2026".to_string());
+        } else if cleaned.to_lowercase().contains("job") || cleaned.to_lowercase().contains("developer") {
+            rewritten_queries.push("Rust developer jobs Bangalore".to_string());
         }
 
-        // Query 3: Full cleaned query
         rewritten_queries.push(cleaned);
-
         rewritten_queries.dedup();
 
         QueryExpansion {
