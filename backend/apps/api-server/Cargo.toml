@@ -1,0 +1,40 @@
+[package]
+name    = "api-server"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "api-server"
+path = "src/main.rs"
+
+[dependencies]
+url = { workspace = true }
+datavault-domain  = { path = "../../crates/domain" }
+datavault-storage = { path = "../../crates/storage" }
+datavault-auth    = { path = "../../crates/auth" }
+datavault-search  = { path = "../../crates/search" }
+
+axum         = { workspace = true }
+axum-extra   = { workspace = true }
+tower        = { workspace = true }
+tower-http   = { workspace = true }
+tokio        = { workspace = true }
+tokio-stream = { workspace = true }
+hyper        = { workspace = true }
+sqlx         = { workspace = true }
+redis        = { workspace = true }
+deadpool-redis = { workspace = true }
+reqwest      = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+uuid         = { workspace = true }
+chrono       = { workspace = true }
+tracing      = { workspace = true }
+tracing-subscriber = { workspace = true }
+dotenvy      = { workspace = true }
+thiserror    = { workspace = true }
+anyhow       = { workspace = true }
+futures-util = { workspace = true }
+async-trait  = { workspace = true }
+bytes        = { workspace = true }
+async-stream = "0.3"

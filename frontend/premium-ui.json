@@ -1,0 +1,17 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["app", "components", "lib"],
+  "locale": "en",
+  "canonicalMap": "UX-CONTRACT.md",
+  "requiredCapabilities": ["Table Selection", "Select/Listbox", "Form", "Scrollbar", "CRUD"],
+  "ownership": { "Select/Listbox": "native" },
+  "requiredCommands": ["lint", "build"],
+  "commands": {
+    "lint": "npm run lint",
+    "build": "npm run build"
+  },
+  "evidence": {
+    "crudFullFlow": "app/collections/new/page.tsx",
+    "failurePaths": "app/collections/new/page.tsx"
+  }
+}

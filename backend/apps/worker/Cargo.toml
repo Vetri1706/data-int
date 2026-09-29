@@ -1,0 +1,27 @@
+[package]
+name    = "worker"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "worker"
+path = "src/main.rs"
+
+[dependencies]
+datavault-domain  = { path = "../../crates/domain" }
+datavault-storage = { path = "../../crates/storage" }
+datavault-search  = { path = "../../crates/search" }
+
+tokio      = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+redis      = { workspace = true }
+deadpool-redis = { workspace = true }
+sqlx       = { workspace = true }
+reqwest    = { workspace = true }
+tracing    = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow     = { workspace = true }
+dotenvy    = { workspace = true }
+uuid       = { workspace = true }
+chrono     = { workspace = true }

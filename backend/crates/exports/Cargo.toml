@@ -1,0 +1,13 @@
+[package]
+name    = "datavault-exports"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+datavault-domain = { path = "../domain" }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+tokio      = { workspace = true }
+tracing    = { workspace = true }
+thiserror  = { workspace = true }
+anyhow     = { workspace = true }
