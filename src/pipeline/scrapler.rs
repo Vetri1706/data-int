@@ -11,7 +11,7 @@ impl LiveScraper {
         max_to_scrape: usize,
     ) -> Vec<SearchResultItem> {
         let client = Client::builder()
-            .timeout(Duration::from_millis(3000))
+            .timeout(Duration::from_millis(3500))
             .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
             .redirect(reqwest::redirect::Policy::limited(5))
             .build()
@@ -44,6 +44,10 @@ impl LiveScraper {
 
                         if should_deep_scrape && status.is_success() {
                             if let Ok(html) = resp.text().await {
+                                // 1. Adaptive Extraction: Check for JSON-LD structured data first
+                                item.jsonld_data = extract_jsonld(&html);
+
+                                // 2. Extract meaningful clean paragraph text chunks for RAG
                                 let extracted_text = extract_meaningful_content(&html);
                                 if extracted_text.len() > 60 {
                                     item.scraped_content = Some(extracted_text.clone());
@@ -60,12 +64,11 @@ impl LiveScraper {
                         Some(item)
                     }
                     Err(_) => {
-                        // Connection failed or timed out: only retain if already from a verified trusted domain
-                        if item.source_engine.contains("Wikipedia") || item.source_engine.contains("cl0q") {
+                        // Drop failed connections to prevent dead links
+                        if item.source_engine.contains("Wikipedia") {
                             item.is_live = true;
                             Some(item)
                         } else {
-                            // Drop to prevent 404s
                             None
                         }
                     }
@@ -80,9 +83,20 @@ impl LiveScraper {
             }
         }
 
-        info!("Verified & Scraped {} live sources (dead 404 links purged)", verified.len());
+        info!("Adaptive Scraper verified {} live sources (404s dropped)", verified.len());
         verified
     }
+}
+
+fn extract_jsonld(html: &str) -> Option<serde_json::Value> {
+    let re = regex::Regex::new(r#"(?is)<script[^>]*type=["']application/ld\+json["'][^>]*>(.*?)</script>"#).ok()?;
+    for cap in re.captures_iter(html) {
+        let raw = cap.get(1)?.as_str().trim();
+        if let Ok(val) = serde_json::from_str::<serde_json::Value>(raw) {
+            return Some(val);
+        }
+    }
+    None
 }
 
 fn extract_meaningful_content(html: &str) -> String {

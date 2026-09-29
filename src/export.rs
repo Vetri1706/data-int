@@ -5,11 +5,11 @@ pub struct DatasetExporter;
 impl DatasetExporter {
     pub fn to_csv(records: &[StructuredRecord]) -> String {
         if records.is_empty() {
-            return "ID,Title,Category,Source_URL,Confidence\n".to_string();
+            return "ID,Canonical_Name,Title,Category,Validation_Status,Composite_Confidence,Source_Authority,Extraction_Certainty,Source_Type,Source_URL\n".to_string();
         }
 
         let mut csv = String::new();
-        csv.push_str("ID,Title,Category,Source_URL,Confidence,Domain,Citation_Anchor,Snippet_Preview\n");
+        csv.push_str("ID,Canonical_Name,Title,Category,Validation_Status,Composite_Confidence,Source_Authority,Extraction_Certainty,Source_Type,Source_URL,Domain,Citation_Anchor,Snippet_Preview\n");
 
         for r in records {
             let domain = r.key_attributes.get("domain").cloned().unwrap_or_default();
@@ -17,12 +17,17 @@ impl DatasetExporter {
             let snippet = r.key_attributes.get("snippet_preview").cloned().unwrap_or_default();
 
             csv.push_str(&format!(
-                "\"{}\",\"{}\",\"{}\",\"{}\",{:.2},\"{}\",\"{}\",\"{}\"\n",
+                "\"{}\",\"{}\",\"{}\",\"{}\",\"{}\",{:.3},{:.2},{:.2},\"{}\",\"{}\",\"{}\",\"{}\",\"{}\"\n",
                 r.id,
+                escape_csv(&r.canonical_name),
                 escape_csv(&r.title),
                 escape_csv(&r.category),
+                escape_csv(&r.validation_status),
+                r.confidence.composite_score,
+                r.confidence.source_authority,
+                r.confidence.extraction_certainty,
+                escape_csv(&r.source_type),
                 escape_csv(&r.source_url),
-                r.confidence,
                 escape_csv(&domain),
                 escape_csv(&anchor),
                 escape_csv(&snippet)

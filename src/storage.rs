@@ -38,6 +38,7 @@ impl TaskStore {
                 sources_count: t.grounding_metadata.sources.len(),
                 total_latency_ms: t.total_latency_ms,
                 triggered_grounding: t.grounding_metadata.triggered_grounding,
+                workflow_summary: t.workflow_stats.as_ref().map(|w| w.dag_summary.clone()),
             })
             .collect()
     }
