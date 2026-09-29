@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Data Intelligence & Search Grounding Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <!-- Top Navigation -->
+  <header class="app-header">
+    <div class="logo-group">
+      <div class="logo-badge">⚡</div>
+      <div>
+        <h1 class="app-title">AI Data Intelligence Platform</h1>
+        <p class="app-subtitle">Search Grounding & Dynamic Workflow Extraction Engine</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="historyBtn" class="btn-secondary">
+        📜 Task History (<span id="historyCount">0</span>)
+      </button>
+      <div class="status-indicator">
+        <span class="status-dot"></span> Rust Engine Online
+      </div>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <!-- Prompt & Configuration Section -->
+    <section class="prompt-card">
+      <form id="searchForm">
+        <div class="input-wrapper">
+          <textarea 
+            id="promptInput" 
+            placeholder="Describe your data requirement in plain English... (e.g. 'Find high growth AI startups in California with founder contacts' or 'Best gaming laptops under 80000 rupees with direct specs')"
+            rows="3"
+            required
+          ></textarea>
+        </div>
+
+        <!-- Pre-set Business Requirement Templates -->
+        <div class="preset-chips">
+          <span class="preset-label">Templates:</span>
+          <button type="button" class="chip" data-prompt="Find Rust backend developer job openings in Bangalore remote or hybrid with salary">💼 Tech Hiring Leads</button>
+          <button type="button" class="chip" data-prompt="Top AI CRM software competitors pricing and feature comparison 2026">📊 B2B Competitor Intel</button>
+          <button type="button" class="chip" data-prompt="Find boutique luxury resorts in Ooty with direct booking deals">🏨 Hospitality Procurement</button>
+          <button type="button" class="chip" data-prompt="What is 25 * 40?">🧮 Offline Math (No Search)</button>
+        </div>
+
+        <div class="controls-row">
+          <div class="threshold-slider-group">
+            <label for="thresholdRange">
+              Grounding Trigger Threshold: 
+              <span id="thresholdValue" class="badge-accent">0.65</span>
+            </label>
+            <input type="range" id="thresholdRange" min="0.0" max="1.0" step="0.05" value="0.65">
+            <span class="help-text">Lower triggers search more aggressively; higher favors offline reasoning.</span>
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn-primary">
+            <span class="btn-icon">⚡</span> Execute Data Workflow
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Visual 5-Stage Stepper -->
+    <section id="stepperSection" class="stepper-card" style="display: none;">
+      <h3 class="section-title">Workflow Execution Pipeline</h3>
+      <div class="stepper-grid">
+        <div class="step-card" id="step1">
+          <div class="step-header">
+            <span class="step-number">1</span>
+            <span class="step-title">Intent & Threshold</span>
+          </div>
+          <div class="step-status">Pending</div>
+          <div class="step-desc">-</div>
+        </div>
+        <div class="step-card" id="step2">
+          <div class="step-header">
+            <span class="step-number">2</span>
+            <span class="step-title">Query Rewriter</span>
+          </div>
+          <div class="step-status">Pending</div>
+          <div class="step-desc">-</div>
+        </div>
+        <div class="step-card" id="step3">
+          <div class="step-header">
+            <span class="step-number">3</span>
+            <span class="step-title">Multi-Source Web</span>
+          </div>
+          <div class="step-status">Pending</div>
+          <div class="step-desc">-</div>
+        </div>
+        <div class="step-card" id="step4">
+          <div class="step-header">
+            <span class="step-number">4</span>
+            <span class="step-title">Rerank & Blend</span>
+          </div>
+          <div class="step-status">Pending</div>
+          <div class="step-desc">-</div>
+        </div>
+        <div class="step-card" id="step5">
+          <div class="step-header">
+            <span class="step-number">5</span>
+            <span class="step-title">Synthesis & Citations</span>
+          </div>
+          <div class="step-status">Pending</div>
+          <div class="step-desc">-</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Execution Results -->
+    <section id="resultsSection" class="results-container" style="display: none;">
+      <!-- Tabs -->
+      <div class="results-tabs">
+        <button class="tab-btn active" data-tab="tab-synthesis">📝 Grounded Intelligence Report</button>
+        <button class="tab-btn" data-tab="tab-dataset">📁 Structured Dataset (<span id="datasetCount">0</span>)</button>
+        <button class="tab-btn" data-tab="tab-grounding">🔍 Grounding Metadata & Sources (<span id="sourcesCount">0</span>)</button>
+      </div>
+
+      <!-- Tab 1: Synthesis & Markdown -->
+      <div id="tab-synthesis" class="tab-pane active">
+        <div class="card pane-card">
+          <div class="meta-banner" id="intentBanner"></div>
+          <div id="markdownOutput" class="markdown-body"></div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Structured Dataset -->
+      <div id="tab-dataset" class="tab-pane">
+        <div class="card pane-card">
+          <div class="dataset-header-row">
+            <div>
+              <h3>Extracted Verified Dataset</h3>
+              <p class="subtitle">Structured records collected and verified across authorized web domains.</p>
+            </div>
+            <div class="export-actions">
+              <a id="exportCsvBtn" href="#" class="btn-action">📥 Export CSV</a>
+              <a id="exportJsonBtn" href="#" class="btn-action">📥 Export JSON</a>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table" id="datasetTable">
+              <thead>
+                <tr>
+                  <th>Title / Entity</th>
+                  <th>Category</th>
+                  <th>Key Attributes</th>
+                  <th>Confidence</th>
+                  <th>Direct Source</th>
+                </tr>
+              </thead>
+              <tbody id="datasetTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Grounding Metadata -->
+      <div id="tab-grounding" class="tab-pane">
+        <div class="card pane-card">
+          <h3>Grounding Metadata & Citation Anchors</h3>
+          <p class="subtitle">Traceable search queries and verified source items mapped directly to LLM claims.</p>
+          
+          <div class="subqueries-box">
+            <h4>Executed Search Queries:</h4>
+            <ul id="queriesList" class="queries-list"></ul>
+          </div>
+
+          <div class="sources-grid" id="sourcesGrid"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- History Drawer Modal -->
+  <div id="historyDrawer" class="drawer-overlay" style="display: none;">
+    <div class="drawer-content">
+      <div class="drawer-header">
+        <h3>Previous Workflows & Datasets</h3>
+        <button id="closeDrawerBtn" class="btn-close">&times;</button>
+      </div>
+      <div id="historyList" class="history-list"></div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
