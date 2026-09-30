@@ -20,11 +20,17 @@ import hashlib
 from typing import TypedDict, List, Dict, Any, Optional, Annotated
 from datetime import datetime, timedelta
 
+try:
+    from asyncio import timeout as async_timeout
+except ImportError:
+    from async_timeout import timeout as async_timeout
+
 import httpx
 from llm import LLMUnavailable, ModelGateway, selected_model, validate_selection
 from model_catalog import provider_catalog
-from grounding import retrieve_chunks, sanitize_query, validate_candidates, extract_canonical_name
+from grounding import chunk_sources, rank_chunks, retrieve_chunks, sanitize_query, validate_candidates, extract_canonical_name
 from relevance import evaluate_sources
+from laya_filter import filter_chunks as apply_laya_filter
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 
@@ -95,6 +101,15 @@ class WorkflowState(TypedDict):
     relevant_sources:   List[Dict[str, Any]]
     search_results:     List[Dict[str, Any]]
     retrieved_chunks:   List[Dict[str, Any]]
+    laya_filtered_chunks: List[Dict[str, Any]]
+    laya_metrics:       Dict[str, Any]
+    laya_status:        str
+    laya_scores:        Dict[str, float]
+    laya_evaluations:   List[Dict[str, Any]]
+    chunk_pool:         List[Dict[str, Any]]
+    tfidf_metrics:      Dict[str, Any]
+    laya_before_tfidf:  bool
+    laya_enabled:       bool
     processed_chunks:   List[str]
     extracted_records:  List[Dict[str, Any]]
     validated_records:  List[Dict[str, Any]]
@@ -414,9 +429,13 @@ async def scrapling_extraction(state: WorkflowState) -> WorkflowState:
     previous_sources = {s["url"]: s for s in state.get("search_results", []) if s.get("url")}
     previous_sources.update({s["url"]: s for s in sources if s.get("url")})
     fetched_sources = list(previous_sources.values())
-    selected = await asyncio.to_thread(
-        retrieve_chunks, fetched_sources, state["prompt"], state["data_contract"]
-    )
+    complete_chunks = chunk_sources(fetched_sources)
+    if state.get("laya_before_tfidf"):
+        selected = complete_chunks
+    else:
+        selected = await asyncio.to_thread(
+            retrieve_chunks, fetched_sources, state["prompt"], state["data_contract"]
+        )
     chunks = {c["chunk_id"]: c for c in state.get("retrieved_chunks", [])}
     chunks.update({c["chunk_id"]: c for c in selected})
     logger.info("  Scrapling retrieved %d/%d sources and produced %d structured records",
@@ -424,8 +443,9 @@ async def scrapling_extraction(state: WorkflowState) -> WorkflowState:
     await post_run_event(state["run_id"], "scrapling.completed",
                          payload={"attempted": len(urls), "retrieved": len(sources),
                                   "failed": len(urls) - len(sources), "records_found": len(records)})
-    return {**state, "search_results": fetched_sources, "retrieved_chunks": list(chunks.values()),
-            "scrapling_records": records, "status": "PAGES_RETRIEVED"}
+    return {**state, "search_results": fetched_sources, "chunk_pool": complete_chunks,
+            "retrieved_chunks": list(chunks.values()), "scrapling_records": records,
+            "status": "PAGES_RETRIEVED"}
 
 
 async def extract_and_normalize(state: WorkflowState) -> WorkflowState:
@@ -442,7 +462,13 @@ async def extract_and_normalize(state: WorkflowState) -> WorkflowState:
     fields    = [f["name"] for f in field_specs]
     entity    = contract.get("entity_type", "entity")
     processed = set(state.get("processed_chunks", []))
-    results = [chunk for chunk in state.get("retrieved_chunks", []) if chunk["chunk_id"] not in processed]
+    # Laya is a fail-open optimization. The full retrieved chunk set remains
+    # available to deterministic validation; only the extraction input is
+    # reduced to the chunks Laya retained.
+    extraction_chunks = state.get("laya_filtered_chunks")
+    if extraction_chunks is None:
+        extraction_chunks = state.get("retrieved_chunks", [])
+    results = [chunk for chunk in extraction_chunks if chunk["chunk_id"] not in processed]
 
     if not results:
         return {**state, "extracted_records": state.get("extracted_records", [])}
@@ -550,6 +576,73 @@ fields outside the generated schema.
         logger.info(f"  Merging {len(scrapling_records)} Scrapling records")
         all_records.extend(scrapling_records)
     return {**state, "extracted_records": all_records, "processed_chunks": sorted(processed)}
+
+
+async def laya_filter(state: WorkflowState) -> WorkflowState:
+    """Node 4b: high-recall Laya gate over Scrapling-produced chunks.
+
+    Laya only makes a bounded yes/no usefulness decision. It never supplies
+    extraction values, evidence, validation, or confidence. On any failure the
+    original chunk set is passed through unchanged.
+    """
+    chunks = list(state.get("chunk_pool", [])) if state.get("laya_before_tfidf") else list(state.get("retrieved_chunks", []))
+    logger.info("[laya] run=%s chunks=%d before_tfidf=%s", state["run_id"], len(chunks), state.get("laya_before_tfidf", False))
+    await post_run_event(
+        state["run_id"], "laya.started",
+        payload={"chunks_before": len(chunks)},
+    )
+    if state.get("laya_enabled") is False:
+        filtered, metrics, status = chunks, {
+            "chunks_before": len(chunks), "chunks_after": len(chunks),
+            "chunks_filtered": 0, "latency_ms": 0.0, "threshold": None,
+        }, "disabled"
+    else:
+        filtered, metrics, status = await apply_laya_filter(chunks, state["data_contract"])
+    if status == "fallback":
+        logger.warning(
+            "[laya] fail-open; using all retrieved chunks: %s",
+            metrics.get("error", metrics.get("fallback_reason", "unknown error")),
+        )
+        await post_run_event(
+            state["run_id"], "laya.failed",
+            payload={**metrics, "fallback": "existing_tf_idf_extraction"},
+        )
+    else:
+        logger.info(
+            "[laya] status=%s before=%d after=%d filtered=%d latency_ms=%s",
+            status, metrics.get("chunks_before", len(chunks)),
+            metrics.get("chunks_after", len(filtered)),
+            metrics.get("chunks_filtered", 0), metrics.get("latency_ms", 0),
+        )
+        await post_run_event(state["run_id"], "laya.completed", payload=metrics)
+    return {
+        **state,
+        "laya_filtered_chunks": filtered,
+        "laya_metrics": metrics,
+        "laya_status": status,
+        "laya_scores": metrics.get("score_by_chunk", {}),
+        "laya_evaluations": metrics.get("evaluations", []),
+    }
+
+
+async def rank_after_laya(state: WorkflowState) -> WorkflowState:
+    """Run the existing TF-IDF policy after an evaluation-only Laya gate."""
+    if not state.get("laya_before_tfidf"):
+        return state
+    approved = list(state.get("laya_filtered_chunks", []))
+    started = asyncio.get_running_loop().time()
+    ranked = await asyncio.to_thread(
+        rank_chunks, approved, state["prompt"], state["data_contract"]
+    )
+    elapsed = round((asyncio.get_running_loop().time() - started) * 1000, 2)
+    metrics = {
+        "chunks_before": len(approved),
+        "chunks_after": len(ranked),
+        "latency_ms": elapsed,
+        "status": "completed",
+    }
+    await post_run_event(state["run_id"], "tfidf.completed", payload=metrics)
+    return {**state, "retrieved_chunks": ranked, "tfidf_metrics": metrics}
 
 
 async def validate_records(state: WorkflowState) -> WorkflowState:
@@ -712,6 +805,8 @@ def build_graph() -> StateGraph:
     g.add_node("execute_search",        execute_search)
     g.add_node("source_relevance_gate", source_relevance_gate)
     g.add_node("scrapling_extraction",  scrapling_extraction)
+    g.add_node("laya_filter",            laya_filter)
+    g.add_node("rank_after_laya",        rank_after_laya)
     g.add_node("extract_and_normalize", extract_and_normalize)
     g.add_node("validate_records",      validate_records)
     g.add_node("evaluate_coverage",     evaluate_coverage)
@@ -723,7 +818,9 @@ def build_graph() -> StateGraph:
     g.add_edge("build_plan",             "execute_search")
     g.add_edge("execute_search",         "source_relevance_gate")
     g.add_edge("source_relevance_gate",  "scrapling_extraction")
-    g.add_edge("scrapling_extraction",   "extract_and_normalize")
+    g.add_edge("scrapling_extraction",   "laya_filter")
+    g.add_edge("laya_filter",            "rank_after_laya")
+    g.add_edge("rank_after_laya",        "extract_and_normalize")
     g.add_edge("extract_and_normalize",  "validate_records")
     g.add_edge("validate_records",       "evaluate_coverage")
     g.add_conditional_edges(
@@ -796,7 +893,7 @@ async def discover_endpoint(req: DiscoveryRequest):
     """
     token = selected_model.set(await checked_selection(req.model_selection))
     try:
-        async with asyncio.timeout(20):
+        async with async_timeout(20):
             response = await llm.ainvoke([
                 SystemMessage(content='Suggest authoritative public URLs for a research query. Return JSON: {"results": [{"title": "...", "url": "https://...", "snippet": "..."}]}. These are unverified suggestions, not factual evidence. Return at most 5. Do not invent deep links; prefer known official homepages when uncertain.'),
                 HumanMessage(content=sanitize_query(req.query)),
@@ -875,6 +972,15 @@ async def _execute_run(req: RunRequest):
         "relevant_sources":  [],
         "search_results":    [],
         "retrieved_chunks":  [],
+        "laya_filtered_chunks": [],
+        "laya_metrics":     {},
+        "laya_status":      "pending",
+        "laya_scores":      {},
+        "laya_evaluations": [],
+        "chunk_pool":       [],
+        "tfidf_metrics":    {},
+        "laya_before_tfidf": False,
+        "laya_enabled":     True,
         "processed_chunks":  [],
         "extracted_records": [],
         "validated_records": [],
@@ -886,7 +992,7 @@ async def _execute_run(req: RunRequest):
     }
     ACTIVE_RUN_STATES[req.run_id] = initial
     try:
-        async with asyncio.timeout(WORKFLOW_TIMEOUT):
+        async with async_timeout(WORKFLOW_TIMEOUT):
             token = selected_model.set(await checked_selection(req.data_contract.get("_model_config")))
             await graph.ainvoke(initial)
     except (TimeoutError, asyncio.TimeoutError):

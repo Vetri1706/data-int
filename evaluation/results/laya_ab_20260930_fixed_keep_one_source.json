@@ -1,0 +1,1720 @@
+{
+  "generated_at": "2026-09-30T09:44:14.855044+00:00",
+  "evaluation": {
+    "selection": {
+      "provider": "local",
+      "model": "qwen2.5:1.5b"
+    },
+    "laya_url": "http://127.0.0.1:18002",
+    "laya_model": "english",
+    "laya_threshold": 0.2,
+    "laya_batch_size": 32,
+    "fixed_inputs": true,
+    "same_search_results_and_scrapling_capture": true,
+    "source_relevance_mode": "fixed_keep_fixture",
+    "ground_truth": "unavailable",
+    "current_pipeline_note": "retrieve_chunks currently performs chunking plus TF-IDF before the laya_filter node; both arms share that selected chunk set."
+  },
+  "aggregate": {
+    "queries_tested": 10,
+    "queries_failed_capture": 0,
+    "sources_processed": 0,
+    "candidate_sources": 0,
+    "relevant_sources": 0,
+    "successfully_retrieved_sources": 0,
+    "failed_sources": 0,
+    "chunks_generated": 0,
+    "chunks_sent_to_extraction_baseline": 0,
+    "chunks_sent_to_extraction_laya": 0,
+    "chunk_reduction_absolute": 0,
+    "chunk_reduction_percentage": null,
+    "llm_calls_baseline": 0,
+    "llm_calls_laya": 0,
+    "llm_input_tokens_baseline": 0,
+    "llm_input_tokens_laya": 0,
+    "token_reduction_percentage": null,
+    "average_laya_latency_ms": 0.0,
+    "average_workflow_latency_baseline_ms": 0.33,
+    "average_workflow_latency_laya_ms": 0.21,
+    "latency_difference_ms_baseline_minus_laya": 0.12,
+    "latency_reduction_percentage": 36.36,
+    "verified_records_baseline": 0,
+    "verified_records_laya": 0,
+    "needs_review_baseline": 0,
+    "needs_review_laya": 0,
+    "draft_records_baseline": 0,
+    "draft_records_laya": 0,
+    "evidence_recall_baseline_proxy": null,
+    "baseline_evidence_units": 0,
+    "retained_baseline_evidence_units": 0,
+    "false_negative_cases": 0,
+    "laya_fallback_cases": 0,
+    "ground_truth": "unavailable; baseline evidence is reported only as a clearly labeled proxy"
+  },
+  "threshold_analysis": [
+    {
+      "threshold": 0.05,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.1,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.15,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.2,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.25,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.3,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.4,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.5,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    }
+  ],
+  "fail_open_check": {
+    "status": "disabled",
+    "workflow_continues": false,
+    "metrics": {
+      "chunks_before": 0,
+      "chunks_after": 0,
+      "chunks_filtered": 0,
+      "latency_ms": 0.0,
+      "batch_count": 0,
+      "threshold": 0.2,
+      "model": "english"
+    }
+  },
+  "per_query": [
+    {
+      "query": "Find AI startups in South India with founders, websites, locations, and funding evidence.",
+      "captured": {
+        "index": 1,
+        "query": "Find AI startups in South India with founders, websites, locations, and funding evidence.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "AI startup",
+          "business_goal": "Develop innovative AI solutions",
+          "fields": [
+            {
+              "name": "Founder",
+              "field_type": "string",
+              "description": "Name of the founder of the startup",
+              "required": true
+            },
+            {
+              "name": "Website",
+              "field_type": "string",
+              "description": "URL of the startup's website",
+              "required": true
+            },
+            {
+              "name": "Location",
+              "field_type": "string",
+              "description": "City or location where the startup is based",
+              "required": true
+            },
+            {
+              "name": "Funding",
+              "field_type": "string",
+              "description": "Amount of funding received by the startup",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 10,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 3,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [
+            "www.google.com",
+            "www.bing.com",
+            "www.yahoo.com"
+          ],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [],
+        "source_relevance_mode": "fixed_keep_fixture",
+        "source_relevance": [],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.12,
+        "scrapling_retrieval_ms": 0.12,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 4322.59
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.08,
+        "validation_latency_ms": 0.08,
+        "scrapling_latency_ms": 0.12,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.28,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.04,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.12,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.16,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+      "captured": {
+        "index": 2,
+        "query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "supplier",
+          "business_goal": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+          "fields": [
+            {
+              "name": "name",
+              "field_type": "string",
+              "description": "Supplier's name",
+              "required": true
+            },
+            {
+              "name": "location",
+              "field_type": "string",
+              "description": "Supplier's location",
+              "required": true
+            },
+            {
+              "name": "catalog_link",
+              "field_type": "string",
+              "description": "Supplier's catalog link",
+              "required": true
+            },
+            {
+              "name": "certifications",
+              "field_type": "string",
+              "description": "Supplier's certifications",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 10,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 3,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [
+            "india.supplierfinder.com"
+          ],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [],
+        "source_relevance_mode": "fixed_keep_fixture",
+        "source_relevance": [],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.56,
+        "scrapling_retrieval_ms": 0.56,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 3788.84
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.19,
+        "validation_latency_ms": 0.15,
+        "scrapling_latency_ms": 0.56,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.9,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.04,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.56,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.6,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find currently open backend engineering roles from official company career pages in India.",
+      "captured": {
+        "index": 3,
+        "query": "Find currently open backend engineering roles from official company career pages in India.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "job",
+          "business_goal": "Find open backend engineering roles",
+          "fields": [
+            {
+              "name": "job_title",
+              "field_type": "string",
+              "description": "The title of the job",
+              "required": true
+            },
+            {
+              "name": "company_name",
+              "field_type": "string",
+              "description": "The name of the company",
+              "required": true
+            },
+            {
+              "name": "location",
+              "field_type": "string",
+              "description": "The location of the job",
+              "required": true
+            },
+            {
+              "name": "industry",
+              "field_type": "string",
+              "description": "The industry of the company",
+              "required": true
+            },
+            {
+              "name": "job_type",
+              "field_type": "string",
+              "description": "The type of job (e.g., full-time, part-time)",
+              "required": true
+            },
+            {
+              "name": "employment_status",
+              "field_type": "string",
+              "description": "The employment status (e.g., open, pending)",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 10,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 1,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [
+            "careerpages.com",
+            "careers.in",
+            "careers.india.com"
+          ],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [],
+        "source_relevance_mode": "fixed_keep_fixture",
+        "source_relevance": [],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.15,
+        "scrapling_retrieval_ms": 0.15,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 4987.17
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.06,
+        "validation_latency_ms": 0.07,
+        "scrapling_latency_ms": 0.15,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.28,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.03,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.15,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.18,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find project management SaaS products with pricing tiers, billing cadence, and source links.",
+      "captured": {
+        "index": 4,
+        "query": "Find project management SaaS products with pricing tiers, billing cadence, and source links.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "project_management_saaS_product",
+          "business_goal": "Manage projects efficiently",
+          "fields": [
+            {
+              "name": "pricing_tiers",
+              "field_type": "string",
+              "description": "List of pricing tiers available",
+              "required": true
+            },
+            {
+              "name": "billing_cadence",
+              "field_type": "string",
+              "description": "Frequency of billing (e.g., monthly, quarterly)",
+              "required": true
+            },
+            {
+              "name": "source_links",
+              "field_type": "string",
+              "description": "Links to the source of the product",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 0,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 1,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [],
+        "source_relevance_mode": "fixed_keep_fixture",
+        "source_relevance": [],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.11,
+        "scrapling_retrieval_ms": 0.11,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 4496.15
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.03,
+        "validation_latency_ms": 0.04,
+        "scrapling_latency_ms": 0.11,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.18,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.02,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.11,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.13,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find robotics companies headquartered in Tamil Nadu with website and location evidence.",
+      "captured": {
+        "index": 5,
+        "query": "Find robotics companies headquartered in Tamil Nadu with website and location evidence.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "company",
+          "business_goal": "Find robotics companies headquartered in Tamil Nadu with website and location evidence.",
+          "fields": [
+            {
+              "name": "name",
+              "field_type": "string",
+              "description": "The name of the company.",
+              "required": true
+            },
+            {
+              "name": "headquarters",
+              "field_type": "string",
+              "description": "The headquarters location of the company.",
+              "required": true
+            },
+            {
+              "name": "website",
+              "field_type": "string",
+              "description": "The website of the company.",
+              "required": true
+            },
+            {
+              "name": "location",
+              "field_type": "string",
+              "description": "The location of the company.",
+              "required": true
+            }
+          ],
+          "constraints": [
+            {
+              "field": "name",
+              "operator": "contains",
+              "target_value": "robotics",
+              "is_hard": true
+            },
+            {
+              "field": "headquarters",
+              "operator": "contains",
+              "target_value": "Tamil Nadu",
+              "is_hard": true
+            },
+            {
+              "field": "website",
+              "operator": "contains",
+              "target_value": "tamilnadu",
+              "is_hard": true
+            },
+            {
+              "field": "location",
+              "operator": "contains",
+              "target_value": "tamilnadu",
+              "is_hard": true
+            }
+          ],
+          "relationships": [],
+          "target_count": 0,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 1,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [],
+        "source_relevance_mode": "fixed_keep_fixture",
+        "source_relevance": [],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.16,
+        "scrapling_retrieval_ms": 0.16,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 6001.0
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.06,
+        "validation_latency_ms": 0.08,
+        "scrapling_latency_ms": 0.16,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.3,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.03,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.16,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.19,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find companies that could sponsor a robotics hackathon with CSR evidence, previous sponsorships, contact information, and relevance.",
+      "captured": {
+        "index": 6,
+        "query": "Find companies that could sponsor a robotics hackathon with CSR evidence, previous sponsorships, contact information, and relevance.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "company",
+          "business_goal": "sponsor a robotics hackathon",
+          "fields": [
+            {
+              "name": "name",
+              "field_type": "string",
+              "description": "The name of the company.",
+              "required": true
+            },
+            {
+              "name": "contact_information",
+              "field_type": "string",
+              "description": "The contact information of the company.",
+              "required": true
+            },
+            {
+              "name": "previous_sponsorships",
+              "field_type": "string",
+              "description": "The previous sponsorships of the company.",
+              "required": true
+            },
+            {
+              "name": "CSR_evidence",
+              "field_type": "string",
+              "description": "The CSR evidence of the company.",
+              "required": true
+            }
+          ],
+          "constraints": [
+            {
+              "field": "CSR_evidence",
+              "operator": "contains",
+              "target_value": "CSR",
+              "is_hard": true
+            },
+            {
+              "field": "previous_sponsorships",
+              "operator": "contains",
+              "target_value": "Robotics Hackathon",
+              "is_hard": true
+            }
+          ],
+          "relationships": [],
+          "target_count": 10,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 2,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [],
+        "source_relevance_mode": "fixed_keep_fixture",
+        "source_relevance": [],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.11,
+        "scrapling_retrieval_ms": 0.11,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 4744.14
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.03,
+        "validation_latency_ms": 0.06,
+        "scrapling_latency_ms": 0.11,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.2,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.02,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.11,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.13,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find AI startups in Bengaluru founded after 2020 with funding in the last 18 months and at least one founder.",
+      "captured": {
+        "index": 7,
+        "query": "Find AI startups in Bengaluru founded after 2020 with funding in the last 18 months and at least one founder.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "AI startup",
+          "business_goal": "Funding",
+          "fields": [
+            {
+              "name": "name",
+              "field_type": "string",
+              "description": "The name of the AI startup.",
+              "required": true
+            },
+            {
+              "name": "location",
+              "field_type": "string",
+              "description": "The location of the AI startup.",
+              "required": true
+            },
+            {
+              "name": "founded_after",
+              "field_type": "date",
+              "description": "The date the AI startup was founded after 2020.",
+              "required": true
+            },
+            {
+              "name": "funding_in_last_18_months",
+              "field_type": "boolean",
+              "description": "Whether the AI startup has received funding in the last 18 months.",
+              "required": true
+            },
+            {
+              "name": "founder",
+              "field_type": "boolean",
+              "description": "Whether the AI startup has at least one founder.",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 10,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 1,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [],
+        "source_relevance_mode": "fixed_keep_fixture",
+        "source_relevance": [],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.1,
+        "scrapling_retrieval_ms": 0.1,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 4509.03
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.04,
+        "validation_latency_ms": 0.05,
+        "scrapling_latency_ms": 0.1,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.19,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.02,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.1,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.12,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find hotels in Chennai with room prices, amenities, address, and current booking availability.",
+      "captured": {
+        "index": 8,
+        "query": "Find hotels in Chennai with room prices, amenities, address, and current booking availability.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "hotels",
+          "business_goal": "Find hotels in Chennai with room prices, amenities, address, and current booking availability.",
+          "fields": [
+            {
+              "name": "name",
+              "field_type": "string",
+              "description": "The name of the hotel.",
+              "required": true
+            },
+            {
+              "name": "address",
+              "field_type": "string",
+              "description": "The address of the hotel.",
+              "required": true
+            },
+            {
+              "name": "room_prices",
+              "field_type": "string",
+              "description": "The room prices available at the hotel.",
+              "required": true
+            },
+            {
+              "name": "amenities",
+              "field_type": "string",
+              "description": "The amenities available at the hotel.",
+              "required": true
+            },
+            {
+              "name": "booking_availability",
+              "field_type": "string",
+              "description": "The current booking availability at the hotel.",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 0,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 1,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [],
+        "source_relevance_mode": "fixed_keep_fixture",
+        "source_relevance": [],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.28,
+        "scrapling_retrieval_ms": 0.28,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 4484.69
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.03,
+        "validation_latency_ms": 0.05,
+        "scrapling_latency_ms": 0.28,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.36,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.02,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.28,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.3,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find Indian battery manufacturers with products, locations, certifications, and contact details.",
+      "captured": {
+        "index": 9,
+        "query": "Find Indian battery manufacturers with products, locations, certifications, and contact details.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "manufacturer",
+          "business_goal": "Find Indian battery manufacturers with products, locations, certifications, and contact details.",
+          "fields": [
+            {
+              "name": "manufacturer_name",
+              "field_type": "string",
+              "description": "The name of the manufacturer.",
+              "required": true
+            },
+            {
+              "name": "products",
+              "field_type": "string",
+              "description": "The types of products the manufacturer produces.",
+              "required": true
+            },
+            {
+              "name": "locations",
+              "field_type": "string",
+              "description": "The locations where the manufacturer operates.",
+              "required": true
+            },
+            {
+              "name": "certifications",
+              "field_type": "string",
+              "description": "The certifications the manufacturer has obtained.",
+              "required": true
+            },
+            {
+              "name": "contact_details",
+              "field_type": "string",
+              "description": "The contact details of the manufacturer.",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 0,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 1,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [],
+        "source_relevance_mode": "fixed_keep_fixture",
+        "source_relevance": [],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.11,
+        "scrapling_retrieval_ms": 0.11,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 4461.99
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.04,
+        "validation_latency_ms": 0.14,
+        "scrapling_latency_ms": 0.11,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.29,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.04,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.11,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.15,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find current backend engineering jobs where role details are on company career pages, including title, location, seniority, and application URL.",
+      "captured": {
+        "index": 10,
+        "query": "Find current backend engineering jobs where role details are on company career pages, including title, location, seniority, and application URL.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "job",
+          "business_goal": "Find current backend engineering jobs",
+          "fields": [
+            {
+              "name": "title",
+              "field_type": "string",
+              "description": "The title of the job",
+              "required": true
+            },
+            {
+              "name": "location",
+              "field_type": "string",
+              "description": "The location of the job",
+              "required": true
+            },
+            {
+              "name": "seniority",
+              "field_type": "string",
+              "description": "The seniority level of the job",
+              "required": true
+            },
+            {
+              "name": "application_url",
+              "field_type": "string",
+              "description": "The URL where the application can be submitted",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 0,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 0,
+            "prefer_official": false,
+            "require_date": false,
+            "required_evidence": false
+          },
+          "allowed_domains": [],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [],
+        "source_relevance_mode": "fixed_keep_fixture",
+        "source_relevance": [],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.13,
+        "scrapling_retrieval_ms": 0.13,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 4016.54
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.06,
+        "validation_latency_ms": 0.08,
+        "scrapling_latency_ms": 0.13,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.27,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.02,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.13,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.15,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    }
+  ],
+  "regression_tests": "66 intelligence + 5 Scrapling tests passed"
+}

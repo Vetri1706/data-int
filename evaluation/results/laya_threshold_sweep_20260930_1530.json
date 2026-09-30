@@ -1,0 +1,1846 @@
+{
+  "generated_at": "2026-09-30T10:00:35.380874+00:00",
+  "evaluation": {
+    "fixture": "/Users/shruthi/dataint/data-int/evaluation/fixtures/laya_threshold_cases.json",
+    "replay": true,
+    "production_behavior_changed": false,
+    "pipeline_order": "cached Scrapling -> complete chunks -> Laya -> offline threshold -> existing TF-IDF -> extraction -> validation",
+    "laya_model": "english",
+    "laya_runtime": {
+      "latency_ms": 11714.65,
+      "scores": {
+        "count": 3,
+        "minimum": 0.5715,
+        "maximum": 0.8368,
+        "mean": 0.6851,
+        "median": 0.647,
+        "p25": 0.60925,
+        "p75": 0.7419,
+        "p90": 0.79884,
+        "p95": 0.81782,
+        "bins": {
+          "0.00-0.05": 0,
+          "0.05-0.10": 0,
+          "0.10-0.15": 0,
+          "0.15-0.20": 0,
+          "0.20-0.25": 0,
+          "0.25-0.30": 0,
+          "0.30+": 3
+        }
+      }
+    },
+    "thresholds": [
+      0.05,
+      0.1,
+      0.15,
+      0.2,
+      0.25,
+      0.3
+    ]
+  },
+  "aggregate": {
+    "baseline": {
+      "chunks_generated": 3,
+      "laya_retained": 0,
+      "laya_rejected": 0,
+      "tfidf_candidates": 3,
+      "llm_calls": 3,
+      "llm_input_tokens": 1284,
+      "llm_input_chars": 5570,
+      "records": 3,
+      "verified": 0,
+      "draft": 0,
+      "needs_review": 0,
+      "fields_grounded": 0,
+      "validation_failures": 3,
+      "laya_latency_ms": 0,
+      "tfidf_latency_ms": 73.18,
+      "extraction_latency_ms": 14258.060000000001,
+      "grounding_validation_latency_ms": 3.91,
+      "total_pipeline_latency_ms": 14335.44
+    },
+    "0.05": {
+      "chunks_generated": 3,
+      "laya_retained": 3,
+      "laya_rejected": 0,
+      "tfidf_candidates": 3,
+      "llm_calls": 3,
+      "llm_input_tokens": 1284,
+      "llm_input_chars": 5570,
+      "records": 3,
+      "verified": 0,
+      "draft": 0,
+      "needs_review": 0,
+      "fields_grounded": 0,
+      "validation_failures": 3,
+      "laya_latency_ms": 11714.65,
+      "tfidf_latency_ms": 55.019999999999996,
+      "extraction_latency_ms": 8021.07,
+      "grounding_validation_latency_ms": 5.0,
+      "total_pipeline_latency_ms": 19795.940000000002
+    },
+    "0.10": {
+      "chunks_generated": 3,
+      "laya_retained": 3,
+      "laya_rejected": 0,
+      "tfidf_candidates": 3,
+      "llm_calls": 3,
+      "llm_input_tokens": 1284,
+      "llm_input_chars": 5570,
+      "records": 3,
+      "verified": 0,
+      "draft": 0,
+      "needs_review": 0,
+      "fields_grounded": 0,
+      "validation_failures": 3,
+      "laya_latency_ms": 11714.65,
+      "tfidf_latency_ms": 66.33,
+      "extraction_latency_ms": 7943.54,
+      "grounding_validation_latency_ms": 1.07,
+      "total_pipeline_latency_ms": 19725.82
+    },
+    "0.15": {
+      "chunks_generated": 3,
+      "laya_retained": 3,
+      "laya_rejected": 0,
+      "tfidf_candidates": 3,
+      "llm_calls": 3,
+      "llm_input_tokens": 1284,
+      "llm_input_chars": 5570,
+      "records": 3,
+      "verified": 0,
+      "draft": 0,
+      "needs_review": 0,
+      "fields_grounded": 0,
+      "validation_failures": 3,
+      "laya_latency_ms": 11714.65,
+      "tfidf_latency_ms": 35.95,
+      "extraction_latency_ms": 6881.88,
+      "grounding_validation_latency_ms": 0.44,
+      "total_pipeline_latency_ms": 18633.11
+    },
+    "0.20": {
+      "chunks_generated": 3,
+      "laya_retained": 3,
+      "laya_rejected": 0,
+      "tfidf_candidates": 3,
+      "llm_calls": 3,
+      "llm_input_tokens": 1284,
+      "llm_input_chars": 5570,
+      "records": 3,
+      "verified": 0,
+      "draft": 0,
+      "needs_review": 0,
+      "fields_grounded": 0,
+      "validation_failures": 3,
+      "laya_latency_ms": 11714.65,
+      "tfidf_latency_ms": 11.89,
+      "extraction_latency_ms": 7835.0599999999995,
+      "grounding_validation_latency_ms": 0.5700000000000001,
+      "total_pipeline_latency_ms": 19562.34
+    },
+    "0.25": {
+      "chunks_generated": 3,
+      "laya_retained": 3,
+      "laya_rejected": 0,
+      "tfidf_candidates": 3,
+      "llm_calls": 3,
+      "llm_input_tokens": 1284,
+      "llm_input_chars": 5570,
+      "records": 3,
+      "verified": 0,
+      "draft": 0,
+      "needs_review": 0,
+      "fields_grounded": 0,
+      "validation_failures": 3,
+      "laya_latency_ms": 11714.65,
+      "tfidf_latency_ms": 19.41,
+      "extraction_latency_ms": 8533.68,
+      "grounding_validation_latency_ms": 1.25,
+      "total_pipeline_latency_ms": 20269.27
+    },
+    "0.30": {
+      "chunks_generated": 3,
+      "laya_retained": 3,
+      "laya_rejected": 0,
+      "tfidf_candidates": 3,
+      "llm_calls": 3,
+      "llm_input_tokens": 1284,
+      "llm_input_chars": 5570,
+      "records": 3,
+      "verified": 0,
+      "draft": 0,
+      "needs_review": 0,
+      "fields_grounded": 0,
+      "validation_failures": 3,
+      "laya_latency_ms": 11714.65,
+      "tfidf_latency_ms": 49.38,
+      "extraction_latency_ms": 7577.51,
+      "grounding_validation_latency_ms": 0.54,
+      "total_pipeline_latency_ms": 19342.26
+    }
+  },
+  "evidence_by_configuration": {
+    "baseline": {
+      "baseline_evidence_units": 0,
+      "retained_baseline_evidence_units": 0,
+      "lost_evidence_units": [],
+      "gold_relevant_chunks": 0,
+      "gold_relevant_chunks_retained": 0,
+      "false_negative_chunks": 0,
+      "evidence_recall_proxy": null,
+      "gold_chunk_recall": null,
+      "gold_chunk_precision": null
+    },
+    "0.05": {
+      "baseline_evidence_units": 0,
+      "retained_baseline_evidence_units": 0,
+      "lost_evidence_units": [],
+      "gold_relevant_chunks": 3,
+      "gold_relevant_chunks_retained": 3,
+      "false_negative_chunks": 0,
+      "evidence_recall_proxy": null,
+      "gold_chunk_recall": 1.0,
+      "gold_chunk_precision": null
+    },
+    "0.10": {
+      "baseline_evidence_units": 0,
+      "retained_baseline_evidence_units": 0,
+      "lost_evidence_units": [],
+      "gold_relevant_chunks": 3,
+      "gold_relevant_chunks_retained": 3,
+      "false_negative_chunks": 0,
+      "evidence_recall_proxy": null,
+      "gold_chunk_recall": 1.0,
+      "gold_chunk_precision": null
+    },
+    "0.15": {
+      "baseline_evidence_units": 0,
+      "retained_baseline_evidence_units": 0,
+      "lost_evidence_units": [],
+      "gold_relevant_chunks": 3,
+      "gold_relevant_chunks_retained": 3,
+      "false_negative_chunks": 0,
+      "evidence_recall_proxy": null,
+      "gold_chunk_recall": 1.0,
+      "gold_chunk_precision": null
+    },
+    "0.20": {
+      "baseline_evidence_units": 0,
+      "retained_baseline_evidence_units": 0,
+      "lost_evidence_units": [],
+      "gold_relevant_chunks": 3,
+      "gold_relevant_chunks_retained": 3,
+      "false_negative_chunks": 0,
+      "evidence_recall_proxy": null,
+      "gold_chunk_recall": 1.0,
+      "gold_chunk_precision": null
+    },
+    "0.25": {
+      "baseline_evidence_units": 0,
+      "retained_baseline_evidence_units": 0,
+      "lost_evidence_units": [],
+      "gold_relevant_chunks": 3,
+      "gold_relevant_chunks_retained": 3,
+      "false_negative_chunks": 0,
+      "evidence_recall_proxy": null,
+      "gold_chunk_recall": 1.0,
+      "gold_chunk_precision": null
+    },
+    "0.30": {
+      "baseline_evidence_units": 0,
+      "retained_baseline_evidence_units": 0,
+      "lost_evidence_units": [],
+      "gold_relevant_chunks": 3,
+      "gold_relevant_chunks_retained": 3,
+      "false_negative_chunks": 0,
+      "evidence_recall_proxy": null,
+      "gold_chunk_recall": 1.0,
+      "gold_chunk_precision": null
+    }
+  },
+  "score_distribution": {
+    "count": 3,
+    "minimum": 0.5715,
+    "maximum": 0.8368,
+    "mean": 0.6851,
+    "median": 0.647,
+    "p25": 0.60925,
+    "p75": 0.7419,
+    "p90": 0.79884,
+    "p95": 0.81782,
+    "bins": {
+      "0.00-0.05": 0,
+      "0.05-0.10": 0,
+      "0.10-0.15": 0,
+      "0.15-0.20": 0,
+      "0.20-0.25": 0,
+      "0.25-0.30": 0,
+      "0.30+": 3
+    }
+  },
+  "raw_laya_evaluations": [
+    {
+      "chunk_id": "ab462b567750e4505af1",
+      "source_url": "https://fixture.example/suppliers/example-components",
+      "chunk_index": 0,
+      "score": 0.647,
+      "decision": "retain",
+      "threshold": 0.2,
+      "model": "english",
+      "status": "scored"
+    },
+    {
+      "chunk_id": "2443380cb057ef2c150d",
+      "source_url": "https://fixture.example/careers/backend-engineer",
+      "chunk_index": 0,
+      "score": 0.8368,
+      "decision": "retain",
+      "threshold": 0.2,
+      "model": "english",
+      "status": "scored"
+    },
+    {
+      "chunk_id": "283d7b2ba5adf369fb98",
+      "source_url": "https://fixture.example/pricing",
+      "chunk_index": 0,
+      "score": 0.5715,
+      "decision": "retain",
+      "threshold": 0.2,
+      "model": "english",
+      "status": "scored"
+    }
+  ],
+  "per_case": {
+    "supplier-page": {
+      "query": "Find component suppliers with manufacturer, location, certifications, and catalog evidence.",
+      "chunks_generated": 1,
+      "laya_evaluations": [
+        {
+          "chunk_id": "ab462b567750e4505af1",
+          "source_url": "https://fixture.example/suppliers/example-components",
+          "chunk_index": 0,
+          "score": 0.647,
+          "decision": "retain",
+          "threshold": 0.2,
+          "model": "english",
+          "status": "scored"
+        }
+      ],
+      "gold_chunk_ids": [
+        "ab462b567750e4505af1"
+      ],
+      "configurations": {
+        "baseline": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1995,
+          "extraction_input_tokens": 441,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 7329.18,
+          "tfidf_latency_ms": 28.41,
+          "grounding_validation_latency_ms": 3.18,
+          "laya_latency_ms": 0.0,
+          "total_pipeline_latency_ms": 7360.93,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "canonical_name": "Example Components",
+              "location": "Chennai, Tamil Nadu, India",
+              "certifications": null,
+              "catalog_url": "https://catalog.example.com/components",
+              "chunk_id": "ab462b567750e4505af1",
+              "source_url": "https://fixture.example/suppliers/example-components",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Example Components manufactures battery management components for industrial and electric mobility applications. Our headquarters and manufacturing facility are in Chennai, Tamil Nadu, India. The quality section lists ISO 9001 certification and a current product catalogue at https://catalog.example.com/components. News archive | Careers | Privacy policy | Terms of use."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 7327.77,
+              "input_chars": 1995,
+              "estimated_input_tokens": 499,
+              "actual_input_tokens": 441
+            }
+          ]
+        },
+        "0.05": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1995,
+          "extraction_input_tokens": 441,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 2725.7,
+          "tfidf_latency_ms": 25.52,
+          "grounding_validation_latency_ms": 1.54,
+          "laya_latency_ms": 10713.97,
+          "total_pipeline_latency_ms": 13466.79,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "canonical_name": "Example Components",
+              "location": "Chennai, Tamil Nadu, India",
+              "certifications": null,
+              "catalog_url": "https://catalog.example.com/components",
+              "chunk_id": "ab462b567750e4505af1",
+              "source_url": "https://fixture.example/suppliers/example-components",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Example Components manufactures battery management components for industrial and electric mobility applications. Our headquarters and manufacturing facility are in Chennai, Tamil Nadu, India. The quality section lists ISO 9001 certification and a current product catalogue at https://catalog.example.com/components."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 2724.44,
+              "input_chars": 1995,
+              "estimated_input_tokens": 499,
+              "actual_input_tokens": 441
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        },
+        "0.10": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1995,
+          "extraction_input_tokens": 441,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 2720.13,
+          "tfidf_latency_ms": 42.89,
+          "grounding_validation_latency_ms": 0.28,
+          "laya_latency_ms": 10713.97,
+          "total_pipeline_latency_ms": 13477.36,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "canonical_name": "Example Components",
+              "location": "Chennai, Tamil Nadu, India",
+              "certifications": null,
+              "catalog_url": "https://catalog.example.com/components",
+              "chunk_id": "ab462b567750e4505af1",
+              "source_url": "https://fixture.example/suppliers/example-components",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Example Components manufactures battery management components for industrial and electric mobility applications. Our headquarters and manufacturing facility are in Chennai, Tamil Nadu, India. The quality section lists ISO 9001 certification and a current product catalogue at https://catalog.example.com/components. News archive | Careers | Privacy policy | Terms of use."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 2719.53,
+              "input_chars": 1995,
+              "estimated_input_tokens": 499,
+              "actual_input_tokens": 441
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        },
+        "0.15": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1995,
+          "extraction_input_tokens": 441,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 2395.37,
+          "tfidf_latency_ms": 13.35,
+          "grounding_validation_latency_ms": 0.15,
+          "laya_latency_ms": 10713.97,
+          "total_pipeline_latency_ms": 13122.91,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "canonical_name": "Example Components",
+              "location": "Chennai, Tamil Nadu, India",
+              "certifications": null,
+              "catalog_url": "https://catalog.example.com/components",
+              "chunk_id": "ab462b567750e4505af1",
+              "source_url": "https://fixture.example/suppliers/example-components",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Example Components manufactures battery management components for industrial and electric mobility applications. Our headquarters and manufacturing facility are in Chennai, Tamil Nadu, India. The quality section lists ISO 9001 certification and a current product catalogue at https://catalog.example.com/components."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 2394.69,
+              "input_chars": 1995,
+              "estimated_input_tokens": 499,
+              "actual_input_tokens": 441
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        },
+        "0.20": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1995,
+          "extraction_input_tokens": 441,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 2530.83,
+          "tfidf_latency_ms": 5.43,
+          "grounding_validation_latency_ms": 0.25,
+          "laya_latency_ms": 10713.97,
+          "total_pipeline_latency_ms": 13250.55,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "canonical_name": "Example Components",
+              "location": "Chennai, Tamil Nadu, India",
+              "certifications": null,
+              "catalog_url": "https://catalog.example.com/components",
+              "chunk_id": "ab462b567750e4505af1",
+              "source_url": "https://fixture.example/suppliers/example-components",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Example Components manufactures battery management components for industrial and electric mobility applications. Our headquarters and manufacturing facility are in Chennai, Tamil Nadu, India. The quality section lists ISO 9001 certification and a current product catalogue at https://catalog.example.com/components."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 2530.23,
+              "input_chars": 1995,
+              "estimated_input_tokens": 499,
+              "actual_input_tokens": 441
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        },
+        "0.25": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1995,
+          "extraction_input_tokens": 441,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 2999.72,
+          "tfidf_latency_ms": 7.14,
+          "grounding_validation_latency_ms": 0.23,
+          "laya_latency_ms": 10713.97,
+          "total_pipeline_latency_ms": 13721.1,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "canonical_name": "Example Components",
+              "location": "Chennai, Tamil Nadu, India",
+              "certifications": null,
+              "catalog_url": "https://catalog.example.com/components",
+              "chunk_id": "ab462b567750e4505af1",
+              "source_url": "https://fixture.example/suppliers/example-components",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Example Components manufactures battery management components for industrial and electric mobility applications. Our headquarters and manufacturing facility are in Chennai, Tamil Nadu, India. The quality section lists ISO 9001 certification and a current product catalogue at https://catalog.example.com/components."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 2999.43,
+              "input_chars": 1995,
+              "estimated_input_tokens": 499,
+              "actual_input_tokens": 441
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        },
+        "0.30": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1995,
+          "extraction_input_tokens": 441,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 2676.62,
+          "tfidf_latency_ms": 15.8,
+          "grounding_validation_latency_ms": 0.14,
+          "laya_latency_ms": 10713.97,
+          "total_pipeline_latency_ms": 13406.57,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "canonical_name": "Example Components",
+              "location": "Chennai, Tamil Nadu, India",
+              "certifications": null,
+              "catalog_url": "https://catalog.example.com/components",
+              "chunk_id": "ab462b567750e4505af1",
+              "source_url": "https://fixture.example/suppliers/example-components",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Example Components manufactures battery management components for industrial and electric mobility applications. Our headquarters and manufacturing facility are in Chennai, Tamil Nadu, India. The quality section lists ISO 9001 certification and a current product catalogue at https://catalog.example.com/components."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 2676.2,
+              "input_chars": 1995,
+              "estimated_input_tokens": 499,
+              "actual_input_tokens": 441
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        }
+      }
+    },
+    "jobs-page": {
+      "query": "Find open backend engineering roles with title, location, seniority, and application URL.",
+      "chunks_generated": 1,
+      "laya_evaluations": [
+        {
+          "chunk_id": "2443380cb057ef2c150d",
+          "source_url": "https://fixture.example/careers/backend-engineer",
+          "chunk_index": 0,
+          "score": 0.8368,
+          "decision": "retain",
+          "threshold": 0.2,
+          "model": "english",
+          "status": "scored"
+        }
+      ],
+      "gold_chunk_ids": [
+        "2443380cb057ef2c150d"
+      ],
+      "configurations": {
+        "baseline": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1814,
+          "extraction_input_tokens": 430,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 2946.9,
+          "tfidf_latency_ms": 35.22,
+          "grounding_validation_latency_ms": 0.15,
+          "laya_latency_ms": 0.0,
+          "total_pipeline_latency_ms": 2982.33,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "role_title": "Backend Engineer",
+              "location": "Bengaluru, Karnataka, India",
+              "seniority": "Mid-level",
+              "application_url": "https://jobs.example.com/backend-engineer",
+              "canonical_name": "Backend Engineer",
+              "chunk_id": "2443380cb057ef2c150d",
+              "source_url": "https://fixture.example/careers/backend-engineer",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Build reliable services with the platform engineering team. This position is currently open. Apply now: https://jobs.example.com/backend-engineer."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 2946.43,
+              "input_chars": 1814,
+              "estimated_input_tokens": 454,
+              "actual_input_tokens": 430
+            }
+          ]
+        },
+        "0.05": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1814,
+          "extraction_input_tokens": 430,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 2062.93,
+          "tfidf_latency_ms": 6.28,
+          "grounding_validation_latency_ms": 3.27,
+          "laya_latency_ms": 700.97,
+          "total_pipeline_latency_ms": 2773.52,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "role_title": "Backend Engineer",
+              "location": "Bengaluru, Karnataka, India",
+              "seniority": "Mid-level",
+              "application_url": "https://jobs.example.com/backend-engineer",
+              "canonical_name": "Backend Engineer",
+              "source_url": "https://fixture.example/careers/backend-engineer",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Backend Engineer Location: Bengaluru, Karnataka, India. Seniority: Mid-level. Build reliable services with the platform engineering team. This position is currently open. Apply now: https://jobs.example.com/backend-engineer."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 2062.43,
+              "input_chars": 1814,
+              "estimated_input_tokens": 454,
+              "actual_input_tokens": 430
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        },
+        "0.10": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1814,
+          "extraction_input_tokens": 430,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 2265.95,
+          "tfidf_latency_ms": 14.38,
+          "grounding_validation_latency_ms": 0.75,
+          "laya_latency_ms": 700.97,
+          "total_pipeline_latency_ms": 2982.11,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "role_title": "Backend Engineer",
+              "location": "Bengaluru, Karnataka, India",
+              "seniority": "Mid-level",
+              "application_url": "https://jobs.example.com/backend-engineer",
+              "canonical_name": "Backend Engineer",
+              "source_url": "https://fixture.example/careers/backend-engineer",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Backend Engineer Location: Bengaluru, Karnataka, India. Seniority: Mid-level. Build reliable services with the platform engineering team. This position is currently open. Apply now: https://jobs.example.com/backend-engineer."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 2265.58,
+              "input_chars": 1814,
+              "estimated_input_tokens": 454,
+              "actual_input_tokens": 430
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        },
+        "0.15": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1814,
+          "extraction_input_tokens": 430,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 1998.9,
+          "tfidf_latency_ms": 19.18,
+          "grounding_validation_latency_ms": 0.19,
+          "laya_latency_ms": 700.97,
+          "total_pipeline_latency_ms": 2719.3,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "role_title": "Backend Engineer",
+              "location": "Bengaluru, Karnataka, India",
+              "seniority": "Mid-level",
+              "application_url": "https://jobs.example.com/backend-engineer",
+              "canonical_name": "Backend Engineer",
+              "source_url": "https://fixture.example/careers/backend-engineer",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Backend Engineer Location: Bengaluru, Karnataka, India. Seniority: Mid-level. Build reliable services with the platform engineering team. This position is currently open. Apply now: https://jobs.example.com/backend-engineer."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 1998.56,
+              "input_chars": 1814,
+              "estimated_input_tokens": 454,
+              "actual_input_tokens": 430
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        },
+        "0.20": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1814,
+          "extraction_input_tokens": 430,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 2152.36,
+          "tfidf_latency_ms": 3.42,
+          "grounding_validation_latency_ms": 0.15,
+          "laya_latency_ms": 700.97,
+          "total_pipeline_latency_ms": 2856.94,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "role_title": "Backend Engineer",
+              "location": "Bengaluru, Karnataka, India",
+              "seniority": "Mid-level",
+              "application_url": "https://jobs.example.com/backend-engineer",
+              "canonical_name": "Backend Engineer",
+              "source_url": "https://fixture.example/careers/backend-engineer",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Backend Engineer Location: Bengaluru, Karnataka, India. Seniority: Mid-level. Build reliable services with the platform engineering team. This position is currently open. Apply now: https://jobs.example.com/backend-engineer."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 2152.08,
+              "input_chars": 1814,
+              "estimated_input_tokens": 454,
+              "actual_input_tokens": 430
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        },
+        "0.25": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1814,
+          "extraction_input_tokens": 430,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 2113.45,
+          "tfidf_latency_ms": 5.65,
+          "grounding_validation_latency_ms": 0.26,
+          "laya_latency_ms": 700.97,
+          "total_pipeline_latency_ms": 2820.38,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "role_title": "Backend Engineer",
+              "location": "Bengaluru, Karnataka, India",
+              "seniority": "Mid-level",
+              "application_url": "https://jobs.example.com/backend-engineer",
+              "canonical_name": "Backend Engineer",
+              "source_url": "https://fixture.example/careers/backend-engineer",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Backend Engineer Location: Bengaluru, Karnataka, India. Seniority: Mid-level. Build reliable services with the platform engineering team. This position is currently open. Apply now: https://jobs.example.com/backend-engineer."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 2113.04,
+              "input_chars": 1814,
+              "estimated_input_tokens": 454,
+              "actual_input_tokens": 430
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        },
+        "0.30": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1814,
+          "extraction_input_tokens": 430,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 2015.97,
+          "tfidf_latency_ms": 13.6,
+          "grounding_validation_latency_ms": 0.27,
+          "laya_latency_ms": 700.97,
+          "total_pipeline_latency_ms": 2730.9,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "role_title": "Backend Engineer",
+              "location": "Bengaluru, Karnataka, India",
+              "seniority": "Mid-level",
+              "application_url": "https://jobs.example.com/backend-engineer",
+              "canonical_name": "Backend Engineer",
+              "source_url": "https://fixture.example/careers/backend-engineer",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Backend Engineer Location: Bengaluru, Karnataka, India. Seniority: Mid-level. Build reliable services with the platform engineering team. This position is currently open. Apply now: https://jobs.example.com/backend-engineer."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 2015.52,
+              "input_chars": 1814,
+              "estimated_input_tokens": 454,
+              "actual_input_tokens": 430
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        }
+      }
+    },
+    "pricing-page": {
+      "query": "Find SaaS pricing tiers with billing cadence, product name, and source evidence.",
+      "chunks_generated": 1,
+      "laya_evaluations": [
+        {
+          "chunk_id": "283d7b2ba5adf369fb98",
+          "source_url": "https://fixture.example/pricing",
+          "chunk_index": 0,
+          "score": 0.5715,
+          "decision": "retain",
+          "threshold": 0.2,
+          "model": "english",
+          "status": "scored"
+        }
+      ],
+      "gold_chunk_ids": [
+        "283d7b2ba5adf369fb98"
+      ],
+      "configurations": {
+        "baseline": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1761,
+          "extraction_input_tokens": 413,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 3981.98,
+          "tfidf_latency_ms": 9.55,
+          "grounding_validation_latency_ms": 0.58,
+          "laya_latency_ms": 0.0,
+          "total_pipeline_latency_ms": 3992.18,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "canonical_name": "Example",
+              "product_name": "Example",
+              "pricing_tiers": [
+                {
+                  "tier": "Starter",
+                  "price": "$10 per user/month"
+                },
+                {
+                  "tier": "Team",
+                  "price": "$24 per user/month"
+                },
+                {
+                  "tier": "Enterprise",
+                  "price": "Contact sales"
+                }
+              ],
+              "billing_cadence": "Monthly",
+              "chunk_id": "283d7b2ba5adf369fb98",
+              "source_url": "https://fixture.example/pricing",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Example Work pricing\nStarter - $10 per user/month. Team - $24 per user/month. Enterprise - Contact sales.\nAnnual plans are billed annually and include a discount. Monthly billing is available for Starter and Team."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 3981.2,
+              "input_chars": 1761,
+              "estimated_input_tokens": 441,
+              "actual_input_tokens": 413
+            }
+          ]
+        },
+        "0.05": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1761,
+          "extraction_input_tokens": 413,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 3232.44,
+          "tfidf_latency_ms": 23.22,
+          "grounding_validation_latency_ms": 0.19,
+          "laya_latency_ms": 299.71,
+          "total_pipeline_latency_ms": 3555.63,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "canonical_name": "Example",
+              "product_name": "Example",
+              "pricing_tiers": [
+                {
+                  "tier": "Starter",
+                  "price": "$10 per user/month"
+                },
+                {
+                  "tier": "Team",
+                  "price": "$24 per user/month"
+                },
+                {
+                  "tier": "Enterprise",
+                  "price": "Contact sales"
+                }
+              ],
+              "billing_cadence": "Monthly",
+              "chunk_id": "283d7b2ba5adf369fb98",
+              "source_url": "https://fixture.example/pricing",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Example Work pricing\nStarter - $10 per user/month. Team - $24 per user/month. Enterprise - Contact sales.\nAnnual plans are billed annually and include a discount. Monthly billing is available for Starter and Team.\nCompare features, read customer stories, download our app."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 3231.89,
+              "input_chars": 1761,
+              "estimated_input_tokens": 441,
+              "actual_input_tokens": 413
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        },
+        "0.10": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1761,
+          "extraction_input_tokens": 413,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 2957.46,
+          "tfidf_latency_ms": 9.06,
+          "grounding_validation_latency_ms": 0.04,
+          "laya_latency_ms": 299.71,
+          "total_pipeline_latency_ms": 3266.35,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "canonical_name": "Example",
+              "product_name": "Example",
+              "pricing_tiers": [
+                {
+                  "tier": "Starter",
+                  "price": "$10 per user/month"
+                },
+                {
+                  "tier": "Team",
+                  "price": "$24 per user/month"
+                },
+                {
+                  "tier": "Enterprise",
+                  "price": "Contact sales"
+                }
+              ],
+              "billing_cadence": "Monthly",
+              "chunk_id": "283d7b2ba5adf369fb98",
+              "source_url": "https://fixture.example/pricing",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Example Work pricing\nStarter - $10 per user/month. Team - $24 per user/month. Enterprise - Contact sales.\nAnnual plans are billed annually and include a discount. Monthly billing is available for Starter and Team."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 2956.96,
+              "input_chars": 1761,
+              "estimated_input_tokens": 441,
+              "actual_input_tokens": 413
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        },
+        "0.15": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1761,
+          "extraction_input_tokens": 413,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 2487.61,
+          "tfidf_latency_ms": 3.42,
+          "grounding_validation_latency_ms": 0.1,
+          "laya_latency_ms": 299.71,
+          "total_pipeline_latency_ms": 2790.9,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "canonical_name": "Example",
+              "product_name": "Example",
+              "pricing_tiers": [
+                {
+                  "tier": "Starter",
+                  "price": "$10 per user/month"
+                },
+                {
+                  "tier": "Team",
+                  "price": "$24 per user/month"
+                },
+                {
+                  "tier": "Enterprise",
+                  "price": "Contact sales"
+                }
+              ],
+              "billing_cadence": "Annual",
+              "chunk_id": "283d7b2ba5adf369fb98",
+              "source_url": "https://fixture.example/pricing",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Example: platform, resources, login."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 2487.31,
+              "input_chars": 1761,
+              "estimated_input_tokens": 441,
+              "actual_input_tokens": 413
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        },
+        "0.20": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1761,
+          "extraction_input_tokens": 413,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 3151.87,
+          "tfidf_latency_ms": 3.04,
+          "grounding_validation_latency_ms": 0.17,
+          "laya_latency_ms": 299.71,
+          "total_pipeline_latency_ms": 3454.85,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "canonical_name": "Example",
+              "product_name": "Example",
+              "pricing_tiers": [
+                {
+                  "tier": "Starter",
+                  "price": "$10 per user/month"
+                },
+                {
+                  "tier": "Team",
+                  "price": "$24 per user/month"
+                },
+                {
+                  "tier": "Enterprise",
+                  "price": "Contact sales"
+                }
+              ],
+              "billing_cadence": "Monthly",
+              "chunk_id": "283d7b2ba5adf369fb98",
+              "source_url": "https://fixture.example/pricing",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Example Work pricing\nStarter - $10 per user/month. Team - $24 per user/month. Enterprise - Contact sales.\nAnnual plans are billed annually and include a discount. Monthly billing is available for Starter and Team."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 3151.38,
+              "input_chars": 1761,
+              "estimated_input_tokens": 441,
+              "actual_input_tokens": 413
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        },
+        "0.25": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1761,
+          "extraction_input_tokens": 413,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 3420.51,
+          "tfidf_latency_ms": 6.62,
+          "grounding_validation_latency_ms": 0.76,
+          "laya_latency_ms": 299.71,
+          "total_pipeline_latency_ms": 3727.79,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "canonical_name": "Example",
+              "product_name": "Example",
+              "pricing_tiers": [
+                {
+                  "tier": "Starter",
+                  "price": "$10 per user/month"
+                },
+                {
+                  "tier": "Team",
+                  "price": "$24 per user/month"
+                },
+                {
+                  "tier": "Enterprise",
+                  "price": "Contact sales"
+                }
+              ],
+              "billing_cadence": "Monthly",
+              "chunk_id": "283d7b2ba5adf369fb98",
+              "source_url": "https://fixture.example/pricing",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Example Work pricing\nStarter - $10 per user/month. Team - $24 per user/month. Enterprise - Contact sales.\nAnnual plans are billed annually and include a discount. Monthly billing is available for Starter and Team."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 3417.73,
+              "input_chars": 1761,
+              "estimated_input_tokens": 441,
+              "actual_input_tokens": 413
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        },
+        "0.30": {
+          "chunks_entering_tfidf": 1,
+          "tfidf_candidates": 1,
+          "chunks_to_extraction": 1,
+          "extraction_llm_calls": 1,
+          "extraction_input_chars": 1761,
+          "extraction_input_tokens": 413,
+          "token_basis": "provider_usage_metadata",
+          "extraction_latency_ms": 2884.92,
+          "tfidf_latency_ms": 19.98,
+          "grounding_validation_latency_ms": 0.13,
+          "laya_latency_ms": 299.71,
+          "total_pipeline_latency_ms": 3204.79,
+          "extraction_error": null,
+          "records_extracted": 1,
+          "records": [
+            {
+              "canonical_name": "Example",
+              "product_name": "Example",
+              "pricing_tiers": [
+                {
+                  "tier": "Starter",
+                  "price": "$10 per user/month"
+                },
+                {
+                  "tier": "Team",
+                  "price": "$24 per user/month"
+                },
+                {
+                  "tier": "Enterprise",
+                  "price": "Contact sales"
+                }
+              ],
+              "billing_cadence": "Monthly",
+              "chunk_id": "283d7b2ba5adf369fb98",
+              "source_url": "https://fixture.example/pricing",
+              "extraction_confidence": 1.0,
+              "evidence_excerpt": "Example Work pricing\nStarter - $10 per user/month. Team - $24 per user/month. Enterprise - Contact sales."
+            }
+          ],
+          "validated_records": [],
+          "records_verified": 0,
+          "records_draft": 0,
+          "records_needs_review": 0,
+          "fields_grounded": 0,
+          "validation_failures": 1,
+          "status_counts": {},
+          "llm_call_details": [
+            {
+              "latency_ms": 2884.5,
+              "input_chars": 1761,
+              "estimated_input_tokens": 441,
+              "actual_input_tokens": 413
+            }
+          ],
+          "laya_retained": 1,
+          "laya_rejected": 0,
+          "evidence": {
+            "baseline_evidence_units": 0,
+            "retained_baseline_evidence_units": 0,
+            "evidence_recall_proxy": null,
+            "lost_evidence_units": [],
+            "gold_relevant_chunks": 1,
+            "gold_relevant_chunks_retained": 1,
+            "gold_chunk_recall": 1.0,
+            "gold_chunk_precision": 1.0,
+            "false_negative_chunks": 0,
+            "total_chunks": 1,
+            "record_comparison": {
+              "records": [],
+              "baseline_evidence_units": 0,
+              "retained_baseline_evidence_units": 0,
+              "evidence_recall_baseline_proxy": null,
+              "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+              "lost_evidence_units": [],
+              "records_lost_by_laya": 0,
+              "records_lost_or_changed": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  "fail_open_checks": {
+    "service_unavailable": {
+      "status": "fallback",
+      "workflow_continues": true,
+      "metrics": {
+        "chunks_before": 1,
+        "chunks_after": 1,
+        "chunks_filtered": 0,
+        "latency_ms": 24.71,
+        "batch_count": 0,
+        "threshold": 0.2,
+        "model": "english",
+        "error": "ConnectError",
+        "failure_status": "unavailable",
+        "evaluations": [
+          {
+            "chunk_id": "ab462b567750e4505af1",
+            "source_url": "https://fixture.example/suppliers/example-components",
+            "chunk_index": 0,
+            "score": null,
+            "decision": "failed",
+            "threshold": 0.2,
+            "model": "english",
+            "status": "failed",
+            "failure": "ConnectError"
+          }
+        ]
+      }
+    },
+    "empty_input": {
+      "status": "disabled",
+      "workflow_continues": true,
+      "chunks_before": 0
+    },
+    "high_threshold_offline": {
+      "status": "measurable",
+      "zero_retained_is_allowed": true
+    }
+  },
+  "regression_tests": "run separately; see final handoff"
+}

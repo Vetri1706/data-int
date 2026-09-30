@@ -1,0 +1,265 @@
+{
+  "generated_at": "2026-09-30T08:49:47.639981+00:00",
+  "evaluation": {
+    "selection": {
+      "provider": "local",
+      "model": "qwen2.5:7b-instruct"
+    },
+    "laya_url": "http://127.0.0.1:18002",
+    "laya_model": "english",
+    "laya_threshold": 0.2,
+    "laya_batch_size": 32,
+    "fixed_inputs": true,
+    "same_search_results_and_scrapling_capture": true,
+    "ground_truth": "unavailable",
+    "current_pipeline_note": "retrieve_chunks currently performs chunking plus TF-IDF before the laya_filter node; both arms share that selected chunk set."
+  },
+  "aggregate": {
+    "queries_tested": 0,
+    "queries_failed_capture": 2,
+    "sources_processed": 0,
+    "candidate_sources": 0,
+    "relevant_sources": 0,
+    "successfully_retrieved_sources": 0,
+    "failed_sources": 0,
+    "chunks_generated": 0,
+    "chunks_sent_to_extraction_baseline": 0,
+    "chunks_sent_to_extraction_laya": 0,
+    "chunk_reduction_absolute": 0,
+    "chunk_reduction_percentage": null,
+    "llm_calls_baseline": 0,
+    "llm_calls_laya": 0,
+    "llm_input_tokens_baseline": 0,
+    "llm_input_tokens_laya": 0,
+    "token_reduction_percentage": null,
+    "average_laya_latency_ms": null,
+    "average_workflow_latency_baseline_ms": null,
+    "average_workflow_latency_laya_ms": null,
+    "latency_difference_ms_baseline_minus_laya": null,
+    "latency_reduction_percentage": null,
+    "verified_records_baseline": 0,
+    "verified_records_laya": 0,
+    "needs_review_baseline": 0,
+    "needs_review_laya": 0,
+    "draft_records_baseline": 0,
+    "draft_records_laya": 0,
+    "evidence_recall_baseline_proxy": null,
+    "baseline_evidence_units": 0,
+    "retained_baseline_evidence_units": 0,
+    "false_negative_cases": 0,
+    "laya_fallback_cases": 0,
+    "ground_truth": "unavailable; baseline evidence is reported only as a clearly labeled proxy"
+  },
+  "threshold_analysis": [
+    {
+      "threshold": 0.05,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.1,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.15,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.2,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.25,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.3,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.4,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.5,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    }
+  ],
+  "fail_open_check": {
+    "status": "disabled",
+    "workflow_continues": false,
+    "metrics": {
+      "chunks_before": 0,
+      "chunks_after": 0,
+      "chunks_filtered": 0,
+      "latency_ms": 0.0,
+      "batch_count": 0,
+      "threshold": 0.2,
+      "model": "english"
+    }
+  },
+  "per_query": [
+    {
+      "captured": {
+        "index": 1,
+        "query": "Find AI startups in South India with founders, websites, locations, and funding evidence.",
+        "errors": [
+          "HTTPException: 503: Model provider unavailable or rate-limited. Please retry shortly."
+        ],
+        "capture_latency_ms": 30199.92
+      },
+      "query": "Find AI startups in South India with founders, websites, locations, and funding evidence."
+    },
+    {
+      "captured": {
+        "index": 2,
+        "query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+        "errors": [
+          "LLMUnavailable: Model provider unavailable or rate-limited. Please retry shortly."
+        ],
+        "data_contract": {
+          "entity_type": "Supplier",
+          "business_goal": "Identify EV battery and component suppliers in India with catalog links, locations, and certifications",
+          "fields": [
+            {
+              "name": "supplier_name",
+              "field_type": "string",
+              "description": "Name of the supplier",
+              "required": true
+            },
+            {
+              "name": "supplier_website",
+              "field_type": "string",
+              "description": "Website of the supplier",
+              "required": true
+            },
+            {
+              "name": "catalog_link",
+              "field_type": "string",
+              "description": "Link to the supplier's catalog",
+              "required": true
+            },
+            {
+              "name": "location",
+              "field_type": "string",
+              "description": "Location of the supplier",
+              "required": true
+            },
+            {
+              "name": "certifications",
+              "field_type": "array",
+              "description": "List of certifications held by the supplier",
+              "required": true
+            }
+          ],
+          "constraints": [
+            {
+              "field": "location",
+              "operator": "contains",
+              "target_value": "India",
+              "is_hard": true
+            }
+          ],
+          "relationships": [],
+          "target_count": 10,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 2,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": [
+              "website",
+              "catalog_link",
+              "location",
+              "certifications"
+            ]
+          },
+          "allowed_domains": [
+            "india"
+          ],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:7b-instruct",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [
+          {
+            "url": "https://ipowerbatteries.in/",
+            "title": "Ipower Lithium Ion Batteries Manufacturer in India",
+            "snippet": "Ipower, a leading lithium ion batteries manufacturer in India, offers durable and efficient batteries for EV, telecom, and energy storage needs.",
+            "search_query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://evxpertz.com/about",
+            "title": "About EVXPERTZ | Building India's EV Service & Battery Infrastructure",
+            "snippet": "We are building India's EV Service & Battery Infrastructure for reliable EV adoption. What We Enable. Diagnosis. EV Diagnosis & Engineering Repair.",
+            "search_query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.aptiv.com/",
+            "title": "Aptiv | Home - Global Technology Company",
+            "snippet": "Aptiv is a global technology company that develops safer, greener and more connected solutions, which enable the future of mobility.",
+            "search_query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.intertek.com/batteries/",
+            "title": "Battery and Energy Storage Testing and Certification Solutions",
+            "snippet": "Intertek offers industry-leading battery testing, energy storage, and lifecycle evaluation services that help manufacturers, developers, and innovators ...",
+            "search_query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://marianinc.com/battery-and-electric-vehicle/",
+            "title": "Die-Cut Solutions and Components for Electric Vehicle (EV) Batteries",
+            "snippet": "Marian manufactures die-cut EV battery components that make batteries lighter, more efficient, and cooler during use.",
+            "search_query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.global.toshiba/ww/products-solutions/battery/scib.html",
+            "title": "SCiB™ Rechargeable battery | Toshiba",
+            "snippet": "SCiB™ is a rechargeable battery with outstanding safety performance that uses lithium titanium oxide for the anode. SCiB™ has been widely used for ...",
+            "search_query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+            "provider": "searxng",
+            "engine": "google cse"
+          }
+        ],
+        "capture_latency_ms": 61569.7
+      },
+      "query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications."
+    }
+  ],
+  "regression_tests": "probe"
+}

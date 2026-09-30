@@ -1,0 +1,3373 @@
+{
+  "generated_at": "2026-09-30T08:47:52.231196+00:00",
+  "evaluation": {
+    "selection": {
+      "provider": "local",
+      "model": "qwen2.5:1.5b"
+    },
+    "laya_url": "http://127.0.0.1:18002",
+    "laya_model": "english",
+    "laya_threshold": 0.2,
+    "laya_batch_size": 32,
+    "fixed_inputs": true,
+    "same_search_results_and_scrapling_capture": true,
+    "ground_truth": "unavailable",
+    "current_pipeline_note": "retrieve_chunks currently performs chunking plus TF-IDF before the laya_filter node; both arms share that selected chunk set.",
+    "source_relevance_mode": "live_existing_gate",
+    "report_note": "Corrected derived report from the completed fixed-input A/B capture. Threshold and fail-open reporting were recomputed after harness nesting/selection fixes; no production behavior changed."
+  },
+  "aggregate": {
+    "queries_tested": 10,
+    "queries_failed_capture": 0,
+    "sources_processed": 1,
+    "candidate_sources": 60,
+    "relevant_sources": 1,
+    "successfully_retrieved_sources": 1,
+    "failed_sources": 0,
+    "chunks_generated": 139,
+    "chunks_sent_to_extraction_baseline": 4,
+    "chunks_sent_to_extraction_laya": 0,
+    "chunk_reduction_absolute": 4,
+    "chunk_reduction_percentage": 100.0,
+    "llm_calls_baseline": 1,
+    "llm_calls_laya": 0,
+    "llm_input_tokens_baseline": 1039,
+    "llm_input_tokens_laya": 0,
+    "token_reduction_percentage": 100.0,
+    "average_laya_latency_ms": 979.31,
+    "average_workflow_latency_baseline_ms": 309.14,
+    "average_workflow_latency_laya_ms": 1025.96,
+    "latency_difference_ms_baseline_minus_laya": -716.82,
+    "latency_reduction_percentage": -231.88,
+    "verified_records_baseline": 0,
+    "verified_records_laya": 0,
+    "needs_review_baseline": 0,
+    "needs_review_laya": 0,
+    "draft_records_baseline": 1,
+    "draft_records_laya": 0,
+    "evidence_recall_baseline_proxy": 0.0,
+    "baseline_evidence_units": 2,
+    "retained_baseline_evidence_units": 0,
+    "false_negative_cases": 1,
+    "laya_fallback_cases": 0,
+    "ground_truth": "unavailable; baseline evidence is reported only as a clearly labeled proxy"
+  },
+  "threshold_analysis": [
+    {
+      "threshold": 0.05,
+      "retention_percentage": 100.0,
+      "chunk_reduction_percentage": 0.0,
+      "evidence_recall_baseline_proxy": 1.0,
+      "false_negative_rate_baseline_proxy": 0.0
+    },
+    {
+      "threshold": 0.1,
+      "retention_percentage": 0.0,
+      "chunk_reduction_percentage": 100.0,
+      "evidence_recall_baseline_proxy": 0.0,
+      "false_negative_rate_baseline_proxy": 1.0
+    },
+    {
+      "threshold": 0.15,
+      "retention_percentage": 0.0,
+      "chunk_reduction_percentage": 100.0,
+      "evidence_recall_baseline_proxy": 0.0,
+      "false_negative_rate_baseline_proxy": 1.0
+    },
+    {
+      "threshold": 0.2,
+      "retention_percentage": 0.0,
+      "chunk_reduction_percentage": 100.0,
+      "evidence_recall_baseline_proxy": 0.0,
+      "false_negative_rate_baseline_proxy": 1.0
+    },
+    {
+      "threshold": 0.25,
+      "retention_percentage": 0.0,
+      "chunk_reduction_percentage": 100.0,
+      "evidence_recall_baseline_proxy": 0.0,
+      "false_negative_rate_baseline_proxy": 1.0
+    },
+    {
+      "threshold": 0.3,
+      "retention_percentage": 0.0,
+      "chunk_reduction_percentage": 100.0,
+      "evidence_recall_baseline_proxy": 0.0,
+      "false_negative_rate_baseline_proxy": 1.0
+    },
+    {
+      "threshold": 0.4,
+      "retention_percentage": 0.0,
+      "chunk_reduction_percentage": 100.0,
+      "evidence_recall_baseline_proxy": 0.0,
+      "false_negative_rate_baseline_proxy": 1.0
+    },
+    {
+      "threshold": 0.5,
+      "retention_percentage": 0.0,
+      "chunk_reduction_percentage": 100.0,
+      "evidence_recall_baseline_proxy": 0.0,
+      "false_negative_rate_baseline_proxy": 1.0
+    }
+  ],
+  "fail_open_check": {
+    "status": "fallback",
+    "workflow_continues": true,
+    "metrics": {
+      "chunks_before": 4,
+      "chunks_after": 4,
+      "chunks_filtered": 0,
+      "latency_ms": 17.81,
+      "batch_count": 0,
+      "threshold": 0.2,
+      "model": "english",
+      "error": "ConnectError"
+    }
+  },
+  "per_query": [
+    {
+      "query": "Find AI startups in South India with founders, websites, locations, and funding evidence.",
+      "captured": {
+        "index": 1,
+        "query": "Find AI startups in South India with founders, websites, locations, and funding evidence.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "AI startup",
+          "business_goal": "Develop innovative AI solutions",
+          "fields": [
+            {
+              "name": "Founder",
+              "field_type": "string",
+              "description": "Name of the AI startup's founder",
+              "required": true
+            },
+            {
+              "name": "Website",
+              "field_type": "string",
+              "description": "URL of the AI startup's website",
+              "required": true
+            },
+            {
+              "name": "Location",
+              "field_type": "string",
+              "description": "City or location where the AI startup is based",
+              "required": true
+            },
+            {
+              "name": "Funding",
+              "field_type": "string",
+              "description": "Amount of funding received by the AI startup",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 10,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 3,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [
+            "www.venturebeat.com",
+            "techcrunch.com",
+            "venturecapital.com"
+          ],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [
+          {
+            "url": "https://www.f6s.com/companies/artificial-intelligence/india/tamil-nadu/no",
+            "title": "98 Top AI (Artificial Intelligence) Companies in Tamil Nadu - F6S",
+            "snippet": "Sep 1, 2026 ... Aivar Innovations, Big Bang Boom Solutions and 127 more AI (Artificial Intelligence) companies in Tamil Nadu from the F6S community. AI ( ...",
+            "search_query": "Find AI startups in South India with founders, websites, locations, and funding evidence.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://cutshort.io/companies/artificial-intelligence-companies-in-chennai",
+            "title": "Artificial Intelligence (AI) Companies/Startups in Chennai - Cutshort",
+            "snippet": "Discover top Artificial Intelligence (AI) Companies/Startups in Chennai. Explore all the job opportunities and directly connect with actual hiring teams.",
+            "search_query": "Find AI startups in South India with founders, websites, locations, and funding evidence.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.ycombinator.com/companies/location/india/hiring",
+            "title": "Y Combinator Startups in India that are currently hiring 2026",
+            "snippet": "Saksham and Ishan met in school and have known each other since 15 years. Saksham was Co-founder/CTO of Iterate AI (backed by EF) and posts content on social ...",
+            "search_query": "Find AI startups in South India with founders, websites, locations, and funding evidence.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://ventureunlockedcapital.substack.com/p/indias-ai-founder-access-map",
+            "title": "India's AI Founder Access Map - Venture Unlocked",
+            "snippet": "Apr 4, 2026 ... They are consistent with what is being built on the ground: Krutrim became India's first AI unicorn in 2024 on just $74 million raised. Sarvam ...",
+            "search_query": "Find AI startups in South India with founders, websites, locations, and funding evidence.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.failory.com/startups/india",
+            "title": "Top 100 India Startups to Watch in 2026 - Failory",
+            "snippet": "1. Zepto ; Founders, Aadit Palicha, Kaivalya Vohra ; Funding Amount, $2.4B ; Startup Size, Enterprise Organization (5,001+) ; Last Funding Status, Secondary Market.",
+            "search_query": "Find AI startups in South India with founders, websites, locations, and funding evidence.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.linkedin.com/posts/shauryaveer-saxena-475972182_founders-startupfunding-seedfunds-activity-7338788403204734976-5m9U",
+            "title": "15 startup programs actively funding Indian founders right now",
+            "snippet": "Jun 11, 2025 ... ... Startups, TechLaws| Compliance| Intellectual Property| Web 3 & AI. 1y ... Fund for AI-driven satellites and geospatial tech. As CM ...",
+            "search_query": "Find AI startups in South India with founders, websites, locations, and funding evidence.",
+            "provider": "searxng",
+            "engine": "google cse"
+          }
+        ],
+        "source_relevance": [
+          {
+            "candidate_index": 0,
+            "url": "https://www.f6s.com/companies/artificial-intelligence/india/tamil-nadu/no",
+            "decision": "REJECT",
+            "relevance_score": 0.0,
+            "source_type": "SEARX",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "The search results do not contain the required fields for the business requirement, specifically 'Founder', 'Website', 'Location', and 'Funding'.",
+            "missing_information": [
+              "Founder",
+              "Website",
+              "Location",
+              "Funding"
+            ]
+          },
+          {
+            "candidate_index": 1,
+            "url": "https://cutshort.io/companies/artificial-intelligence-companies-in-chennai",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 2,
+            "url": "https://www.ycombinator.com/companies/location/india/hiring",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 3,
+            "url": "https://ventureunlockedcapital.substack.com/p/indias-ai-founder-access-map",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 4,
+            "url": "https://www.failory.com/startups/india",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 5,
+            "url": "https://www.linkedin.com/posts/shauryaveer-saxena-475972182_founders-startupfunding-seedfunds-activity-7338788403204734976-5m9U",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          }
+        ],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.08,
+        "scrapling_retrieval_ms": 0.08,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 8745.18
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.15,
+        "validation_latency_ms": 0.13,
+        "scrapling_latency_ms": 0.08,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.36,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.05,
+        "validation_latency_ms": 0.01,
+        "scrapling_latency_ms": 0.08,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.14,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+      "captured": {
+        "index": 2,
+        "query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "supplier",
+          "business_goal": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+          "fields": [
+            {
+              "name": "supplier_name",
+              "field_type": "string",
+              "description": "Name of the supplier.",
+              "required": true
+            },
+            {
+              "name": "supplier_type",
+              "field_type": "string",
+              "description": "Type of supplier (e.g., battery, component, etc.).",
+              "required": true
+            },
+            {
+              "name": "supplier_location",
+              "field_type": "string",
+              "description": "Location of the supplier.",
+              "required": true
+            },
+            {
+              "name": "supplier_certifications",
+              "field_type": "string",
+              "description": "Certifications of the supplier.",
+              "required": true
+            },
+            {
+              "name": "supplier_catalog_link",
+              "field_type": "string",
+              "description": "Catalog link of the supplier.",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 0,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 1,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [
+            "india.supplierfinder.com"
+          ],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [
+          {
+            "url": "https://ipowerbatteries.in/",
+            "title": "Ipower Lithium Ion Batteries Manufacturer in India",
+            "snippet": "Ipower, a leading lithium ion batteries manufacturer in India, offers durable and efficient batteries for EV, telecom, and energy storage needs.",
+            "search_query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://evxpertz.com/about",
+            "title": "About EVXPERTZ | Building India's EV Service & Battery Infrastructure",
+            "snippet": "We are building India's EV Service & Battery Infrastructure for reliable EV adoption. What We Enable. Diagnosis. EV Diagnosis & Engineering Repair.",
+            "search_query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.aptiv.com/",
+            "title": "Aptiv | Home - Global Technology Company",
+            "snippet": "Aptiv is a global technology company that develops safer, greener and more connected solutions, which enable the future of mobility.",
+            "search_query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.intertek.com/batteries/",
+            "title": "Battery and Energy Storage Testing and Certification Solutions",
+            "snippet": "Intertek offers industry-leading battery testing, energy storage, and lifecycle evaluation services that help manufacturers, developers, and innovators ...",
+            "search_query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://marianinc.com/battery-and-electric-vehicle/",
+            "title": "Die-Cut Solutions and Components for Electric Vehicle (EV) Batteries",
+            "snippet": "Marian manufactures die-cut EV battery components that make batteries lighter, more efficient, and cooler during use.",
+            "search_query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.global.toshiba/ww/products-solutions/battery/scib.html",
+            "title": "SCiB™ Rechargeable battery | Toshiba",
+            "snippet": "SCiB™ is a rechargeable battery with outstanding safety performance that uses lithium titanium oxide for the anode. SCiB™ has been widely used for ...",
+            "search_query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+            "provider": "searxng",
+            "engine": "google cse"
+          }
+        ],
+        "source_relevance": [
+          {
+            "candidate_index": 0,
+            "url": "https://ipowerbatteries.in/",
+            "decision": "KEEP",
+            "relevance_score": 0.8,
+            "source_type": "website",
+            "entity_relevance": true,
+            "evidence_capability": [
+              "{'name': 'supplier_name', 'score': 0.8}",
+              "{'name': 'supplier_type', 'score': 0.8}",
+              "{'name': 'supplier_location', 'score': 0.8}",
+              "{'name': 'supplier_certifications', 'score': 0.8}",
+              "{'name': 'supplier_catalog_link', 'score': 0.8}"
+            ],
+            "constraint_relevance": true,
+            "reason": "The search results provide relevant information about EV battery and component suppliers in India, including catalog links, locations, and certifications.",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 1,
+            "url": "https://evxpertz.com/about",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 2,
+            "url": "https://www.aptiv.com/",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 3,
+            "url": "https://www.intertek.com/batteries/",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 4,
+            "url": "https://marianinc.com/battery-and-electric-vehicle/",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 5,
+            "url": "https://www.global.toshiba/ww/products-solutions/battery/scib.html",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          }
+        ],
+        "relevant_sources": [
+          {
+            "url": "https://ipowerbatteries.in/",
+            "title": "Ipower Lithium Ion Batteries Manufacturer in India",
+            "snippet": "Ipower, a leading lithium ion batteries manufacturer in India, offers durable and efficient batteries for EV, telecom, and energy storage needs.",
+            "search_query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+            "provider": "searxng",
+            "engine": "google cse",
+            "relevance": {
+              "candidate_index": 0,
+              "url": "https://ipowerbatteries.in/",
+              "decision": "KEEP",
+              "relevance_score": 0.8,
+              "source_type": "website",
+              "entity_relevance": true,
+              "evidence_capability": [
+                "{'name': 'supplier_name', 'score': 0.8}",
+                "{'name': 'supplier_type', 'score': 0.8}",
+                "{'name': 'supplier_location', 'score': 0.8}",
+                "{'name': 'supplier_certifications', 'score': 0.8}",
+                "{'name': 'supplier_catalog_link', 'score': 0.8}"
+              ],
+              "constraint_relevance": true,
+              "reason": "The search results provide relevant information about EV battery and component suppliers in India, including catalog links, locations, and certifications.",
+              "missing_information": []
+            }
+          }
+        ],
+        "scrapling_stage_ms": 464.83,
+        "scrapling_retrieval_ms": 464.83,
+        "chunking_tfidf_ms": 35.37,
+        "search_results": [
+          {
+            "url": "https://ipowerbatteries.in/",
+            "original_url": "https://ipowerbatteries.in/",
+            "title": "Ipower Lithium Ion Batteries Manufacturer in India",
+            "provider": "searxng",
+            "content_sha256": "23e19b839b029c4bf7f6f0a93f6a8b65a9b4524e1b930bf1ea3fbf08ad85abc0",
+            "http_status": 200,
+            "reachability": 1.0,
+            "fetched_at": "2026-09-30T08:46:24.020522+00:00",
+            "published_at": null,
+            "redirect_count": 0,
+            "root_fallback": false
+          }
+        ],
+        "retrieved_sources": [
+          {
+            "url": "https://ipowerbatteries.in/",
+            "original_url": "https://ipowerbatteries.in/",
+            "title": "Ipower Lithium Ion Batteries Manufacturer in India",
+            "provider": "searxng",
+            "content_sha256": "23e19b839b029c4bf7f6f0a93f6a8b65a9b4524e1b930bf1ea3fbf08ad85abc0",
+            "http_status": 200,
+            "reachability": 1.0,
+            "fetched_at": "2026-09-30T08:46:24.020522+00:00",
+            "published_at": null,
+            "redirect_count": 0,
+            "root_fallback": false
+          }
+        ],
+        "retrieved_source_content": [
+          {
+            "url": "https://ipowerbatteries.in/",
+            "original_url": "https://ipowerbatteries.in/",
+            "title": "Ipower Lithium Ion Batteries Manufacturer in India",
+            "provider": "searxng",
+            "content": "![loader image](https://ipowerbatteries.in/wp-content/uploads/2026/05/Safe-Sustainable-Smart-3.png)\n\n[Skip to content](#content)\n\n\n[Ipower Batteries - Ipower BatteriesIpower Batteries](https://ipowerbatteries.in/)\n==================================================================================\n\n* Our Products\n  + [2 Wheeler Batteries](#)\n    - [LFP Batteries](https://ipowerbatteries.in/lfp-battery/)\n    - [LMFP Batteries](https://ipowerbatteries.in/lmfp-batteries/)\n    - [NMC Batteries](https://ipowerbatteries.in/nmc-batteries/)\n  + [3 Wheeler Batteries](#)\n    - [L3 Batteries](https://ipowerbatteries.in/l3-batteries/)\n    - [L5 Batteries](https://ipowerbatteries.in/l5-batteries/)\n  + [Telecom Batteries](https://ipowerbatteries.in/telecom-battery/)\n  + [Inverter Battery](https://ipowerbatteries.in/lithium-inverter-battery/)\n  + [Commercial & Industrial ESS](https://ipowerbatteries.in/commercial-industrial-ess/)\n  + [Others](https://ipowerbatteries.in/others/)\n* Media\n  + [News](https://ipowerbatteries.in/news/)\n  + [Blogs](https://ipowerbatteries.in/blogs/)\n  + [Testimonials](https://ipowerbatteries.in/testimonials/)\n  + [FAQ](https://ipowerbatteries.in/faq/)\n  + [Awards](https://ipowerbatteries.in/awards/)\n* [Certifications](https://ipowerbatteries.in/certifications/)\n* [Export](https://ipowerbatteries.in/export/)\n* [Life @ IpowerBatteries](#)\n  + [Great Place to Work](https://ipowerbatteries.in/great-place-to-work/)\n  + [Career](https://ipowerbatteries.in/career/)\n* [Contact Us](https://ipowerbatteries.in/contact-us/)\n* [Our Legacy](https://ipowerbatteries.in/our-legacy/)\n* [Catalogue](https://ipowerbatteries.in/wp-content/uploads/2025/02/Ipower-Catalogue.pdf)\n\n[Battery Service](#ipower-services)\n\nSearch for:\nSearch\n\nIndustries We Serve\n-------------------\n\n![E-Bike & E-Scooter](https://ipowerbatteries.in/wp-content/uploads/2023/09/01-1.jpg)\n\nE-Bike & E-Scooter\n------------------\n\n![Ipower Ev Battery Industry](https://ipowerbatteries.in/wp-content/uploads/2024/03/02-1.webp)\n\nE-Rickshaw & E-Cargo\n--------------------\n\n![Ipower Battery telecom Industry](https://ipowerbatteries.in/wp-content/uploads/2024/03/WhatsApp-Image-2023-10-03-at-6.34.36-PM-1.webp)\n\nTelecommunication Battery\n-------------------------\n\n![](https://ipowerbatteries.in/wp-content/uploads/2025/02/0134.webp)\n\nSolar Battery\n-------------\n\n![](https://ipowerbatteries.in/wp-content/uploads/2026/01/Home-Inverter.webp)\n\nInverter Battery\n----------------\n\n![](https://ipowerbatteries.in/wp-content/uploads/2026/01/industry-commercial.webp)\n\nCommercial & Industrial ESS\n---------------------------\n\n![](https://ipowerbatteries.in/wp-content/uploads/2026/01/railway.webp)\n\nOther Segment\n-------------\n\n#### 100 %\n\nGreen\n\n![72V40A Battery](https://ipowerbatteries.in/wp-content/uploads/2024/03/350.webp)\n\n![EV Scooter Battery](https://ipowerbatteries.in/wp-content/uploads/2024/03/Ipower-website-scooty-banner.webp)\n\n#### Our Mission\n\nA CLEANER AND GREENER PLANET\n----------------------------\n\nDriving the power within and committing to our mission of providing reliable power solutions to businesses, covering a wide range of related fields in Lithium-ion technology by\n\nBeing One of India's Leading Battery Manufacturers\n--------------------------------------------------\n\nWith nationwide expertise in Lithium-ion technology, we deliver satisfaction to businesses with 200+ Sales & Service Centers across India.\n\nOffering Reliable Solutions That Fit Your Needs\n-----------------------------------------------\n\nTailor-made products to suit your needs. Join hands with us to be a part of the energy revolution.\n\n* With Ipower You Can Be Assured Of\n* Consistency of Product Quality\n* Consistency of Timely Deliveries\n* Consistency of Safety and Reliability\n\n[Read More](https://ipowerbatteries.in/about/)\n\nWhy Lithium-Ion batteries?\n--------------------------\n\n![Rugpro Battery's](https://ipowerbatteries.in/wp-content/uploads/elementor/thumbs/battery-1-qcyx98xjscuxcmtl2y1snnap87ug91hy37tc6ehxq4.webp \"Rugpro Battery’s\")\n\nEco-Friendly\n------------\n\nThey keep the air clean and have low heavy toxic metals.\n\nLightweight and Compact\n-----------------------\n\nLithium & Carbon are lightweight on their own, making for much smaller and lighter batteries.\n\nHigh Energy Density\n-------------------\n\nHigh level of performance as they pack a high energy capacity in a small size.\n\n![inverter](https://ipowerbatteries.in/wp-content/uploads/elementor/thumbs/inverter-rhak3mukr3wguiwd262qoi6xe8zbun32ooktx4z1mk.webp \"inverter\")\n\nLow Maintenance\n---------------\n\nLithium batteries do not suffer from memory effect and thus require less maintenance.\n\nMore Charge Cycles\n------------------\n\nQuality lithium-ion batteries last about 1000 full charge cycles.\n\nLow Self-Discharge Rate\n-----------------------\n\nThey also have a low self-discharge rate than nickel-based rechargeable batteries.\n\nAbout Us\n--------\n\n![Ipower Head Office](https://ipowerbatteries.in/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2023-10-03-at-6.34.38-PM-qdbiggwoho5a0vnw5etrwo38oxqo89lyc2ka5pxxug.jpeg \"Ipower Head Office\")\n\n![WhatsApp Image 2023-08-02 at 6.46.06 PM](https://ipowerbatteries.in/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2023-08-02-at-6.46.06-PM-qabli43jbpc72knfnpuxra7qe5mdjr4xyaospy87zk.jpeg \"WhatsApp Image 2023-08-02 at 6.46.06 PM\")\n\nOur state-of-the-art manufacturing facility at Kundli, Haryana is IMS certified. With all the necessary compliances, resources and a highly dependable team, Ipower is equipped to build a greener tomorrow.\n\nSetting the Standard\n--------------------\n\nWith global standards and highly scalable infrastructure, the premise spreads over an area of 50,000 sq ft.\n\nDelivering Quantity with Quality\n--------------------------------\n\nIt has a production capacity of over 500 battery packs each day, rigorous testing and quality checking processes and a government recognition in-house R&D Centre.\n\n### Serving the Industry since 2019\n\nClients Served\n\n0\n\nEv`s Powered\n\n0\n\nMW of Energy Storage\n\n0\n\nGW+ Production Capacity\n\n0\n\nOur Products\n------------\n\nWe manufacture a plethora of lithium ion batteries that cater to the requirements of the electric mobility industry and other energy applications. Being one of the leading Lithium Ion Battery Manufacturers in India, our battery products are available for electric vehicles such as e-bikes, e-rickshaws, and e-scooters as well as home & office applications.\nOur range includes lithium ion batteries for e-rickshaws and e-scooters, energy storage products and systems (ESS), inverter batteries, as well as industrial and commercial UPS solutions.\n\n[Show More](https://ipowerbatteries.in/product/)\n\n[![](https://ipowerbatteries.in/wp-content/uploads/2026/01/site-middle-banner-3.jpg)](https://ipowerbatteries.in/2023/05/27/lmfp-batteries-a-new-kid-on-the-block/)\n\n[![Rugpro LMFP Batteries](https://ipowerbatteries.in/wp-content/uploads/2023/10/mobile-size-1.jpg)](https://ipowerbatteries.in/2023/05/27/lmfp-batteries-a-new-kid-on-the-block/)\n\nCommitted To Innovation For A Greener Tomorrow:\nWith Lithium Batteries\n======================================================================\n\n![](https://ipowerbatteries.in/wp-content/uploads/2024/03/WhatsApp-Image-2023-08-02-at-7.01.24-PM.webp)\n\nIntroducing Ipower Service Centre\n---------------------------------\n\nIpower presents a network of advanced service centres, addressing the growing demand in the rapidly expanding lithium battery market.\n\n[Know More](https://ipowerbatteries.in/ipower-service-center/)\n\n{\"cpt\":\"testimonial\",\"style\":\"2\",\"columns\":\"1\",\"show\":\"6\",\"order\":\"DESC\",\"orderby\":\"DESC\"}\n\nTestimonials\n------------\n\nWhat Our Partners Say About Us\n\n> The confidence we get , when we are able to service our customer’s batteries in our own showroom, is enormous. Opening Authorised iPower service centre is solving the biggest problem we have so far faced in this 5 years of experience in the EV field. The battery Service Turnaround Time. It is helping us achieve better customer satisfaction. And it has also increased our customers trust on us.\n\n![](https://ipowerbatteries.in/wp-content/uploads/2023/09/WhatsApp-Image-2023-07-04-at-10.56.23-AM-150x150.jpeg)\n\n### Arun Kumar\n\n> We really take pride in IPower’s initiative of opening up service centres across India. Since we have started the Ipower service centre in Hyderabad, customer’s trust on the EV industry has increased significantly as we are able to service the batteries locally in very less time and effectively. Given, batteries are the most critical component in the Electric vehicle, the timely servicing is proving really beneficial for the whole industry.\n\n![](https://ipowerbatteries.in/wp-content/uploads/2023/09/WhatsApp-Image-2023-07-04-at-5.40.19-PM-150x150.jpeg)\n\n### Anukul Jaivyo\n\n> Now since we have started the Ipower service centre, the whole turnaround time is reduced significantly. It benefits both the customer and us, the consumer trust is increased and timely delivery is being given.\n\n![](https://ipowerbatteries.in/wp-content/uploads/2023/09/WhatsApp-Image-2023-06-30-at-4.35.45-PM-150x150.jpeg)\n\n### Pankaj Yadav\n\n> At Lohia industries, we always strive for best of quality for 100% end-customer satisfaction. Ipower batteries match the quality standards as per our requirements and that’s the major reason for our continued collaboration.\n\n### Mr. Ayush Lohia (MD, Lohia Industries Ltd)\n\nHead of Marketing\n\n> I was most impressed with the high standard of professionalism and product innovation Ipower demonstrated and provided to us. I would highly recommend and I have already been doing so to fellow would-be inventors and entrepreneurs in the electric mobility segment.\n\n### Mr. Ankit Aggarwal (MD, Deltic)\n\nCEO Co-Founder\n\n> Ipower were the right choice for us since the beginning as they had the experience of more than a decade developing products that they are actually selling. In the design and sampling process, there was never a question we asked that they denied, and for that we really thank them.\n\n### Mr. Yogesh (MD, SES)\n\nManaging Director\n\n{\"cpt\":\"client\",\"style\":\"1\",\"columns\":\"6\",\"show\":\"6\",\"from\\_category\":[\"black\"],\"order\":\"ASC\",\"orderby\":\"DESC\"}\n\n#### client 7\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\n#### client 8\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\n#### client 9\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\n#### client 10\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\n#### client 11\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\n#### client 12\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\nLatest In The EV Sector\n-----------------------\n\n[View More Blog](https://ipowerbatteries.in/blogs/)\n\n[![](https://ipowerbatteries.in/wp-content/uploads/2026/09/hero-battery-recycling-1.png)](https://ipowerbatteries.in/2026/09/14/ev-battery-recycling-second-life-circular-economy-india/)\n\nIndustry Insights\n\n### [From Road to Reuse: Second Life, Recycling, and India’s Coming Battery Circular Economy](https://ipowerbatteries.in/2026/09/14/ev-battery-recycling-second-life-circular-economy-india/)\n\n[Read More »](https://ipowerbatteries.in/2026/09/14/ev-battery-recycling-second-life-circular-economy-india/)\n\nSeptember 14, 2026\n\n[![](https://ipowerbatteries.in/wp-content/uploads/2026/09/hero-make-in-india-1.png)](https://ipowerbatteries.in/2026/09/08/make-in-india-lithium-battery-manufacturing-supply-chain/)\n\nIndustry Insights\n\n### [Powering Atmanirbhar Bharat: How Localised Lithium Battery Manufacturing Is Reshaping India’s EV Supply Chain](https://ipowerbatteries.in/2026/09/08/make-in-india-lithium-battery-manufacturing-supply-chain/)\n\n[Read More »](https://ipowerbatteries.in/2026/09/08/make-in-india-lithium-battery-manufacturing-supply-chain/)\n\nSeptember 8, 2026\n\n[![](https://ipowerbatteries.in/wp-content/uploads/2026/09/hero-battery-swapping-1.png)](https://ipowerbatteries.in/2026/09/01/battery-swapping-vs-charging-india-2w-3w-fleets/)\n\nElectric Mobility\n\n### [Battery Swapping vs. Plug-In Charging: The Definitive Guide for India’s Electric Two- and Three-Wheeler Fleets](https://ipowerbatteries.in/2026/09/01/battery-swapping-vs-charging-india-2w-3w-fleets/)\n\n[Read More »](https://ipowerbatteries.in/2026/09/01/battery-swapping-vs-charging-india-2w-3w-fleets/)\n\nSeptember 1, 2026\n\n![](https://ipowerbatteries.in/wp-content/uploads/2022/11/ipower-logo-r-ai-final.webp)\n\nPowering electric mobility with evolving energy storage solutions – Ipower is one of India’s most promising names in the green energy…[Read More](https://ipowerbatteries.in/about/)\n\nQuick Links\n-----------\n\n* [About Us](https://ipowerbatteries.in/about/)\n* [Product](https://ipowerbatteries.in/products/)\n* [FAQ](https://ipowerbatteries.in/faq/)\n* [Contact Us](https://ipowerbatteries.in/contact-us/)\n* [Ipower Service Centre](https://ipowerbatteries.in/ipower-service-centre/)\n\nQuick Contact\n-------------\n\nPlot No-82, HSIIDC Industrial Area, Sec-53, Kundli, Sonipat, Haryana, India 131028  \nPhone: [+91 9899201797](tel:9899201797)  \nEmail: [support@ipowerbatteries.in](mailto:support@ipowerbatteries.in)\n\nCopyright © 2025 All Rights Reserved.\n\n* [Reports](https://ipowerbatteries.in/reports/)\n* [Privacy Policy](https://ipowerbatteries.in/privacy-policy/)\n\n\n\n\nWant To Get Battery Service\n\nWant To Open A Service Centre\n\nWant To Get Battery Service\n\n### Battery Service Made Easy\n\nWe have a centralized service center that can assist you with all your battery needs.\n\nSimply give us a call at +91-9599822711, and our friendly staff will guide you through the process, ensuring you get the help you need, when you need it.\n\n[Call +91-9599822711](tel:9599822711)\n\nWant To Open A Service Centre\n\n### Looking to Open a Service Center?\n\nIf you’re interested in becoming a part of our network and opening a service center in your area, you’re in the right place!\n\nWe welcome entrepreneurs and businesses looking to expand their services.\n\n[Know More](https://ipowerbatteries.in/ipower-service-center/)",
+            "content_sha256": "23e19b839b029c4bf7f6f0a93f6a8b65a9b4524e1b930bf1ea3fbf08ad85abc0",
+            "http_status": 200,
+            "reachability": 1.0,
+            "fetched_at": "2026-09-30T08:46:24.020522+00:00",
+            "published_at": null,
+            "redirect_count": 0,
+            "root_fallback": false
+          }
+        ],
+        "chunks_generated": 139,
+        "retrieved_chunks": [
+          {
+            "url": "https://ipowerbatteries.in/",
+            "original_url": "https://ipowerbatteries.in/",
+            "title": "Ipower Lithium Ion Batteries Manufacturer in India",
+            "provider": "searxng",
+            "content_sha256": "23e19b839b029c4bf7f6f0a93f6a8b65a9b4524e1b930bf1ea3fbf08ad85abc0",
+            "http_status": 200,
+            "reachability": 1.0,
+            "fetched_at": "2026-09-30T08:46:24.020522+00:00",
+            "published_at": null,
+            "redirect_count": 0,
+            "root_fallback": false,
+            "chunk_id": "5d9fe7274e583bbd789c",
+            "text": "tery packs each day, rigorous testing and quality checking processes and a government recognition in-house R&D Centre.\n\n### Serving the Industry since 2019\n\nClients Served\n\n0\n\nEv`s Powered\n\n0\n\nMW of Energy Storage\n\n0\n\nGW+ Production Capacity\n\n0\n\nOur Products\n------------\n\nWe manufacture a plethora of lithium ion batteries that cater to the requirements of the electric mobility industry and other energy applications. Being one of the leading Lithium Ion Battery Manufacturers in India, our battery",
+            "char_start": 5800,
+            "char_end": 6300,
+            "retrieval_score": 0.061864
+          },
+          {
+            "url": "https://ipowerbatteries.in/",
+            "original_url": "https://ipowerbatteries.in/",
+            "title": "Ipower Lithium Ion Batteries Manufacturer in India",
+            "provider": "searxng",
+            "content_sha256": "23e19b839b029c4bf7f6f0a93f6a8b65a9b4524e1b930bf1ea3fbf08ad85abc0",
+            "http_status": 200,
+            "reachability": 1.0,
+            "fetched_at": "2026-09-30T08:46:24.020522+00:00",
+            "published_at": null,
+            "redirect_count": 0,
+            "root_fallback": false,
+            "chunk_id": "a7718d333bcfe7114e43",
+            "text": "f lithium ion batteries that cater to the requirements of the electric mobility industry and other energy applications. Being one of the leading Lithium Ion Battery Manufacturers in India, our battery products are available for electric vehicles such as e-bikes, e-rickshaws, and e-scooters as well as home & office applications.\nOur range includes lithium ion batteries for e-rickshaws and e-scooters, energy storage products and systems (ESS), inverter batteries, as well as industrial and commerci",
+            "char_start": 6100,
+            "char_end": 6600,
+            "retrieval_score": 0.053246
+          },
+          {
+            "url": "https://ipowerbatteries.in/",
+            "original_url": "https://ipowerbatteries.in/",
+            "title": "Ipower Lithium Ion Batteries Manufacturer in India",
+            "provider": "searxng",
+            "content_sha256": "23e19b839b029c4bf7f6f0a93f6a8b65a9b4524e1b930bf1ea3fbf08ad85abc0",
+            "http_status": 200,
+            "reachability": 1.0,
+            "fetched_at": "2026-09-30T08:46:24.020522+00:00",
+            "published_at": null,
+            "redirect_count": 0,
+            "root_fallback": false,
+            "chunk_id": "c79ef2cdaa6ce7a38cea",
+            "text": "------------\n\nTailor-made products to suit your needs. Join hands with us to be a part of the energy revolution.\n\n* With Ipower You Can Be Assured Of\n* Consistency of Product Quality\n* Consistency of Timely Deliveries\n* Consistency of Safety and Reliability\n\n[Read More](https://ipowerbatteries.in/about/)\n\nWhy Lithium-Ion batteries?\n--------------------------\n\n![Rugpro Battery's](https://ipowerbatteries.in/wp-content/uploads/elementor/thumbs/battery-1-qcyx98xjscuxcmtl2y1snnap87ug91hy37tc6ehxq4.we",
+            "char_start": 3500,
+            "char_end": 4000,
+            "retrieval_score": 0.045349
+          },
+          {
+            "url": "https://ipowerbatteries.in/",
+            "original_url": "https://ipowerbatteries.in/",
+            "title": "Ipower Lithium Ion Batteries Manufacturer in India",
+            "provider": "searxng",
+            "content_sha256": "23e19b839b029c4bf7f6f0a93f6a8b65a9b4524e1b930bf1ea3fbf08ad85abc0",
+            "http_status": 200,
+            "reachability": 1.0,
+            "fetched_at": "2026-09-30T08:46:24.020522+00:00",
+            "published_at": null,
+            "redirect_count": 0,
+            "root_fallback": false,
+            "chunk_id": "084496b0e64f2051a0bd",
+            "text": "and India’s Coming Battery Circular Economy](https://ipowerbatteries.in/2026/09/14/ev-battery-recycling-second-life-circular-economy-india/)\n\n[Read More »](https://ipowerbatteries.in/2026/09/14/ev-battery-recycling-second-life-circular-economy-india/)\n\nSeptember 14, 2026\n\n[![](https://ipowerbatteries.in/wp-content/uploads/2026/09/hero-make-in-india-1.png)](https://ipowerbatteries.in/2026/09/08/make-in-india-lithium-battery-manufacturing-supply-chain/)\n\nIndustry Insights\n\n### [Powering Atmanirbha",
+            "char_start": 11200,
+            "char_end": 11700,
+            "retrieval_score": 0.043906
+          }
+        ],
+        "scrapling_records": [
+          {
+            "supplier_name": null,
+            "supplier_type": null,
+            "supplier_location": null,
+            "supplier_certifications": null,
+            "supplier_catalog_link": null,
+            "source_url": "https://ipowerbatteries.in/",
+            "extraction_method": "structured_data_and_markdown",
+            "evidence_excerpt": "![loader image](https://ipowerbatteries.in/wp-content/uploads/2026/05/Safe-Sustainable-Smart-3.png)\n\n[Skip to content](#content)\n\n\n[Ipower Batteries - Ipower BatteriesIpower Batteries](https://ipowerbatteries.in/)\n==================================================================================\n\n* Our Products\n  + [2 Wheeler Batteries](#)\n    - [LFP Batteries](https://ipowerbatteries.in/lfp-battery/)\n    - [LMFP Batteries](https://ipowerbatteries.in/lmfp-batteries/)\n    - [NMC Batteries](https://ipowerbatteries.in/nmc-batteries/)\n  + [3 Wheeler Batteries](#)\n    - [L3 Batteries](https://ipowerbatteries.in/l3-batteries/)\n    - [L5 Batteries](https://ipowerbatteries.in/l5-batteries/)\n  + [Telecom Batteries](https://ipowerbatteries.in/telecom-battery/)\n  + [Inverter Battery](https://ipowerbatteries.in/lithium-inverter-battery/)\n  + [Commercial & Industrial ESS](https://ipowerbatteries.in/commercial-industrial-ess/)\n  + [Others](https://ipowerbatteries.in/others/)\n* Media\n  + [News](https://ipowerbatteries.in/news/)\n  + [Blogs](https://ipowerbatteries.in/blogs/)\n  + [Testimonials](https://ipowerbatteries.in/testimonials/)\n  + [FAQ](https://ipowerbatteries.in/faq/)\n  + [Awards](https://ipowerbatteries.in/awards/)\n* [Certifications](https://ipowerbatteries.in/certifications/)\n* [Export](https://ipowerbatteries.in/export/)\n* [Life @ IpowerBatteries](#)\n  + [Great Place to Work](https://ipowerbatteries.in/great-place-to-work/)\n  + [Career](https://ipowerbatteries.in/career/)\n* [Contact Us](https://ipowerbatteries.in/contact-us/)\n* [Our Legacy](https://ipowerbatteries.in/our-legacy/)\n* [Catalogue](https://ipowerbatteries.in/wp-content/uploads/2025/02/Ipower-Catalogue.pdf)\n\n[Battery Service](#ipower-services)\n\nSearch for:\nSearch\n\nIndustries We Serve\n-------------------\n\n![E-Bike & E-Scooter](https://ipowerbatteries.in/wp-content/uploads/2023/09/01-1.jpg)\n\nE-Bike & E-Scooter\n------------------\n\n![Ipower Ev Battery Industry](https://ipowerbatteries.in/wp-content/uploads/2024/03/02-1.webp)\n\nE-Rickshaw & E-Cargo\n--------------------\n\n![Ipower Battery telecom Industry](https://ipowerbatteries.in/wp-content/uploads/2024/03/WhatsApp-Image-2023-10-03-at-6.34.36-PM-1.webp)\n\nTelecommunication Battery\n-------------------------\n\n![](https://ipowerbatteries.in/wp-content/uploads/2025/02/0134.webp)\n\nSolar Battery\n-------------\n\n![](https://ipowerbatteries.in/wp-content/uploads/2026/01/Home-Inverter.webp)\n\nInverter Battery\n----------------\n\n![](https://ipowerbatteries.in/wp-content/uploads/2026/01/industry-commercial.webp)\n\nCommercial & Industrial ESS\n---------------------------\n\n![](https://ipowerbatteries.in/wp-content/uploads/2026/01/railway.webp)\n\nOther Segment\n-------------\n\n#### 100 %\n\nGreen\n\n![72V40A Battery](https://ipowerbatteries.in/wp-content/uploads/2024/03/350.webp)\n\n![EV Scooter Battery](https://ipowerbatteries.in/wp-content/uploads/2024/03/Ipower-website-scooty-banner.webp)\n\n#### Our Mission\n\nA CLEANER AND GREENER PLANET\n----------------------------\n\nDriving the power within and committing to our mission of providing reliable power solutions to businesses, covering a wide range of related fields in Lithium-ion technology by\n\nBeing One of India's Leading Battery Manufacturers\n--------------------------------------------------\n\nWith nationwide expertise in Lithium-ion technology, we deliver satisfaction to businesses with 200+ Sales & Service Centers across India.\n\nOffering Reliable Solutions That Fit Your Needs\n-----------------------------------------------\n\nTailor-made products to suit your needs. Join hands with us to be a part of the energy revolution.\n\n* With Ipower You Can Be Assured Of\n* Consistency of Product Quality\n* Consistency of Timely Deliveries\n* Consistency of Safety and Reliability\n\n[Read More](https://ipowerbatteries.in/about/)\n\nWhy Lithium-Ion batteries?\n--------------------------\n\n![Rugpro Battery's](https://ipowerbatteries.in/wp-content/uploads/elementor/thumbs/battery-1-qcyx98xjscuxcmtl2y1snnap87ug91hy37tc6ehxq4.webp \"Rugpro Battery’s\")\n\nEco-Friendly\n------------\n\nThey keep the air clean and have low heavy toxic metals.\n\nLightweight and Compact\n-----------------------\n\nLithium & Carbon are lightweight on their own, making for much smaller and lighter batteries.\n\nHigh Energy Density\n-------------------\n\nHigh level of performance as they pack a high energy capacity in a small size.\n\n![inverter](https://ipowerbatteries.in/wp-content/uploads/elementor/thumbs/inverter-rhak3mukr3wguiwd262qoi6xe8zbun32ooktx4z1mk.webp \"inverter\")\n\nLow Maintenance\n---------------\n\nLithium batteries do not suffer from memory effect and thus require less maintenance.\n\nMore Charge Cycles\n------------------\n\nQuality lithium-ion batteries last about 1000 full charge cycles.\n\nLow Self-Discharge Rate\n-----------------------\n\nThey also have a low self-discharge rate than nickel-based rechargeable batteries.\n\nAbout Us\n--------\n\n![Ipower Head Office](https://ipowerbatteries.in/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2023-10-03-at-6.34.38-PM-qdbiggwoho5a0vnw5etrwo38oxqo89lyc2ka5pxxug.jpeg \"Ipower Head Office\")\n\n![WhatsApp Image 2023-08-02 at 6.46.06 PM](https://ipowerbatteries.in/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2023-08-02-at-6.46.06-PM-qabli43jbpc72knfnpuxra7qe5mdjr4xyaospy87zk.jpeg \"WhatsApp Image 2023-08-02 at 6.46.06 PM\")\n\nOur state-of-the-art manufacturing facility at Kundli, Haryana is IMS certified. With all the necessary compliances, resources and a highly dependable team, Ipower is equipped to build a greener tomorrow.\n\nSetting the Standard\n--------------------\n\nWith global standards and highly scalable infrastructure, the premise spreads over an area of 50,000 sq ft.\n\nDelivering Quantity with Quality\n--------------------------------\n\nIt has a production capacity of over 500 battery packs each day, rigorous testing and quality checking processes and a government recognition in-house R&D Centre.\n\n### Serving the Industry since 2019\n\nClients Served\n\n0\n\nEv`s Powered\n\n0\n\nMW of Energy Storage\n\n0\n\nGW+ Production Capacity\n\n0\n\nOur Products\n------------\n\nWe manufacture a plethora of lithium ion batteries that cater to the requirements of the electric mobility industry and other energy applications. Being one of the leading Lithium Ion Battery Manufacturers in India, our battery products are available for electric vehicles such as e-bikes, e-rickshaws, and e-scooters as well as home & office applications.\nOur range includes lithium ion batteries for e-rickshaws and e-scooters, energy storage products and systems (ESS), inverter batteries, as well as industrial and commercial UPS solutions.\n\n[Show More](https://ipowerbatteries.in/product/)\n\n[![](https://ipowerbatteries.in/wp-content/uploads/2026/01/site-middle-banner-3.jpg)](https://ipowerbatteries.in/2023/05/27/lmfp-batteries-a-new-kid-on-the-block/)\n\n[![Rugpro LMFP Batteries](https://ipowerbatteries.in/wp-content/uploads/2023/10/mobile-size-1.jpg)](https://ipowerbatteries.in/2023/05/27/lmfp-batteries-a-new-kid-on-the-block/)\n\nCommitted To Innovation For A Greener Tomorrow:\nWith Lithium Batteries\n======================================================================\n\n![](https://ipowerbatteries.in/wp-content/uploads/2024/03/WhatsApp-Image-2023-08-02-at-7.01.24-PM.webp)\n\nIntroducing Ipower Service Centre\n---------------------------------\n\nIpower presents a network of advanced service centres, addressing the growing demand in the rapidly expanding lithium battery market.\n\n[Know More](https://ipowerbatteries.in/ipower-service-center/)\n\n{\"cpt\":\"testimonial\",\"style\":\"2\",\"columns\":\"1\",\"show\":\"6\",\"order\":\"DESC\",\"orderby\":\"DESC\"}\n\nTestimonials\n------------\n\nWhat Our Partners Say About Us\n\n> The confidence we get , when we are able to service our customer’s batteries in our own showroom, is enormous. Opening Authorised iPower service centre is solving the biggest problem we have so far faced in this 5 years of experience in the EV field. The battery Service Turnaround Time. It is helping us achieve better customer satisfaction. And it has also increased our customers trust on us.\n\n![](https://ipowerbatteries.in/wp-content/uploads/2023/09/WhatsApp-Image-2023-07-04-at-10.56.23-AM-150x150.jpeg)\n\n### Arun Kumar\n\n> We really take pride in IPower’s initiative of opening up service centres across India. Since we have started the Ipower service centre in Hyderabad, customer’s trust on the EV industry has increased significantly as we are able to service the batteries locally in very less time and effectively. Given, batteries are the most critical component in the Electric vehicle, the timely servicing is proving really beneficial for the whole industry.\n\n![](https://ipowerbatteries.in/wp-content/uploads/2023/09/WhatsApp-Image-2023-07-04-at-5.40.19-PM-150x150.jpeg)\n\n### Anukul Jaivyo\n\n> Now since we have started the Ipower service centre, the whole turnaround time is reduced significantly. It benefits both the customer and us, the consumer trust is increased and timely delivery is being given.\n\n![](https://ipowerbatteries.in/wp-content/uploads/2023/09/WhatsApp-Image-2023-06-30-at-4.35.45-PM-150x150.jpeg)\n\n### Pankaj Yadav\n\n> At Lohia industries, we always strive for best of quality for 100% end-customer satisfaction. Ipower batteries match the quality standards as per our requirements and that’s the major reason for our continued collaboration.\n\n### Mr. Ayush Lohia (MD, Lohia Industries Ltd)\n\nHead of Marketing\n\n> I was most impressed with the high standard of professionalism and product innovation Ipower demonstrated and provided to us. I would highly recommend and I have already been doing so to fellow would-be inventors and entrepreneurs in the electric mobility segment.\n\n### Mr. Ankit Aggarwal (MD, Deltic)\n\nCEO Co-Founder\n\n> Ipower were the right choice for us since the beginning as they had the experience of more than a decade developing products that they are actually selling. In the design and sampling process, there was never a question we asked that they denied, and for that we really thank them.\n\n### Mr. Yogesh (MD, SES)\n\nManaging Director\n\n{\"cpt\":\"client\",\"style\":\"1\",\"columns\":\"6\",\"show\":\"6\",\"from\\_category\":[\"black\"],\"order\":\"ASC\",\"orderby\":\"DESC\"}\n\n#### client 7\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\n#### client 8\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\n#### client 9\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\n#### client 10\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\n#### client 11\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\n#### client 12\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\nLatest In The EV Sector\n-----------------------\n\n[View More Blog](https://ipowerbatteries.in/blogs/)\n\n[![](https://ipowerbatteries.in/wp-content/uploads/2026/09/hero-battery-recycling-1.png)](https://ipowerbatteries.in/2026/09/14/ev-battery-recycling-second-life-circular-economy-india/)\n\nIndustry Insights\n\n### [From Road to Reuse: Second Life, Recycling, and India’s Coming Battery Circular Economy](https://ipowerbatteries.in/2026/09/14/ev-battery-recycling-second-life-circular-economy-india/)\n\n[Read More »](https://ipowerbatteries.in/2026/09/14/ev-battery-recycling-second-life-circular-economy-india/)\n\nSeptember 14, 2026\n\n[![](https://ipowerbatteries.in/wp-content/uploads/2026/09/hero-make-in-india-1.png)](https://ipowerbatteries.in/2026/09/08/make-in-india-lithium-battery-manufacturing-supply-chain/)\n\nIndustry Insights\n\n### [Powering Atmanirbhar Bharat: How Localised Lithium Battery Manufacturing Is Reshaping India’s EV Supply Chain](https://ipowerbatteries.in/2026/09/08/make-in-india-lithium-battery-manufacturing-supply-chain/)\n\n[Read More »](https://ipowerbatteries.in/2026/09/08/make-in-india-lithium-battery-manufacturing-supply-chain/)\n\nSeptember 8, 2026\n\n[![](https://ipowerbatteries.in/wp-content/uploads/2026/09/hero-battery-swapping-1.png)](https://ipowerbatteries.in/2026/09/01/battery-swapping-vs-charging-india-2w-3w-fleets/)\n\nElectric Mobility\n\n### [Battery Swapping vs. Plug-In Charging: The Definitive Guide for India’s Electric Two- and Three-Wheeler Fleets](https://ipowerbatteries.in/2026/09/01/battery-swapping-vs-charging-india-2w-3w-fleets/)\n\n[Read More »](https://ipowerbatteries.in/2026/09/01/battery-swapping-vs-charging-india-2w-3w-fleets/)\n\nSeptember 1, 2026\n\n![](https://ipowerbatteries.in/wp-content/uploads/2022/11/ipower-logo-r-ai-final.webp)\n\nPowering electric mobility with evolving energy storage solutions – Ipower is one of India’s most promising names in the green energy…[Read More](https://ipowerbatteries.in/about/)\n\nQuick Links\n-----------\n\n* [About Us](https://ipowerbatteries.in/about/)\n* [Product](https://ipowerbatteries.in/products/)\n* [FAQ](https://ipowerbatteries.in/faq/)\n* [Contact Us](https://ipowerbatteries.in/contact-us/)\n* [Ipower Service Centre](https://ipowerbatteries.in/ipower-service-centre/)\n\nQuick Contact\n-------------\n\nPlot No-82, HSIIDC Industrial Area, Sec-53, Kundli, Sonipat, Haryana, India 131028  \nPhone: [+91 9899201797](tel:9899201797)  \nEmail: [support@ipowerbatteries.in](mailto:support@ipowerbatteries.in)\n\nCopyright © 2025 All Rights Reserved.\n\n* [Reports](https://ipowerbatteries.in/reports/)\n* [Privacy Policy](https://ipowerbatteries.in/privacy-policy/)\n\n\n\n\nWant To Get Battery Service\n\nWant To Open A Service Centre\n\nWant To Get Battery Service\n\n### Battery Service Made Easy\n\nWe have a centralized service center that can assist you with all your battery needs.\n\nSimply give us a call at +91-9599822711, and our friendly staff will guide you through the process, ensuring you get the help you need, when you need it.\n\n[Call +91-9599822711](tel:9599822711)\n\nWant To Open A Service Centre\n\n### Looking to Open a Service Center?\n\nIf you’re interested in becoming a part of our network and opening a service center in your area, you’re in the right place!\n\nWe welcome entrepreneurs and businesses looking to expand their services.\n\n[Know More](https://ipowerbatteries.in/ipower-service-center/)",
+            "canonical_name": "structured_data_and_markdown"
+          }
+        ],
+        "capture_latency_ms": 10585.59
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 139,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 4,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 1,
+        "llm_input_tokens": {
+          "actual": 1039,
+          "estimated": 969,
+          "basis": "provider_usage_metadata"
+        },
+        "llm_call_details": [
+          {
+            "latency_ms": 2591.14,
+            "input_chars": 3874,
+            "estimated_input_tokens": 969,
+            "actual_input_tokens": 1039
+          }
+        ],
+        "extraction_latency_ms": 2592.2,
+        "validation_latency_ms": 32.16,
+        "scrapling_latency_ms": 464.83,
+        "tfidf_latency_ms": 35.37,
+        "total_replay_latency_ms": 3089.19,
+        "extraction_error": null,
+        "extracted_records": [
+          {
+            "supplier_name": "Ipower Batteries",
+            "supplier_type": "battery",
+            "supplier_location": "India",
+            "supplier_certifications": "government recognition in-house R&D Centre",
+            "supplier_catalog_link": "https://ipowerbatteries.in/"
+          },
+          {
+            "supplier_name": null,
+            "supplier_type": null,
+            "supplier_location": null,
+            "supplier_certifications": null,
+            "supplier_catalog_link": null,
+            "source_url": "https://ipowerbatteries.in/",
+            "extraction_method": "structured_data_and_markdown",
+            "evidence_excerpt": "![loader image](https://ipowerbatteries.in/wp-content/uploads/2026/05/Safe-Sustainable-Smart-3.png)\n\n[Skip to content](#content)\n\n\n[Ipower Batteries - Ipower BatteriesIpower Batteries](https://ipowerbatteries.in/)\n==================================================================================\n\n* Our Products\n  + [2 Wheeler Batteries](#)\n    - [LFP Batteries](https://ipowerbatteries.in/lfp-battery/)\n    - [LMFP Batteries](https://ipowerbatteries.in/lmfp-batteries/)\n    - [NMC Batteries](https://ipowerbatteries.in/nmc-batteries/)\n  + [3 Wheeler Batteries](#)\n    - [L3 Batteries](https://ipowerbatteries.in/l3-batteries/)\n    - [L5 Batteries](https://ipowerbatteries.in/l5-batteries/)\n  + [Telecom Batteries](https://ipowerbatteries.in/telecom-battery/)\n  + [Inverter Battery](https://ipowerbatteries.in/lithium-inverter-battery/)\n  + [Commercial & Industrial ESS](https://ipowerbatteries.in/commercial-industrial-ess/)\n  + [Others](https://ipowerbatteries.in/others/)\n* Media\n  + [News](https://ipowerbatteries.in/news/)\n  + [Blogs](https://ipowerbatteries.in/blogs/)\n  + [Testimonials](https://ipowerbatteries.in/testimonials/)\n  + [FAQ](https://ipowerbatteries.in/faq/)\n  + [Awards](https://ipowerbatteries.in/awards/)\n* [Certifications](https://ipowerbatteries.in/certifications/)\n* [Export](https://ipowerbatteries.in/export/)\n* [Life @ IpowerBatteries](#)\n  + [Great Place to Work](https://ipowerbatteries.in/great-place-to-work/)\n  + [Career](https://ipowerbatteries.in/career/)\n* [Contact Us](https://ipowerbatteries.in/contact-us/)\n* [Our Legacy](https://ipowerbatteries.in/our-legacy/)\n* [Catalogue](https://ipowerbatteries.in/wp-content/uploads/2025/02/Ipower-Catalogue.pdf)\n\n[Battery Service](#ipower-services)\n\nSearch for:\nSearch\n\nIndustries We Serve\n-------------------\n\n![E-Bike & E-Scooter](https://ipowerbatteries.in/wp-content/uploads/2023/09/01-1.jpg)\n\nE-Bike & E-Scooter\n------------------\n\n![Ipower Ev Battery Industry](https://ipowerbatteries.in/wp-content/uploads/2024/03/02-1.webp)\n\nE-Rickshaw & E-Cargo\n--------------------\n\n![Ipower Battery telecom Industry](https://ipowerbatteries.in/wp-content/uploads/2024/03/WhatsApp-Image-2023-10-03-at-6.34.36-PM-1.webp)\n\nTelecommunication Battery\n-------------------------\n\n![](https://ipowerbatteries.in/wp-content/uploads/2025/02/0134.webp)\n\nSolar Battery\n-------------\n\n![](https://ipowerbatteries.in/wp-content/uploads/2026/01/Home-Inverter.webp)\n\nInverter Battery\n----------------\n\n![](https://ipowerbatteries.in/wp-content/uploads/2026/01/industry-commercial.webp)\n\nCommercial & Industrial ESS\n---------------------------\n\n![](https://ipowerbatteries.in/wp-content/uploads/2026/01/railway.webp)\n\nOther Segment\n-------------\n\n#### 100 %\n\nGreen\n\n![72V40A Battery](https://ipowerbatteries.in/wp-content/uploads/2024/03/350.webp)\n\n![EV Scooter Battery](https://ipowerbatteries.in/wp-content/uploads/2024/03/Ipower-website-scooty-banner.webp)\n\n#### Our Mission\n\nA CLEANER AND GREENER PLANET\n----------------------------\n\nDriving the power within and committing to our mission of providing reliable power solutions to businesses, covering a wide range of related fields in Lithium-ion technology by\n\nBeing One of India's Leading Battery Manufacturers\n--------------------------------------------------\n\nWith nationwide expertise in Lithium-ion technology, we deliver satisfaction to businesses with 200+ Sales & Service Centers across India.\n\nOffering Reliable Solutions That Fit Your Needs\n-----------------------------------------------\n\nTailor-made products to suit your needs. Join hands with us to be a part of the energy revolution.\n\n* With Ipower You Can Be Assured Of\n* Consistency of Product Quality\n* Consistency of Timely Deliveries\n* Consistency of Safety and Reliability\n\n[Read More](https://ipowerbatteries.in/about/)\n\nWhy Lithium-Ion batteries?\n--------------------------\n\n![Rugpro Battery's](https://ipowerbatteries.in/wp-content/uploads/elementor/thumbs/battery-1-qcyx98xjscuxcmtl2y1snnap87ug91hy37tc6ehxq4.webp \"Rugpro Battery’s\")\n\nEco-Friendly\n------------\n\nThey keep the air clean and have low heavy toxic metals.\n\nLightweight and Compact\n-----------------------\n\nLithium & Carbon are lightweight on their own, making for much smaller and lighter batteries.\n\nHigh Energy Density\n-------------------\n\nHigh level of performance as they pack a high energy capacity in a small size.\n\n![inverter](https://ipowerbatteries.in/wp-content/uploads/elementor/thumbs/inverter-rhak3mukr3wguiwd262qoi6xe8zbun32ooktx4z1mk.webp \"inverter\")\n\nLow Maintenance\n---------------\n\nLithium batteries do not suffer from memory effect and thus require less maintenance.\n\nMore Charge Cycles\n------------------\n\nQuality lithium-ion batteries last about 1000 full charge cycles.\n\nLow Self-Discharge Rate\n-----------------------\n\nThey also have a low self-discharge rate than nickel-based rechargeable batteries.\n\nAbout Us\n--------\n\n![Ipower Head Office](https://ipowerbatteries.in/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2023-10-03-at-6.34.38-PM-qdbiggwoho5a0vnw5etrwo38oxqo89lyc2ka5pxxug.jpeg \"Ipower Head Office\")\n\n![WhatsApp Image 2023-08-02 at 6.46.06 PM](https://ipowerbatteries.in/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2023-08-02-at-6.46.06-PM-qabli43jbpc72knfnpuxra7qe5mdjr4xyaospy87zk.jpeg \"WhatsApp Image 2023-08-02 at 6.46.06 PM\")\n\nOur state-of-the-art manufacturing facility at Kundli, Haryana is IMS certified. With all the necessary compliances, resources and a highly dependable team, Ipower is equipped to build a greener tomorrow.\n\nSetting the Standard\n--------------------\n\nWith global standards and highly scalable infrastructure, the premise spreads over an area of 50,000 sq ft.\n\nDelivering Quantity with Quality\n--------------------------------\n\nIt has a production capacity of over 500 battery packs each day, rigorous testing and quality checking processes and a government recognition in-house R&D Centre.\n\n### Serving the Industry since 2019\n\nClients Served\n\n0\n\nEv`s Powered\n\n0\n\nMW of Energy Storage\n\n0\n\nGW+ Production Capacity\n\n0\n\nOur Products\n------------\n\nWe manufacture a plethora of lithium ion batteries that cater to the requirements of the electric mobility industry and other energy applications. Being one of the leading Lithium Ion Battery Manufacturers in India, our battery products are available for electric vehicles such as e-bikes, e-rickshaws, and e-scooters as well as home & office applications.\nOur range includes lithium ion batteries for e-rickshaws and e-scooters, energy storage products and systems (ESS), inverter batteries, as well as industrial and commercial UPS solutions.\n\n[Show More](https://ipowerbatteries.in/product/)\n\n[![](https://ipowerbatteries.in/wp-content/uploads/2026/01/site-middle-banner-3.jpg)](https://ipowerbatteries.in/2023/05/27/lmfp-batteries-a-new-kid-on-the-block/)\n\n[![Rugpro LMFP Batteries](https://ipowerbatteries.in/wp-content/uploads/2023/10/mobile-size-1.jpg)](https://ipowerbatteries.in/2023/05/27/lmfp-batteries-a-new-kid-on-the-block/)\n\nCommitted To Innovation For A Greener Tomorrow:\nWith Lithium Batteries\n======================================================================\n\n![](https://ipowerbatteries.in/wp-content/uploads/2024/03/WhatsApp-Image-2023-08-02-at-7.01.24-PM.webp)\n\nIntroducing Ipower Service Centre\n---------------------------------\n\nIpower presents a network of advanced service centres, addressing the growing demand in the rapidly expanding lithium battery market.\n\n[Know More](https://ipowerbatteries.in/ipower-service-center/)\n\n{\"cpt\":\"testimonial\",\"style\":\"2\",\"columns\":\"1\",\"show\":\"6\",\"order\":\"DESC\",\"orderby\":\"DESC\"}\n\nTestimonials\n------------\n\nWhat Our Partners Say About Us\n\n> The confidence we get , when we are able to service our customer’s batteries in our own showroom, is enormous. Opening Authorised iPower service centre is solving the biggest problem we have so far faced in this 5 years of experience in the EV field. The battery Service Turnaround Time. It is helping us achieve better customer satisfaction. And it has also increased our customers trust on us.\n\n![](https://ipowerbatteries.in/wp-content/uploads/2023/09/WhatsApp-Image-2023-07-04-at-10.56.23-AM-150x150.jpeg)\n\n### Arun Kumar\n\n> We really take pride in IPower’s initiative of opening up service centres across India. Since we have started the Ipower service centre in Hyderabad, customer’s trust on the EV industry has increased significantly as we are able to service the batteries locally in very less time and effectively. Given, batteries are the most critical component in the Electric vehicle, the timely servicing is proving really beneficial for the whole industry.\n\n![](https://ipowerbatteries.in/wp-content/uploads/2023/09/WhatsApp-Image-2023-07-04-at-5.40.19-PM-150x150.jpeg)\n\n### Anukul Jaivyo\n\n> Now since we have started the Ipower service centre, the whole turnaround time is reduced significantly. It benefits both the customer and us, the consumer trust is increased and timely delivery is being given.\n\n![](https://ipowerbatteries.in/wp-content/uploads/2023/09/WhatsApp-Image-2023-06-30-at-4.35.45-PM-150x150.jpeg)\n\n### Pankaj Yadav\n\n> At Lohia industries, we always strive for best of quality for 100% end-customer satisfaction. Ipower batteries match the quality standards as per our requirements and that’s the major reason for our continued collaboration.\n\n### Mr. Ayush Lohia (MD, Lohia Industries Ltd)\n\nHead of Marketing\n\n> I was most impressed with the high standard of professionalism and product innovation Ipower demonstrated and provided to us. I would highly recommend and I have already been doing so to fellow would-be inventors and entrepreneurs in the electric mobility segment.\n\n### Mr. Ankit Aggarwal (MD, Deltic)\n\nCEO Co-Founder\n\n> Ipower were the right choice for us since the beginning as they had the experience of more than a decade developing products that they are actually selling. In the design and sampling process, there was never a question we asked that they denied, and for that we really thank them.\n\n### Mr. Yogesh (MD, SES)\n\nManaging Director\n\n{\"cpt\":\"client\",\"style\":\"1\",\"columns\":\"6\",\"show\":\"6\",\"from\\_category\":[\"black\"],\"order\":\"ASC\",\"orderby\":\"DESC\"}\n\n#### client 7\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\n#### client 8\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\n#### client 9\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\n#### client 10\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\n#### client 11\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\n#### client 12\n\n![client-dark-01](https://ipowerbatteries.in/wp-content/uploads/2021/11/client-dark-01.png)\n\nLatest In The EV Sector\n-----------------------\n\n[View More Blog](https://ipowerbatteries.in/blogs/)\n\n[![](https://ipowerbatteries.in/wp-content/uploads/2026/09/hero-battery-recycling-1.png)](https://ipowerbatteries.in/2026/09/14/ev-battery-recycling-second-life-circular-economy-india/)\n\nIndustry Insights\n\n### [From Road to Reuse: Second Life, Recycling, and India’s Coming Battery Circular Economy](https://ipowerbatteries.in/2026/09/14/ev-battery-recycling-second-life-circular-economy-india/)\n\n[Read More »](https://ipowerbatteries.in/2026/09/14/ev-battery-recycling-second-life-circular-economy-india/)\n\nSeptember 14, 2026\n\n[![](https://ipowerbatteries.in/wp-content/uploads/2026/09/hero-make-in-india-1.png)](https://ipowerbatteries.in/2026/09/08/make-in-india-lithium-battery-manufacturing-supply-chain/)\n\nIndustry Insights\n\n### [Powering Atmanirbhar Bharat: How Localised Lithium Battery Manufacturing Is Reshaping India’s EV Supply Chain](https://ipowerbatteries.in/2026/09/08/make-in-india-lithium-battery-manufacturing-supply-chain/)\n\n[Read More »](https://ipowerbatteries.in/2026/09/08/make-in-india-lithium-battery-manufacturing-supply-chain/)\n\nSeptember 8, 2026\n\n[![](https://ipowerbatteries.in/wp-content/uploads/2026/09/hero-battery-swapping-1.png)](https://ipowerbatteries.in/2026/09/01/battery-swapping-vs-charging-india-2w-3w-fleets/)\n\nElectric Mobility\n\n### [Battery Swapping vs. Plug-In Charging: The Definitive Guide for India’s Electric Two- and Three-Wheeler Fleets](https://ipowerbatteries.in/2026/09/01/battery-swapping-vs-charging-india-2w-3w-fleets/)\n\n[Read More »](https://ipowerbatteries.in/2026/09/01/battery-swapping-vs-charging-india-2w-3w-fleets/)\n\nSeptember 1, 2026\n\n![](https://ipowerbatteries.in/wp-content/uploads/2022/11/ipower-logo-r-ai-final.webp)\n\nPowering electric mobility with evolving energy storage solutions – Ipower is one of India’s most promising names in the green energy…[Read More](https://ipowerbatteries.in/about/)\n\nQuick Links\n-----------\n\n* [About Us](https://ipowerbatteries.in/about/)\n* [Product](https://ipowerbatteries.in/products/)\n* [FAQ](https://ipowerbatteries.in/faq/)\n* [Contact Us](https://ipowerbatteries.in/contact-us/)\n* [Ipower Service Centre](https://ipowerbatteries.in/ipower-service-centre/)\n\nQuick Contact\n-------------\n\nPlot No-82, HSIIDC Industrial Area, Sec-53, Kundli, Sonipat, Haryana, India 131028  \nPhone: [+91 9899201797](tel:9899201797)  \nEmail: [support@ipowerbatteries.in](mailto:support@ipowerbatteries.in)\n\nCopyright © 2025 All Rights Reserved.\n\n* [Reports](https://ipowerbatteries.in/reports/)\n* [Privacy Policy](https://ipowerbatteries.in/privacy-policy/)\n\n\n\n\nWant To Get Battery Service\n\nWant To Open A Service Centre\n\nWant To Get Battery Service\n\n### Battery Service Made Easy\n\nWe have a centralized service center that can assist you with all your battery needs.\n\nSimply give us a call at +91-9599822711, and our friendly staff will guide you through the process, ensuring you get the help you need, when you need it.\n\n[Call +91-9599822711](tel:9599822711)\n\nWant To Open A Service Centre\n\n### Looking to Open a Service Center?\n\nIf you’re interested in becoming a part of our network and opening a service center in your area, you’re in the right place!\n\nWe welcome entrepreneurs and businesses looking to expand their services.\n\n[Know More](https://ipowerbatteries.in/ipower-service-center/)",
+            "canonical_name": "structured_data_and_markdown"
+          }
+        ],
+        "validated_records": [
+          {
+            "supplier_name": "Ipower Batteries",
+            "supplier_type": null,
+            "supplier_location": null,
+            "supplier_certifications": "government recognition in-house R&D Centre",
+            "supplier_catalog_link": null,
+            "canonical_name": "Ipower Batteries",
+            "source_url": "https://ipowerbatteries.in/",
+            "chunk_id": "5d9fe7274e583bbd789c",
+            "evidence_excerpt": "tery packs each day, rigorous testing and quality checking processes and a government recognition in-house R&D Centre.\n\n### Serving the Industry since 2019\n\nClients Served\n\n0\n\nEv`s Powered\n\n0\n\nMW of Energy Storage\n\n0\n\nGW+ Production Capacity\n\n0\n\nOur Products\n------------\n\nWe manufacture a plethora of lithium ion batteries that cater to the requirements of the electric mobility industry and other energy applications. Being one of the leading Lithium Ion Battery Manufacturers in India, our battery",
+            "grounding_score": 0.137065,
+            "confidence_score": 0.2272,
+            "status": "draft",
+            "confidence_breakdown": {
+              "source_authority": 0.5,
+              "grounding_score": 0.137065,
+              "ml_validation_score": 0.314826,
+              "agreement": 0.0,
+              "freshness": 0.0,
+              "completeness": 0.4,
+              "reachability": 1.0,
+              "extraction_certainty": 0.4
+            },
+            "provenance": {
+              "authority_score": 0.5,
+              "agreement_rate": 0.0,
+              "source_urls": [
+                "https://ipowerbatteries.in/"
+              ],
+              "field_evidence": [
+                {
+                  "field_name": "supplier_name",
+                  "verbatim_quote": "tery packs each day, rigorous testing and quality checking processes and a government recognition in-house R&D Centre.\n\n### Serving the Industry since 2019\n\nClients Served\n\n0\n\nEv`s Powered\n\n0\n\nMW of Energy Storage\n\n0\n\nGW+ Production Capacity\n\n0\n\nOur Products\n------------\n\nWe manufacture a plethora of lithium ion batteries that cater to the requirements of the electric mobility industry and other energy applications. Being one of the leading Lithium Ion Battery Manufacturers in India, our battery",
+                  "source_url": "https://ipowerbatteries.in/",
+                  "extracted_value": "Ipower Batteries",
+                  "chunk_id": "5d9fe7274e583bbd789c",
+                  "char_start": 5800,
+                  "char_end": 6300
+                },
+                {
+                  "field_name": "supplier_certifications",
+                  "verbatim_quote": "tery packs each day, rigorous testing and quality checking processes and a government recognition in-house R&D Centre.\n\n### Serving the Industry since 2019\n\nClients Served\n\n0\n\nEv`s Powered\n\n0\n\nMW of Energy Storage\n\n0\n\nGW+ Production Capacity\n\n0\n\nOur Products\n------------\n\nWe manufacture a plethora of lithium ion batteries that cater to the requirements of the electric mobility industry and other energy applications. Being one of the leading Lithium Ion Battery Manufacturers in India, our battery",
+                  "source_url": "https://ipowerbatteries.in/",
+                  "extracted_value": "government recognition in-house R&D Centre",
+                  "chunk_id": "5d9fe7274e583bbd789c",
+                  "char_start": 5800,
+                  "char_end": 6300
+                }
+              ],
+              "http_status": 200,
+              "reachability": 1.0,
+              "freshness_basis": "unknown",
+              "fetched_at": "2026-09-30T08:46:24.020522+00:00",
+              "published_at": null,
+              "content_sha256": "23e19b839b029c4bf7f6f0a93f6a8b65a9b4524e1b930bf1ea3fbf08ad85abc0",
+              "chunk_id": "5d9fe7274e583bbd789c",
+              "char_start": 5800,
+              "char_end": 6300,
+              "retrieval_score": 0.061864,
+              "validation_method": "tfidf-evidence-v1",
+              "factors": [
+                {
+                  "factor_name": "source_authority",
+                  "score": 0.5,
+                  "weight": 0.1,
+                  "contribution": 0.05
+                },
+                {
+                  "factor_name": "grounding_score",
+                  "score": 0.137065,
+                  "weight": 0.25,
+                  "contribution": 0.034266
+                },
+                {
+                  "factor_name": "ml_validation_score",
+                  "score": 0.314826,
+                  "weight": 0.2,
+                  "contribution": 0.062965
+                },
+                {
+                  "factor_name": "agreement",
+                  "score": 0.0,
+                  "weight": 0.15,
+                  "contribution": 0.0
+                },
+                {
+                  "factor_name": "freshness",
+                  "score": 0.0,
+                  "weight": 0.1,
+                  "contribution": 0.0
+                },
+                {
+                  "factor_name": "completeness",
+                  "score": 0.4,
+                  "weight": 0.2,
+                  "contribution": 0.08
+                }
+              ]
+            }
+          }
+        ],
+        "status_counts": {
+          "draft": 1
+        },
+        "records_extracted": 2,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 1,
+        "required_fields_grounded": 2,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 1
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 139,
+        "chunks_entering_laya": 4,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 4,
+          "chunks_after": 0,
+          "chunks_filtered": 4,
+          "retention_percentage": 0.0,
+          "filtering_percentage": 100.0,
+          "latency_ms": 9793.08,
+          "batch_size": 32,
+          "batch_count": 1,
+          "average_decision_score": 0.072,
+          "retained_chunks": 0,
+          "rejected_chunks": 4,
+          "fallback_occurrences": 0,
+          "threshold": 0.2
+        },
+        "laya_scores": {
+          "5d9fe7274e583bbd789c": 0.0751,
+          "a7718d333bcfe7114e43": 0.0763,
+          "c79ef2cdaa6ce7a38cea": 0.0553,
+          "084496b0e64f2051a0bd": 0.0813
+        },
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.16,
+        "validation_latency_ms": 0.09,
+        "scrapling_latency_ms": 464.83,
+        "tfidf_latency_ms": 35.37,
+        "total_replay_latency_ms": 10258.16,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [
+          {
+            "record": "ipower batteries",
+            "baseline_status": "draft",
+            "laya_status": null,
+            "baseline_evidence": [
+              [
+                "supplier_name",
+                "5d9fe7274e583bbd789c"
+              ],
+              [
+                "supplier_certifications",
+                "5d9fe7274e583bbd789c"
+              ]
+            ],
+            "evidence_retained": false,
+            "field_differences": [
+              {
+                "field": "supplier_name",
+                "baseline": "Ipower Batteries",
+                "laya": null
+              },
+              {
+                "field": "supplier_certifications",
+                "baseline": "government recognition in-house R&D Centre",
+                "laya": null
+              },
+              {
+                "field": "canonical_name",
+                "baseline": "Ipower Batteries",
+                "laya": null
+              },
+              {
+                "field": "source_url",
+                "baseline": "https://ipowerbatteries.in/",
+                "laya": null
+              },
+              {
+                "field": "chunk_id",
+                "baseline": "5d9fe7274e583bbd789c",
+                "laya": null
+              }
+            ],
+            "classification": "lost_by_laya"
+          }
+        ],
+        "baseline_evidence_units": 2,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": 0.0,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [
+          [
+            "supplier_name",
+            "5d9fe7274e583bbd789c"
+          ],
+          [
+            "supplier_certifications",
+            "5d9fe7274e583bbd789c"
+          ]
+        ],
+        "records_lost_by_laya": 1,
+        "records_lost_or_changed": 1
+      }
+    },
+    {
+      "query": "Find currently open backend engineering roles from official company career pages in India.",
+      "captured": {
+        "index": 3,
+        "query": "Find currently open backend engineering roles from official company career pages in India.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "job",
+          "business_goal": "Find open backend engineering roles",
+          "fields": [
+            {
+              "name": "job_title",
+              "field_type": "string",
+              "description": "The title of the job",
+              "required": true
+            },
+            {
+              "name": "company_name",
+              "field_type": "string",
+              "description": "The name of the company",
+              "required": true
+            },
+            {
+              "name": "location",
+              "field_type": "string",
+              "description": "The location of the job",
+              "required": true
+            },
+            {
+              "name": "industry",
+              "field_type": "string",
+              "description": "The industry of the company",
+              "required": true
+            },
+            {
+              "name": "job_type",
+              "field_type": "string",
+              "description": "The type of job (e.g., full-time, part-time)",
+              "required": true
+            },
+            {
+              "name": "employment_type",
+              "field_type": "string",
+              "description": "The employment type (e.g., permanent, contract)",
+              "required": true
+            },
+            {
+              "name": "salary",
+              "field_type": "string",
+              "description": "The salary range of the job",
+              "required": true
+            },
+            {
+              "name": "experience",
+              "field_type": "string",
+              "description": "The required experience level",
+              "required": true
+            },
+            {
+              "name": "education",
+              "field_type": "string",
+              "description": "The required education level",
+              "required": true
+            },
+            {
+              "name": "application_process",
+              "field_type": "string",
+              "description": "The process for applying for the job",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 10,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 3,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [
+            "careerpages.com",
+            "careersite.com",
+            "careers.in"
+          ],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [
+          {
+            "url": "https://in.linkedin.com/jobs/backend-jobs",
+            "title": "Backend Jobs in India (11,000+ Open Roles) | LinkedIn",
+            "snippet": "11,000+ Backend Jobs in India · Software Engineer (Java) · Software Engineer (Java) · Senior Software Engineer (Backend) · Senior Backend Engineer · Backend Engineer ...",
+            "search_query": "Find currently open backend engineering roles from official company career pages in India.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://in.indeed.com/q-backend-developer-jobs.html",
+            "title": "11,000 Backend Developer Job Vacancies - Indeed",
+            "snippet": "Experience: 1 to 4 years in backend development only (no freshers, no fullstack, no 4-year-plus profiles). Forward only profiles that clear all eligibility ...",
+            "search_query": "Find currently open backend engineering roles from official company career pages in India.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://in.linkedin.com/jobs/back-end-developer-jobs",
+            "title": "Back End Developer Jobs in India (5,000+ Open Roles) | LinkedIn",
+            "snippet": "Today's top 5000+ Back End Developer jobs in India. Leverage your professional network, and get hired. New Back End Developer jobs added daily.",
+            "search_query": "Find currently open backend engineering roles from official company career pages in India.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.switchly.in/backend-engineer-jobs",
+            "title": "Backend Engineer Jobs with Direct Hiring Managers - Switchly",
+            "snippet": "Find backend engineer jobs in India where you apply directly to the hiring manager — no recruiter screens, no ghosting. Node.js, Python, Go, Java roles at ...",
+            "search_query": "Find currently open backend engineering roles from official company career pages in India.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://jobs.nokia.com/en/sites/CX_1/jobs",
+            "title": "Search Jobs - Nokia Careers",
+            "snippet": "Join us as a Software QA Engineer, where you will play a key role in ensuring the quality and reliability of next-generation optical networking solutions.",
+            "search_query": "Find currently open backend engineering roles from official company career pages in India.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://in.indeed.com/q-backend-developer-fresher-jobs.html",
+            "title": "200 Backend Developer Fresher Job Vacancies - Indeed",
+            "snippet": "Collaborate with frontend developers, QA engineers, and DevOps teams. Develop and maintain backend applications using Spring Boot and Golang (Gin). Design and ...",
+            "search_query": "Find currently open backend engineering roles from official company career pages in India.",
+            "provider": "searxng",
+            "engine": "google cse"
+          }
+        ],
+        "source_relevance": [
+          {
+            "candidate_index": 0,
+            "url": "https://in.linkedin.com/jobs/backend-jobs",
+            "decision": "REJECT",
+            "relevance_score": 0.0,
+            "source_type": "searxng",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "The provided search results do not contain any official company career pages in India, which is a requirement for the business goal. The snippets are not specific to backend engineering roles or the required fields.",
+            "missing_information": [
+              "official_company_pages",
+              "backend_engineering_roles",
+              "india"
+            ]
+          },
+          {
+            "candidate_index": 1,
+            "url": "https://in.indeed.com/q-backend-developer-jobs.html",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 2,
+            "url": "https://in.linkedin.com/jobs/back-end-developer-jobs",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 3,
+            "url": "https://www.switchly.in/backend-engineer-jobs",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 4,
+            "url": "https://jobs.nokia.com/en/sites/CX_1/jobs",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 5,
+            "url": "https://in.indeed.com/q-backend-developer-fresher-jobs.html",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          }
+        ],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.2,
+        "scrapling_retrieval_ms": 0.2,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 12752.2
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.12,
+        "validation_latency_ms": 0.12,
+        "scrapling_latency_ms": 0.2,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.44,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.09,
+        "validation_latency_ms": 0.01,
+        "scrapling_latency_ms": 0.2,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.3,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find project management SaaS products with pricing tiers, billing cadence, and source links.",
+      "captured": {
+        "index": 4,
+        "query": "Find project management SaaS products with pricing tiers, billing cadence, and source links.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "project_management_saaS_product",
+          "business_goal": "Manage projects efficiently",
+          "fields": [
+            {
+              "name": "pricing_tiers",
+              "field_type": "string",
+              "description": "List of pricing tiers available",
+              "required": true
+            },
+            {
+              "name": "billing_cadence",
+              "field_type": "string",
+              "description": "Frequency of billing (e.g., monthly, quarterly)",
+              "required": true
+            },
+            {
+              "name": "source_links",
+              "field_type": "string",
+              "description": "Links to project management tools",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 0,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 1,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [
+          {
+            "url": "https://project-management.com/project-management-saas/",
+            "title": "I Ranked the Best SaaS for Project Management in 2026",
+            "snippet": "Tiered pricing plans and free trials: Allows a customer to test the suitability of the solution to their specific business needs. A tiered pricing plan also ...",
+            "search_query": "Find project management SaaS products with pricing tiers, billing cadence, and source links.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.wrike.com/project-management-guide/faq/what-are-project-management-tools/",
+            "title": "Best project management tools and software: My 21 top picks for 2026",
+            "snippet": "Aug 14, 2026 ... Free plans and pricing. Most project management tools offer a free plan with caps on users, projects, or storage (like Wrike or Asana), while ...",
+            "search_query": "Find project management SaaS products with pricing tiers, billing cadence, and source links.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://projectmanagementclub.net/best-product-management-software-for-saas-startups/",
+            "title": "Best Product Management Software for SaaS Startups",
+            "snippet": "Jul 13, 2026 ... We tested ten product management platforms as a lean SaaS startup, ranking each on setup speed, cost, and iteration velocity for small ...",
+            "search_query": "Find project management SaaS products with pricing tiers, billing cadence, and source links.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.turbostarter.dev/blog/best-saas-starter-kit-2026",
+            "title": "Best SaaS starter kit 2026: 9 boilerplates compared - TurboStarter",
+            "snippet": "Jul 2, 2026 ... Compare the best SaaS starter kits in 2026 by stack, pricing, auth, billing, teams, AI readiness, and long-term maintainability.",
+            "search_query": "Find project management SaaS products with pricing tiers, billing cadence, and source links.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://flexprice.io/blog/usage-based-billing-flexprice-vs-chargebee-vs-stripe",
+            "title": "Flexprice vs Chargebee vs Stripe: Which is the Best Billing Platform ...",
+            "snippet": "Jan 13, 2026 ... Chargebee is best suited for classic B2B SaaS companies with stable, predictable pricing like HR tools, CRM, project management, or productivity ...",
+            "search_query": "Find project management SaaS products with pricing tiers, billing cadence, and source links.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://baremetrics.com/blog/baremetrics-vs-chartmogul-which-is-right-for-your-business",
+            "title": "ChartMogul vs. Baremetrics: Which SaaS Analytics Tool Wins?",
+            "snippet": "Mar 16, 2022 ... Data is the lifeblood of your SaaS business. Without it, you won't know who your customers are, how to get more of them, or even if your ...",
+            "search_query": "Find project management SaaS products with pricing tiers, billing cadence, and source links.",
+            "provider": "searxng",
+            "engine": "google cse"
+          }
+        ],
+        "source_relevance": [
+          {
+            "candidate_index": 0,
+            "url": "https://project-management.com/project-management-saas/",
+            "decision": "REJECT",
+            "relevance_score": 0.0,
+            "source_type": "web_search",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "The search results do not contain the required fields for project management SaaS products (pricing tiers, billing cadence, and source links).",
+            "missing_information": [
+              "pricing_tiers",
+              "billing_cadence",
+              "source_links"
+            ]
+          },
+          {
+            "candidate_index": 1,
+            "url": "https://www.wrike.com/project-management-guide/faq/what-are-project-management-tools/",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 2,
+            "url": "https://projectmanagementclub.net/best-product-management-software-for-saas-startups/",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 3,
+            "url": "https://www.turbostarter.dev/blog/best-saas-starter-kit-2026",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 4,
+            "url": "https://flexprice.io/blog/usage-based-billing-flexprice-vs-chargebee-vs-stripe",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 5,
+            "url": "https://baremetrics.com/blog/baremetrics-vs-chartmogul-which-is-right-for-your-business",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          }
+        ],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.08,
+        "scrapling_retrieval_ms": 0.08,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 7922.06
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.07,
+        "validation_latency_ms": 0.05,
+        "scrapling_latency_ms": 0.08,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.2,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.01,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.08,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.09,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find robotics companies headquartered in Tamil Nadu with website and location evidence.",
+      "captured": {
+        "index": 5,
+        "query": "Find robotics companies headquartered in Tamil Nadu with website and location evidence.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "company",
+          "business_goal": "Find robotics companies headquartered in Tamil Nadu with website and location evidence.",
+          "fields": [
+            {
+              "name": "name",
+              "field_type": "string",
+              "description": "The name of the company.",
+              "required": true
+            },
+            {
+              "name": "headquarters",
+              "field_type": "string",
+              "description": "The headquarters location of the company.",
+              "required": true
+            },
+            {
+              "name": "website",
+              "field_type": "string",
+              "description": "The website of the company.",
+              "required": true
+            },
+            {
+              "name": "location",
+              "field_type": "string",
+              "description": "The location of the company.",
+              "required": true
+            }
+          ],
+          "constraints": [
+            {
+              "field": "name",
+              "operator": "contains",
+              "target_value": "robotics",
+              "is_hard": true
+            },
+            {
+              "field": "headquarters",
+              "operator": "equals",
+              "target_value": "Tamil Nadu",
+              "is_hard": true
+            },
+            {
+              "field": "website",
+              "operator": "contains",
+              "target_value": "tamil",
+              "is_hard": true
+            },
+            {
+              "field": "location",
+              "operator": "contains",
+              "target_value": "tamil",
+              "is_hard": true
+            }
+          ],
+          "relationships": [],
+          "target_count": 0,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 1,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [
+          {
+            "url": "https://revenuebase.ai/companies/robotic-automation-companies/india/coimbatore",
+            "title": "Top 8 Robotic automation companies based in Coimbatore, India",
+            "snippet": "Sep 21, 2026 ... Partial evidence. “LAKSHMI INDUSTRIAL AUTOMATION - India is an industrial automation company based out of 22 2 GK Square, 1st Street, Kurichi, ...",
+            "search_query": "Find robotics companies headquartered in Tamil Nadu with website and location evidence.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://blog.huntyourtribe.com/robotics-startups-in-kerala-a-deep-dive-into-eyerov-ihub-robotics-sastra-robotics-and-genrobotics/",
+            "title": "Robotics Startups in Kerala: EyeROV, iHub Robotics, Sastra ...",
+            "snippet": "Jun 24, 2026 ... What These Four Companies Tell Us About Robotics in Kerala · Why This Matters for Kerala's Tech Ecosystem · Where to Find Roles at Kerala Robotics ...",
+            "search_query": "Find robotics companies headquartered in Tamil Nadu with website and location evidence.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://commerce.maryland.gov/fund/maryland-manufacturing-4-0",
+            "title": "Funding & Incentives Maryland Manufacturing 4.0",
+            "snippet": "​The Maryland Manufacturing 4.0 grant program provides grants to small and mid-sized Maryland manufacturers to invest in Industry 4.0-related technologies, ...",
+            "search_query": "Find robotics companies headquartered in Tamil Nadu with website and location evidence.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.mass.gov/info-details/massgis-impacts-and-stories",
+            "title": "MassGIS Impacts and Stories - Mass.gov",
+            "snippet": "We know that many of these companies are small or mid-sized firms based in Massachusetts. ... locations can be shown on an interactive map on the RMV website.",
+            "search_query": "Find robotics companies headquartered in Tamil Nadu with website and location evidence.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.bis.gov/regulations/ear/744",
+            "title": "EAR 744 | Bureau of Industry and Security",
+            "snippet": "'Military-intelligence end users' subject to the license requirements set forth in this section located in Belarus, Burma, Cambodia, China, Russia, or Venezuela ...",
+            "search_query": "Find robotics companies headquartered in Tamil Nadu with website and location evidence.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.f6s.com/companies/artificial-intelligence/india/tamil-nadu/no",
+            "title": "98 Top AI (Artificial Intelligence) Companies in Tamil Nadu - F6S",
+            "snippet": "Sep 1, 2026 ... Aivar Innovations, Big Bang Boom Solutions and 127 more AI (Artificial Intelligence) companies in Tamil Nadu from the F6S community. AI ( ...",
+            "search_query": "Find robotics companies headquartered in Tamil Nadu with website and location evidence.",
+            "provider": "searxng",
+            "engine": "google cse"
+          }
+        ],
+        "source_relevance": [
+          {
+            "candidate_index": 0,
+            "url": "https://revenuebase.ai/companies/robotic-automation-companies/india/coimbatore",
+            "decision": "REJECT",
+            "relevance_score": 0.0,
+            "source_type": "SEARX",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "The search results do not contain the required fields for the business requirement, specifically 'name', 'headquarters', 'website', and 'location'.",
+            "missing_information": [
+              "name",
+              "headquarters",
+              "website",
+              "location"
+            ]
+          },
+          {
+            "candidate_index": 1,
+            "url": "https://blog.huntyourtribe.com/robotics-startups-in-kerala-a-deep-dive-into-eyerov-ihub-robotics-sastra-robotics-and-genrobotics/",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 2,
+            "url": "https://commerce.maryland.gov/fund/maryland-manufacturing-4-0",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 3,
+            "url": "https://www.mass.gov/info-details/massgis-impacts-and-stories",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 4,
+            "url": "https://www.bis.gov/regulations/ear/744",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 5,
+            "url": "https://www.f6s.com/companies/artificial-intelligence/india/tamil-nadu/no",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          }
+        ],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.19,
+        "scrapling_retrieval_ms": 0.19,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 9587.82
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.04,
+        "validation_latency_ms": 0.03,
+        "scrapling_latency_ms": 0.19,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.26,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.02,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.19,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.21,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find companies that could sponsor a robotics hackathon with CSR evidence, previous sponsorships, contact information, and relevance.",
+      "captured": {
+        "index": 6,
+        "query": "Find companies that could sponsor a robotics hackathon with CSR evidence, previous sponsorships, contact information, and relevance.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "company",
+          "business_goal": "sponsor a robotics hackathon",
+          "fields": [
+            {
+              "name": "name",
+              "field_type": "string",
+              "description": "The name of the company.",
+              "required": true
+            },
+            {
+              "name": "contact_info",
+              "field_type": "string",
+              "description": "The contact information of the company.",
+              "required": true
+            },
+            {
+              "name": "previous_sponsorships",
+              "field_type": "string",
+              "description": "The previous sponsorships of the company.",
+              "required": true
+            },
+            {
+              "name": "CSR_evidence",
+              "field_type": "string",
+              "description": "The CSR evidence of the company.",
+              "required": true
+            }
+          ],
+          "constraints": [
+            {
+              "field": "name",
+              "operator": "contains",
+              "target_value": "robotics hackathon",
+              "is_hard": false
+            },
+            {
+              "field": "previous_sponsorships",
+              "operator": "contains",
+              "target_value": "robotics hackathon",
+              "is_hard": false
+            },
+            {
+              "field": "CSR_evidence",
+              "operator": "contains",
+              "target_value": "robotics hackathon",
+              "is_hard": false
+            }
+          ],
+          "relationships": [],
+          "target_count": 0,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 1,
+            "prefer_official": false,
+            "require_date": false,
+            "required_evidence": false
+          },
+          "allowed_domains": [],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [
+          {
+            "url": "https://aiforgood.itu.int/summit26/programme/",
+            "title": "Programme - AI for Good - ITU",
+            "snippet": "Discover AI for Good Summit 2026 programme, led by ITU, aims to unlock AI's potential to serve humanity through building skills and standards, and advancing ...",
+            "search_query": "Find companies that could sponsor a robotics hackathon with CSR evidence, previous sponsorships, contact information, and relevance.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.linkedin.com/posts/rubendominguezibar_just-in-openai-pulls-sponsorship-of-a-caltech-activity-7504245249473527808-uG-D",
+            "title": "OpenAI pulls Caltech math hackathon sponsorship amid ... - LinkedIn",
+            "snippet": "Sep 11, 2026 ... JUST IN: OpenAI pulls sponsorship of a Caltech math hackathon after mathematicians revolt ▫️ Academics call it \"slop mathematics,\" credit ...",
+            "search_query": "Find companies that could sponsor a robotics hackathon with CSR evidence, previous sponsorships, contact information, and relevance.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.whitehouse.gov/releases/2025/09/major-organizations-commit-to-supporting-ai-education/",
+            "title": "Major Organizations Commit to Supporting AI Education",
+            "snippet": "Sep 9, 2025 ... ... for Experiential Robotics new AI kit for High School students. ... “Over the next 4 years, we will get up to 10,000 teachers certified in AI ...",
+            "search_query": "Find companies that could sponsor a robotics hackathon with CSR evidence, previous sponsorships, contact information, and relevance.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://careers.microsoft.com/v2/global/en/universityinternship",
+            "title": "Global University Internships - Microsoft Careers",
+            "snippet": "Welcome to Microsoft Intern Celebration and Hackathon Week. Through mentorship, career development, community events, and innovation challenges, interns connect ...",
+            "search_query": "Find companies that could sponsor a robotics hackathon with CSR evidence, previous sponsorships, contact information, and relevance.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.sonepar.com/resource/blob/7950/9853097c8263ce9ccbc57cd6c2a63b1a/corporate-social-responsibility-report-csr-data.pdf",
+            "title": "2025 CSR Report - Sonepar",
+            "snippet": "Apr 28, 2026 ... This new step, which we will present to our suppliers at the Strategic Supplier. Summit in Paris in October 2026, will enable our associates to ...",
+            "search_query": "Find companies that could sponsor a robotics hackathon with CSR evidence, previous sponsorships, contact information, and relevance.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.keysight.com/us/en/home.html",
+            "title": "Keysight: Design, Emulate, and Test to Accelerate Innovation",
+            "snippet": "for Complex Engineering Challenges. From AI and 6G to automotive, quantum, and beyond, Keysight helps innovators design, emulate, and test with ...",
+            "search_query": "Find companies that could sponsor a robotics hackathon with CSR evidence, previous sponsorships, contact information, and relevance.",
+            "provider": "searxng",
+            "engine": "google cse"
+          }
+        ],
+        "source_relevance": [
+          {
+            "candidate_index": 0,
+            "url": "https://aiforgood.itu.int/summit26/programme/",
+            "decision": "REJECT",
+            "relevance_score": 0.0,
+            "source_type": "web",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "The first candidate does not contain any of the required fields (name, contact_info, previous_sponsorships, CSR_evidence).",
+            "missing_information": [
+              "name",
+              "contact_info",
+              "previous_sponsorships",
+              "CSR_evidence"
+            ]
+          },
+          {
+            "candidate_index": 1,
+            "url": "https://www.linkedin.com/posts/rubendominguezibar_just-in-openai-pulls-sponsorship-of-a-caltech-activity-7504245249473527808-uG-D",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 2,
+            "url": "https://www.whitehouse.gov/releases/2025/09/major-organizations-commit-to-supporting-ai-education/",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 3,
+            "url": "https://careers.microsoft.com/v2/global/en/universityinternship",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 4,
+            "url": "https://www.sonepar.com/resource/blob/7950/9853097c8263ce9ccbc57cd6c2a63b1a/corporate-social-responsibility-report-csr-data.pdf",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 5,
+            "url": "https://www.keysight.com/us/en/home.html",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          }
+        ],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.08,
+        "scrapling_retrieval_ms": 0.08,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 10034.71
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.03,
+        "validation_latency_ms": 0.02,
+        "scrapling_latency_ms": 0.08,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.13,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.01,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.08,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.09,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find AI startups in Bengaluru founded after 2020 with funding in the last 18 months and at least one founder.",
+      "captured": {
+        "index": 7,
+        "query": "Find AI startups in Bengaluru founded after 2020 with funding in the last 18 months and at least one founder.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "startup",
+          "business_goal": "Funding",
+          "fields": [
+            {
+              "name": "name",
+              "field_type": "string",
+              "description": "The name of the startup.",
+              "required": true
+            },
+            {
+              "name": "city",
+              "field_type": "string",
+              "description": "The city where the startup is based.",
+              "required": true
+            },
+            {
+              "name": "founded_after",
+              "field_type": "date",
+              "description": "The date the startup was founded after 2020.",
+              "required": true
+            },
+            {
+              "name": "funding_in_last_18_months",
+              "field_type": "boolean",
+              "description": "Whether the startup has received funding in the last 18 months.",
+              "required": true
+            },
+            {
+              "name": "founder",
+              "field_type": "boolean",
+              "description": "Whether the startup has at least one founder.",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 0,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 1,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [
+          {
+            "url": "https://growthlist.co/bangalore-startups/",
+            "title": "505+ Funded Bangalore Startups 2026 - Growth List",
+            "snippet": "Aug 29, 2023 ... Karnataka advances AI leadership through CoEs like ARTPARK at IISc, backed by $19.9 million from the Ministry of Electronics & IT. Bangalore ...",
+            "search_query": "Find AI startups in Bengaluru founded after 2020 with funding in the last 18 months and at least one founder.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://in.linkedin.com/in/chiragjoshi-drivendifferently",
+            "title": "Chirag Joshi - Crafting - AI for SMEs | Prev: 3x Founding Team",
+            "snippet": "... one but 4 potential billion dollar companies. An Epic experience. Participant. SV.CO. Oct 2017 - Apr 2019 1 year 7 months. Bangalore. Young entrepreneurs ...",
+            "search_query": "Find AI startups in Bengaluru founded after 2020 with funding in the last 18 months and at least one founder.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.ycombinator.com/companies/location/india",
+            "title": "Y Combinator Startups in India 2026",
+            "snippet": "The founders learned this problem at Emergent (YC S24), where they built and operated production coding agents used by 5M+ users. Abhinav was hire #1 and helped ...",
+            "search_query": "Find AI startups in Bengaluru founded after 2020 with funding in the last 18 months and at least one founder.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://in.linkedin.com/in/nivedanrathi",
+            "title": "Nivedan Rathi - Founder @Future & AI | 750k Subscribers - LinkedIn",
+            "snippet": "• Built a vision AI product & raised funds for it in 2017-18 • Hosted dozens ... Feb 2019 - Sep 2020 1 year 8 months. Bengaluru, Karnataka, India. Led ...",
+            "search_query": "Find AI startups in Bengaluru founded after 2020 with funding in the last 18 months and at least one founder.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.instagram.com/p/DGNgRHlztLo/",
+            "title": "ZenStatement, a Bengaluru-based startup, is revolutionising finance ...",
+            "snippet": "Feb 18, 2025 ... ZenStatement, a Bengaluru-based startup, is revolutionising finance operations with its AI-powered cash flow management and financial ...",
+            "search_query": "Find AI startups in Bengaluru founded after 2020 with funding in the last 18 months and at least one founder.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.facebook.com/nkpr.agency/posts/as-recently-featured-in-the-national-post-and-a-host-of-other-top-tier-media-pub/5426770624014768/",
+            "title": "As recently featured in the National Post and a host of other top-tier ...",
+            "snippet": "Nov 9, 2020 ... ... one of the most disruptive moments in recent American history , the global commerce leader announced the landmark acquisition of ...",
+            "search_query": "Find AI startups in Bengaluru founded after 2020 with funding in the last 18 months and at least one founder.",
+            "provider": "searxng",
+            "engine": "google cse"
+          }
+        ],
+        "source_relevance": [
+          {
+            "candidate_index": 0,
+            "url": "https://growthlist.co/bangalore-startups/",
+            "decision": "REJECT",
+            "relevance_score": 0.0,
+            "source_type": "web",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "The search results do not contain the required fields for the business requirement, specifically 'founded_after', 'funding_in_last_18_months', and 'founder'.",
+            "missing_information": [
+              "founded_after",
+              "funding_in_last_18_months",
+              "founder"
+            ]
+          },
+          {
+            "candidate_index": 1,
+            "url": "https://in.linkedin.com/in/chiragjoshi-drivendifferently",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 2,
+            "url": "https://www.ycombinator.com/companies/location/india",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 3,
+            "url": "https://in.linkedin.com/in/nivedanrathi",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 4,
+            "url": "https://www.instagram.com/p/DGNgRHlztLo/",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 5,
+            "url": "https://www.facebook.com/nkpr.agency/posts/as-recently-featured-in-the-national-post-and-a-host-of-other-top-tier-media-pub/5426770624014768/",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          }
+        ],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.09,
+        "scrapling_retrieval_ms": 0.09,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 10014.24
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.04,
+        "validation_latency_ms": 0.03,
+        "scrapling_latency_ms": 0.09,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.16,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.02,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.09,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.11,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find hotels in Chennai with room prices, amenities, address, and current booking availability.",
+      "captured": {
+        "index": 8,
+        "query": "Find hotels in Chennai with room prices, amenities, address, and current booking availability.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "hotels",
+          "business_goal": "Find hotels in Chennai with room prices, amenities, address, and current booking availability.",
+          "fields": [
+            {
+              "name": "name",
+              "field_type": "string",
+              "description": "Hotel name",
+              "required": true
+            },
+            {
+              "name": "address",
+              "field_type": "string",
+              "description": "Hotel address",
+              "required": true
+            },
+            {
+              "name": "room_price",
+              "field_type": "float",
+              "description": "Room price",
+              "required": true
+            },
+            {
+              "name": "amenities",
+              "field_type": "string",
+              "description": "List of amenities",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 10,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 3,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [
+            "hotels.com",
+            "booking.com",
+            "travelocity.com"
+          ],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [
+          {
+            "url": "https://www.makemytrip.com/hotels/chennai-hotels.html",
+            "title": "Hotels in Chennai Book with FREE Cancellation - MakeMyTrip",
+            "snippet": "Choose from 1338 hotels in Chennai on MakeMyTrip.com. Our Chennai hotels offer Free Cancellation and Pay at Hotel options. You can also save more on your ...",
+            "search_query": "Find hotels in Chennai with room prices, amenities, address, and current booking availability.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.kayak.co.in/Chennai-Hotels.13827.hotel.ksp",
+            "title": "Chennai Hotels from ₹ 958/night | Compare Best Hotels in Chennai",
+            "snippet": "Compare the prices of 3219 hotels in Chennai. Find the best deals from your favourite hotel booking sites all in one place. 2-star hotels from ₹ 958, ...",
+            "search_query": "Find hotels in Chennai with room prices, amenities, address, and current booking availability.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.agoda.com/city/chennai-in.html",
+            "title": "11 Best Hotels in Chennai, India - Agoda.com",
+            "snippet": "Hotels like The Leela Palace Chennai offer luxurious beachfront experiences, featuring elegant rooms with sea views, private balconies, and top-notch amenities.",
+            "search_query": "Find hotels in Chennai with room prices, amenities, address, and current booking availability.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.booking.com/budget/city/in/chennai.html",
+            "title": "The 10 best cheap hotels in Chennai, India - Booking.com",
+            "snippet": "GSILVER HOTELS PERUMBAKKAM - Budget Classic Rooms Near Sholinganallur OMR is offering accommodations in Chennai. This 3-star hotel has air-conditioned rooms ...",
+            "search_query": "Find hotels in Chennai with room prices, amenities, address, and current booking availability.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.ihg.com/chennai-india",
+            "title": "Chennai Hotels | Top Hotels in Chennai, India by IHG",
+            "snippet": "With 3 in Chennai, IHG Hotels & Resorts has the perfect hotel for your upcoming trip to Chennai. Our hotels are dedicated to providing exceptional service and a ...",
+            "search_query": "Find hotels in Chennai with room prices, amenities, address, and current booking availability.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.tripadvisor.com/Hotel_Review-g304556-d13576414-Reviews-Floressa_Randa-Chennai_Madras_Chennai_District_Tamil_Nadu.html",
+            "title": "Floressa Randa - Chennai (Madras) Hotels - Tripadvisor",
+            "snippet": "I made the booking through MMT... Service is great. . staff here are very welcoming and patient. One of the the best accommodations in chennai . The ...",
+            "search_query": "Find hotels in Chennai with room prices, amenities, address, and current booking availability.",
+            "provider": "searxng",
+            "engine": "google cse"
+          }
+        ],
+        "source_relevance": [
+          {
+            "candidate_index": 0,
+            "url": "https://www.makemytrip.com/hotels/chennai-hotels.html",
+            "decision": "REJECT",
+            "relevance_score": 0.0,
+            "source_type": "searxng",
+            "entity_relevance": true,
+            "evidence_capability": [
+              "{'name': 'address', 'field_type': 'string', 'description': 'Hotel address', 'required': True}",
+              "{'name': 'room_price', 'field_type': 'float', 'description': 'Room price', 'required': True}",
+              "{'name': 'amenities', 'field_type': 'string', 'description': 'List of amenities', 'required': True}"
+            ],
+            "constraint_relevance": true,
+            "reason": "The searxng source does not contain all required fields (e.g., amenities, room price) and does not provide the specific information needed for the business requirement.",
+            "missing_information": [
+              "name",
+              "address",
+              "room_price",
+              "amenities"
+            ]
+          },
+          {
+            "candidate_index": 1,
+            "url": "https://www.kayak.co.in/Chennai-Hotels.13827.hotel.ksp",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 2,
+            "url": "https://www.agoda.com/city/chennai-in.html",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 3,
+            "url": "https://www.booking.com/budget/city/in/chennai.html",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 4,
+            "url": "https://www.ihg.com/chennai-india",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 5,
+            "url": "https://www.tripadvisor.com/Hotel_Review-g304556-d13576414-Reviews-Floressa_Randa-Chennai_Madras_Chennai_District_Tamil_Nadu.html",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          }
+        ],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.15,
+        "scrapling_retrieval_ms": 0.15,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 8133.06
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.06,
+        "validation_latency_ms": 0.05,
+        "scrapling_latency_ms": 0.15,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.26,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.02,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.15,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.17,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find Indian battery manufacturers with products, locations, certifications, and contact details.",
+      "captured": {
+        "index": 9,
+        "query": "Find Indian battery manufacturers with products, locations, certifications, and contact details.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "Battery Manufacturer",
+          "business_goal": "Identify and provide information on Indian battery manufacturers with products, locations, certifications, and contact details.",
+          "fields": [
+            {
+              "name": "Name",
+              "field_type": "string",
+              "description": "The name of the battery manufacturer.",
+              "required": true
+            },
+            {
+              "name": "Products",
+              "field_type": "string",
+              "description": "The types of batteries manufactured by the manufacturer.",
+              "required": true
+            },
+            {
+              "name": "Locations",
+              "field_type": "string",
+              "description": "The locations where the manufacturer operates.",
+              "required": true
+            },
+            {
+              "name": "Certifications",
+              "field_type": "string",
+              "description": "The certifications the manufacturer has obtained.",
+              "required": true
+            },
+            {
+              "name": "Contact Details",
+              "field_type": "string",
+              "description": "The contact details of the manufacturer, including phone number, email, and website.",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 0,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 1,
+            "prefer_official": true,
+            "require_date": true,
+            "required_evidence": true
+          },
+          "allowed_domains": [
+            "indianbatterymanufacturers.com"
+          ],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [
+          {
+            "url": "https://revenuebase.ai/companies/lithium-ion-battery-manufacturers/india",
+            "title": "Top 25 Lithium ion battery manufacturers based in India",
+            "snippet": "Sep 17, 2026 ... RevenueBase identified 250 lithium ion battery manufacturers headquartered in India as of September 2026 and tracks 7,842 professional contacts ...",
+            "search_query": "Find Indian battery manufacturers with products, locations, certifications, and contact details.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.nexussolarenergy.in/solar-guide/top-lithium-battery-manufacturers-in-india/",
+            "title": "Top 10 Lithium Battery Manufacturers in India - Nexus Solar Energy",
+            "snippet": "Sep 21, 2026 ... 1. Nexus Solar Energy. Nexus Solar Energy manufactures lithium battery packs and sells LiFePO4 and lithium titanate oxide products for solar ...",
+            "search_query": "Find Indian battery manufacturers with products, locations, certifications, and contact details.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.solaxpower.com/blogs/battery-manufacturers-in-india.html",
+            "title": "Top 5 Battery Manufacturers in India for Solar Storage - SolaX Power",
+            "snippet": "Sep 21, 2026 ... 5 Battery and Energy Storage Companies in India · 1. SolaX Power · 2. Amara Raja Energy & Mobility · 3. Waaree · 4. Luminous Power Technologies · 5.",
+            "search_query": "Find Indian battery manufacturers with products, locations, certifications, and contact details.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.eaplworld.com/top-10-battery-manufacturers-in-india",
+            "title": "Top 10 Battery Manufacturers in India | Eastman Group",
+            "snippet": "Sep 23, 2025 ... 2. Exide Industries Ltd. Exide remains one of the oldest battery companies in India, best known for automotive, inverter, and industrial ...",
+            "search_query": "Find Indian battery manufacturers with products, locations, certifications, and contact details.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://factorydeskai.com/top-battery-companies-in-india/",
+            "title": "Top 10 Battery Companies in India (2026 Edition) - FactoryDesk AI",
+            "snippet": "Jul 13, 2026 ... Lead-Acid Batteries: Old, inexpensive, commonly found in cars, inverts. · VRLA Batteries: Maintenance free, Sealed, Good for UPS and Telecom ...",
+            "search_query": "Find Indian battery manufacturers with products, locations, certifications, and contact details.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://www.shizenenergy.in/top-lithium-battery-manufacturers-in-india-for-oems-and-distributors/",
+            "title": "Top Lithium Battery Manufacturers in India for OEMs and Distributors",
+            "snippet": "Sep 14, 2025 ... 1. Shizen Energy India Private Limited · 2. Exide Industries Limited · 3. Amara Raja Batteries Ltd. · 4. Livguard Energy Technologies · 5. Okaya ...",
+            "search_query": "Find Indian battery manufacturers with products, locations, certifications, and contact details.",
+            "provider": "searxng",
+            "engine": "google cse"
+          }
+        ],
+        "source_relevance": [
+          {
+            "candidate_index": 0,
+            "url": "https://revenuebase.ai/companies/lithium-ion-battery-manufacturers/india",
+            "decision": "REJECT",
+            "relevance_score": 0.0,
+            "source_type": "web",
+            "entity_relevance": false,
+            "evidence_capability": [
+              "{'name': 'Products', 'field_type': 'string', 'description': 'The types of batteries manufactured by the manufacturer.', 'required': True}",
+              "{'name': 'Locations', 'field_type': 'string', 'description': 'The locations where the manufacturer operates.', 'required': True}",
+              "{'name': 'Certifications', 'field_type': 'string', 'description': 'The certifications the manufacturer has obtained.', 'required': True}",
+              "{'name': 'Contact Details', 'field_type': 'string', 'description': 'The contact details of the manufacturer, including phone number, email, and website.', 'required': True}"
+            ],
+            "constraint_relevance": false,
+            "reason": "The provided search results do not contain all the required fields for the business requirement, specifically the contact details.",
+            "missing_information": [
+              "Contact Details"
+            ]
+          },
+          {
+            "candidate_index": 1,
+            "url": "https://www.nexussolarenergy.in/solar-guide/top-lithium-battery-manufacturers-in-india/",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 2,
+            "url": "https://www.solaxpower.com/blogs/battery-manufacturers-in-india.html",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 3,
+            "url": "https://www.eaplworld.com/top-10-battery-manufacturers-in-india",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 4,
+            "url": "https://factorydeskai.com/top-battery-companies-in-india/",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 5,
+            "url": "https://www.shizenenergy.in/top-lithium-battery-manufacturers-in-india-for-oems-and-distributors/",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          }
+        ],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.14,
+        "scrapling_retrieval_ms": 0.14,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 10173.94
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.07,
+        "validation_latency_ms": 0.05,
+        "scrapling_latency_ms": 0.14,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.26,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.04,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.14,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.18,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    },
+    {
+      "query": "Find current backend engineering jobs where role details are on company career pages, including title, location, seniority, and application URL.",
+      "captured": {
+        "index": 10,
+        "query": "Find current backend engineering jobs where role details are on company career pages, including title, location, seniority, and application URL.",
+        "errors": [],
+        "data_contract": {
+          "entity_type": "job",
+          "business_goal": "Find current backend engineering jobs",
+          "fields": [
+            {
+              "name": "title",
+              "field_type": "string",
+              "description": "The title of the job",
+              "required": true
+            },
+            {
+              "name": "location",
+              "field_type": "string",
+              "description": "The location of the job",
+              "required": true
+            },
+            {
+              "name": "seniority",
+              "field_type": "string",
+              "description": "The seniority level of the job",
+              "required": true
+            },
+            {
+              "name": "application_url",
+              "field_type": "string",
+              "description": "The URL where the application can be submitted",
+              "required": true
+            }
+          ],
+          "constraints": [],
+          "relationships": [],
+          "target_count": 0,
+          "freshness_days": null,
+          "evidence_policy": {
+            "min_sources": 0,
+            "prefer_official": false,
+            "require_date": false,
+            "required_evidence": false
+          },
+          "allowed_domains": [],
+          "_model_config": {
+            "provider": "local",
+            "model": "qwen2.5:1.5b",
+            "allow_external": false
+          }
+        },
+        "candidate_sources": [
+          {
+            "url": "https://wfh.team/jobs/category/software-engineering",
+            "title": "Remote Software Engineering Jobs - WFH.team",
+            "snippet": "Related titles include Software Engineer, Backend Engineer, Frontend Engineer ... Rank current roles by skills, seniority, salary, timezone, and location ...",
+            "search_query": "Find current backend engineering jobs where role details are on company career pages, including title, location, seniority, and application URL.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "http://job-boards.greenhouse.io/xai/jobs/5120536007",
+            "title": "Job Application for Backend Engineer - API at SpaceXAI - Greenhouse",
+            "snippet": "Most of our backend infrastructure is written in Rust. So familiarity with a compiled language such as C++, Rust, or Go is highly beneficial. RESPONSIBILITIES:.",
+            "search_query": "Find current backend engineering jobs where role details are on company career pages, including title, location, seniority, and application URL.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://hidden-jobs.com/roles/engineering/",
+            "title": "Engineering Jobs | Remote, Hybrid & Onsite - Hidden Jobs",
+            "snippet": "Engineering titles span many disciplines. Use keyword search to separate backend, frontend, platform, infrastructure, data, AI, security, and adjacent ...",
+            "search_query": "Find current backend engineering jobs where role details are on company career pages, including title, location, seniority, and application URL.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://jobs.nvidia.com/careers/job/893397444130?search=backend+engineer",
+            "title": "Senior NPI Program Manager | NVIDIA Corporation",
+            "snippet": "Assist in delivering advanced AI accelerators across various industries in collaboration with Operations Program Managers. Planning, coordinating ...",
+            "search_query": "Find current backend engineering jobs where role details are on company career pages, including title, location, seniority, and application URL.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://underdog.io/blog/best-job-boards-for-engineers",
+            "title": "The 12 Best Job Boards for Engineers in 2025: A Practical Guide",
+            "snippet": "Dec 22, 2025 ... Salary Transparency: Search and compare salary data for specific engineering roles at thousands of companies, helping you negotiate with ...",
+            "search_query": "Find current backend engineering jobs where role details are on company career pages, including title, location, seniority, and application URL.",
+            "provider": "searxng",
+            "engine": "google cse"
+          },
+          {
+            "url": "https://footbridgefederal.com/careers/current-openings",
+            "title": "Current Openings | Footbridge Federal Careers",
+            "snippet": "Footbridge is seeking an expert-level backend engineer to design and build production-grade Java services supporting data-driven web applications. ServiceNow ...",
+            "search_query": "Find current backend engineering jobs where role details are on company career pages, including title, location, seniority, and application URL.",
+            "provider": "searxng",
+            "engine": "google cse"
+          }
+        ],
+        "source_relevance": [
+          {
+            "candidate_index": 0,
+            "url": "https://wfh.team/jobs/category/software-engineering",
+            "decision": "REJECT",
+            "relevance_score": 0.0,
+            "source_type": "searxng",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "The source does not contain any fields that match the required fields for the business requirement.",
+            "missing_information": [
+              "title",
+              "location",
+              "seniority",
+              "application_url"
+            ]
+          },
+          {
+            "candidate_index": 1,
+            "url": "http://job-boards.greenhouse.io/xai/jobs/5120536007",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 2,
+            "url": "https://hidden-jobs.com/roles/engineering/",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 3,
+            "url": "https://jobs.nvidia.com/careers/job/893397444130?search=backend+engineer",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 4,
+            "url": "https://underdog.io/blog/best-job-boards-for-engineers",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          },
+          {
+            "candidate_index": 5,
+            "url": "https://footbridgefederal.com/careers/current-openings",
+            "decision": "UNCERTAIN",
+            "relevance_score": 0.0,
+            "source_type": "unknown",
+            "entity_relevance": false,
+            "evidence_capability": [],
+            "constraint_relevance": false,
+            "reason": "Insufficient source metadata for a confident decision",
+            "missing_information": []
+          }
+        ],
+        "relevant_sources": [],
+        "scrapling_stage_ms": 0.1,
+        "scrapling_retrieval_ms": 0.1,
+        "chunking_tfidf_ms": 0,
+        "search_results": [],
+        "retrieved_sources": [],
+        "retrieved_source_content": [],
+        "chunks_generated": 0,
+        "retrieved_chunks": [],
+        "scrapling_records": [],
+        "capture_latency_ms": 7124.71
+      },
+      "baseline": {
+        "enabled": false,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.04,
+        "validation_latency_ms": 0.04,
+        "scrapling_latency_ms": 0.1,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.18,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "laya": {
+        "enabled": true,
+        "chunks_to_tfidf": 0,
+        "chunks_entering_laya": 0,
+        "chunks_to_extraction": 0,
+        "laya_metrics": {
+          "chunks_before": 0,
+          "chunks_after": 0,
+          "chunks_filtered": 0,
+          "latency_ms": 0.0,
+          "fallback_occurrences": 0
+        },
+        "laya_scores": {},
+        "llm_calls": 0,
+        "llm_input_tokens": {
+          "actual": null,
+          "estimated": 0,
+          "basis": "input_characters_divided_by_4"
+        },
+        "llm_call_details": [],
+        "extraction_latency_ms": 0.02,
+        "validation_latency_ms": 0.0,
+        "scrapling_latency_ms": 0.1,
+        "tfidf_latency_ms": 0,
+        "total_replay_latency_ms": 0.12,
+        "extraction_error": null,
+        "extracted_records": [],
+        "validated_records": [],
+        "status_counts": {},
+        "records_extracted": 0,
+        "records_verified": 0,
+        "records_needs_review": 0,
+        "records_draft": 0,
+        "required_fields_grounded": 0,
+        "hard_constraints_satisfied": 0,
+        "validation_failures": 0
+      },
+      "comparison": {
+        "records": [],
+        "baseline_evidence_units": 0,
+        "retained_baseline_evidence_units": 0,
+        "evidence_recall_baseline_proxy": null,
+        "evidence_recall_label": "baseline verified-record evidence proxy; ground truth unavailable",
+        "lost_evidence_units": [],
+        "records_lost_by_laya": 0,
+        "records_lost_or_changed": 0
+      }
+    }
+  ],
+  "regression_tests": "66 intelligence tests + 5 Scrapling tests passed; bash -n and py_compile passed"
+}

@@ -4,6 +4,11 @@ import os
 import re
 import time
 
+try:
+    from asyncio import timeout as async_timeout
+except ImportError:
+    from async_timeout import timeout as async_timeout
+
 import httpx
 
 from llm import provider_config
@@ -43,7 +48,7 @@ class ProviderCatalog:
                       "available": False, "reason": None, "models": []}
             try:
                 config = provider_config(name, self.env)
-                async with asyncio.timeout(8):
+                async with async_timeout(8):
                     async with self.client_factory(timeout=6, follow_redirects=False) as client:
                         if name == "local":
                             response = await client.get(config.base_url.removesuffix("/v1") + "/api/tags")

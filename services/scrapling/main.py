@@ -1,145 +1,56 @@
-"""
-Scrapling Service — Adaptive Extraction & Link Verification
-============================================================
+"""Datavault's Scrapling retrieval service.
 
-Standalone microservice for:
-- JSON-LD structured data extraction (schema.org: JobPosting, Product, Hotel, Organization, etc.)
-- DOM selector-based extraction with fallback strategies
-- Concurrent HTTP verification with 404/410/5xx purging
-- Text chunking for RAG retrieval
-
-API:
-  POST /extract        - Extract structured data from URLs
-  POST /verify         - Verify URL reachability (batch)
-  POST /chunk          - Chunk extracted content for RAG
-  GET  /health         - Health check
+This service deliberately delegates page retrieval and parsing to the real
+D4Vinci/Scrapling project.  It does not decide source relevance and it does
+not verify extracted records; those responsibilities remain in the
+intelligence graph and grounding pipeline.
 """
 
 import asyncio
 import hashlib
+import ipaddress
 import json
 import logging
 import re
 import socket
-import ipaddress
-from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from typing import Any, Optional
-from urllib.parse import urljoin, urlsplit
-from uuid import uuid4
+from urllib.parse import urlsplit
 
-import httpx
-from bs4 import BeautifulSoup
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel, Field, HttpUrl
-from extruct import extract as extruct_extract
-from w3lib.html import get_base_url
-
-try:
-    from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
-except ImportError:  # Browser support remains optional for lightweight local installs.
-    async_playwright = None
-    PlaywrightTimeoutError = TimeoutError
+from scrapling.fetchers import AsyncFetcher, DynamicFetcher, StealthyFetcher
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("scrapling")
 
 SCRAPLING_PORT = 8001
 MAX_BYTES = 1_000_000
-CONCURRENCY_LIMIT = 10
+MAX_CONTENT_CHARS = 50_000
+CONCURRENCY_LIMIT = 8
+DYNAMIC_CONCURRENCY_LIMIT = 2
 REQUEST_TIMEOUT = 10.0
 VERIFY_TIMEOUT = 5.0
-
-SCHEMA_TYPES = {
-    "JobPosting": ["title", "hiringOrganization", "jobLocation", "baseSalary", "employmentType", "datePosted", "validThrough", "description", "identifier", "url"],
-    "Product": ["name", "brand", "offers", "description", "sku", "gtin", "aggregateRating", "review", "url"],
-    "Hotel": ["name", "brand", "address", "geo", "starRating", "description", "amenityFeature", "checkInTime", "checkOutTime", "url"],
-    "Organization": ["name", "url", "logo", "address", "contactPoint", "sameAs", "foundingDate", "description"],
-    "LocalBusiness": ["name", "address", "geo", "telephone", "openingHours", "priceRange", "currenciesAccepted", "paymentAccepted", "url"],
-    "Event": ["name", "startDate", "endDate", "location", "description", "organizer", "performer", "offers", "url"],
-    "Article": ["headline", "author", "datePublished", "dateModified", "publisher", "description", "articleBody", "url"],
-    "Person": ["name", "jobTitle", "worksFor", "affiliation", "email", "telephone", "url", "sameAs"],
-}
-
-SELECTOR_PRESETS = {
-    "job": {
-        "title": ["h1.job-title", "h1.title", "[data-testid=job-title]", ".job-header h1", "h1"],
-        "company": [".company-name", "[data-testid=company-name]", ".employer-name", ".company a"],
-        "location": [".job-location", "[data-testid=location]", ".location", "[itemprop=jobLocation]"],
-        "salary": [".salary", "[data-testid=salary]", ".compensation", "[itemprop=baseSalary]"],
-        "description": [".job-description", "[data-testid=description]", ".description", "[itemprop=description]"],
-        "type": [".employment-type", "[data-testid=job-type]", ".job-type", "[itemprop=employmentType]"],
-    },
-    "product": {
-        "title": ["h1.product-title", "h1.title", "[data-testid=product-title]", ".product-name h1"],
-        "price": [".price", "[data-testid=price]", ".product-price", "[itemprop=price]"],
-        "description": [".product-description", "[data-testid=description]", ".description", "[itemprop=description]"],
-        "brand": [".brand", "[data-testid=brand]", ".product-brand", "[itemprop=brand]"],
-        "rating": [".rating", "[data-testid=rating]", "[itemprop=aggregateRating]"],
-    },
-    "hotel": {
-        "name": ["h1.hotel-name", "h1.title", "[data-testid=hotel-name]", ".hotel-header h1"],
-        "address": [".address", "[data-testid=address]", "[itemprop=address]"],
-        "rating": [".star-rating", "[data-testid=rating]", "[itemprop=starRating]"],
-        "description": [".hotel-description", "[data-testid=description]", ".description", "[itemprop=description]"],
-        "amenities": [".amenities", "[data-testid=amenities]", ".facilities", "[itemprop=amenityFeature]"],
-    },
-    "company": {
-        "name": ["h1.company-name", "h1.title", "[data-testid=company-name]", ".org-name"],
-        "description": [".company-description", "[data-testid=description]", ".about-us", "[itemprop=description]"],
-        "location": [".hq-location", "[data-testid=location]", ".headquarters", "[itemprop=address]"],
-        "website": [".website a", "[data-testid=website]", "[itemprop=url]"],
-        "size": [".company-size", "[data-testid=size]", "[itemprop=numberOfEmployees]"],
-    },
-    "generic": {
-        "title": ["h1", "title", "[itemprop=name]", "[itemprop=headline]"],
-        "description": ["[itemprop=description]", ".description", ".content", "main", "article"],
-        "url": ["[itemprop=url]", "link[rel=canonical]"],
-    },
-}
-
-
-@dataclass
-class ExtractedField:
-    name: str
-    value: Any
-    source: str
-    selector: Optional[str] = None
-    confidence: float = 0.0
-
-
-@dataclass
-class ExtractionResult:
-    url: str
-    final_url: str
-    schema_type: Optional[str]
-    schema_data: dict
-    selector_data: dict
-    text_content: str
-    text_hash: str
-    http_status: int
-    reachability: float
-    fetched_at: str
-    content_type: str
-    extraction_method: str
 
 
 class ExtractRequest(BaseModel):
     urls: list[HttpUrl] = Field(..., min_length=1, max_length=50)
+    # Kept for API compatibility. Structured data is preserved without a
+    # domain-specific schema allowlist; the graph filters fields by DataContract.
     schema_types: Optional[list[str]] = None
     selector_preset: Optional[str] = None
     custom_selectors: Optional[dict[str, list[str]]] = None
     follow_redirects: bool = True
-    max_redirects: int = 5
+    max_redirects: int = Field(5, ge=0, le=10)
     verify_ssl: bool = True
     render_js: bool = True
-    render_wait_ms: int = Field(800, ge=0, le=5000)
+    render_wait_ms: int = Field(800, ge=0, le=5_000)
 
 
 class VerifyRequest(BaseModel):
     urls: list[HttpUrl] = Field(..., min_length=1, max_length=100)
     allow_root_fallback: bool = True
-    max_redirects: int = 4
+    max_redirects: int = Field(4, ge=0, le=10)
 
 
 class ChunkRequest(BaseModel):
@@ -168,10 +79,11 @@ class ChunkResponse(BaseModel):
     total: int
 
 
-app = FastAPI(title="Scrapling Service", version="1.0.0")
+app = FastAPI(title="Scrapling Service", version="2.0.0")
 
 
 async def public_url(url: str) -> bool:
+    """Reuse the service's existing public-address SSRF protection."""
     try:
         parsed = urlsplit(url)
         if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username:
@@ -182,264 +94,340 @@ async def public_url(url: str) -> bool:
             parsed.port or (443 if parsed.scheme == "https" else 80),
             type=socket.SOCK_STREAM,
         )
-        return bool(addresses) and all(ipaddress.ip_address(a[4][0]).is_global for a in addresses)
+        return bool(addresses) and all(ipaddress.ip_address(item[4][0]).is_global for item in addresses)
     except (ValueError, OSError):
         return False
 
 
-def build_client(verify_ssl: bool, timeout: float) -> httpx.AsyncClient:
-    return httpx.AsyncClient(
-        timeout=httpx.Timeout(timeout),
-        follow_redirects=False,
-        verify=verify_ssl,
-        headers={"User-Agent": "Mozilla/5.0 (compatible; Scrapling/1.0)"},
-        limits=httpx.Limits(max_connections=CONCURRENCY_LIMIT, max_keepalive_connections=5),
-    )
+def _error_code(error: BaseException) -> str:
+    message = str(error).lower()
+    if isinstance(error, (asyncio.TimeoutError, TimeoutError)) or "timeout" in message:
+        return "timeout"
+    if "ssl" in message or "certificate" in message:
+        return "tls_error"
+    if "redirect" in message:
+        return "redirect_error"
+    if "connection" in message or "network" in message or "dns" in message:
+        return "connection_error"
+    return "retrieval_error"
 
 
-def _page_text(html: str) -> tuple[BeautifulSoup, str]:
-    soup = BeautifulSoup(html, "html.parser")
-    for tag in soup.select("script:not([type='application/ld+json']), style, nav, footer, header, noscript, form"):
-        tag.decompose()
-    text = " ".join(soup.get_text(" ", strip=True).split())[:50000]
-    return soup, text
+def _failed(url: str, error: str, code: str, status_code: Optional[int] = None) -> dict:
+    result = {
+        "url": url,
+        "original_url": url,
+        "source_url": url,
+        "status": "failed",
+        "success": False,
+        "error": error[:500],
+        "error_code": code,
+    }
+    if status_code is not None:
+        result["http_status"] = status_code
+    return result
 
 
-def _usable_text(text: str) -> bool:
-    return len(text) >= 40 and not re.search(
-        r"(?:access denied|verify you are human|captcha|page not found)", text[:250], re.I
-    )
+def _clean_text(value: Any) -> str:
+    return re.sub(r"\s+", " ", str(value or "")).strip()
 
 
-async def render_page(url: str, verify_ssl: bool, original_url: str, redirects: int,
-                      root_fallback: bool, wait_ms: int) -> Optional[dict]:
-    """Render only when static retrieval produced no usable page content."""
-    if async_playwright is None:
-        logger.info("Browser fallback unavailable for %s; Playwright is not installed", url)
-        return None
-    if not await public_url(url):
-        return None
+def _element_value(element: Any) -> Any:
+    """Read a Scrapling selector without assuming a page schema."""
+    if hasattr(element, "attrib"):
+        attributes = element.attrib
+        for key in ("content", "datetime", "href", "src", "value"):
+            value = attributes.get(key)
+            if value:
+                return _clean_text(value)
+    if hasattr(element, "get_all_text"):
+        value = _clean_text(element.get_all_text(separator=" ", strip=True))
+        if value:
+            return value
+    return _clean_text(element)
+
+
+def _json_ld(page: Any) -> list[dict]:
+    values = []
     try:
-        async with async_playwright() as playwright:
-            browser = await playwright.chromium.launch(headless=True)
-            try:
-                context = await browser.new_context(ignore_https_errors=not verify_ssl)
-                page = await context.new_page()
-                response = await page.goto(url, wait_until="domcontentloaded", timeout=int(REQUEST_TIMEOUT * 1000))
-                if response is not None and response.status != 200:
-                    logger.info("Browser retrieval returned HTTP %s for %s", response.status, url)
-                    return None
-                if wait_ms:
-                    await page.wait_for_timeout(wait_ms)
-                try:
-                    await page.wait_for_load_state("networkidle", timeout=3000)
-                except PlaywrightTimeoutError:
-                    pass
-                final_url = page.url
-                if not await public_url(final_url):
-                    return None
-                html = await page.content()
-                if len(html.encode("utf-8")) > MAX_BYTES:
-                    return None
-                soup, text = _page_text(html)
-                if not _usable_text(text):
-                    return None
-                return {
-                    "url": final_url,
-                    "original_url": original_url,
-                    "title": soup.title.get_text(" ", strip=True) if soup.title else urlsplit(final_url).netloc,
-                    "html": html,
-                    "soup": soup,
-                    "text": text,
-                    "text_hash": hashlib.sha256(text.encode()).hexdigest(),
-                    "http_status": response.status if response else 200,
-                    "redirect_count": redirects,
-                    "root_fallback": root_fallback,
-                    "reachability": 0.7 if (redirects or root_fallback) else 1.0,
-                    "fetched_at": datetime.now(timezone.utc).isoformat(),
-                    "content_type": "text/html; rendered",
-                    "rendered": True,
-                }
-            finally:
-                await browser.close()
-    except (PlaywrightTimeoutError, ValueError, UnicodeError, asyncio.TimeoutError) as exc:
-        logger.warning("Browser rendering failed for %s: %s", url, exc)
-        return None
-
-
-async def fetch_with_verification(
-    client: httpx.AsyncClient,
-    url: str,
-    allow_root_fallback: bool,
-    max_redirects: int,
-    render_js: bool = False,
-    render_wait_ms: int = 800,
-    verify_ssl: bool = True,
-) -> Optional[dict]:
-    original_url = url
-    used_root = False
-    redirects = 0
-
-    for _ in range(max_redirects + 2):
-        if not await public_url(url):
-            return None
+        scripts = page.css("script[type='application/ld+json']::text").getall()
+    except Exception:
+        scripts = []
+    for raw in scripts:
         try:
-            async with client.stream("GET", url, timeout=VERIFY_TIMEOUT) as response:
-                status = response.status_code
-                if status in {301, 302, 303, 307, 308}:
-                    location = response.headers.get("location")
-                    if not location or redirects >= max_redirects:
-                        return None
-                    url = urljoin(url, location)
-                    redirects += 1
-                    continue
-                if status in {403, 404} and not used_root and allow_root_fallback:
-                    parsed = urlsplit(url)
-                    root = f"{parsed.scheme}://{parsed.netloc}/"
-                    if root == url:
-                        return None
-                    url, used_root = root, True
-                    continue
-                if status != 200:
-                    return None
-                content_type = response.headers.get("content-type", "").lower()
-                if not any(t in content_type for t in ("text/html", "text/plain", "application/xhtml", "application/json")):
-                    return None
-                body = bytearray()
-                async for block in response.aiter_bytes():
-                    body.extend(block)
-                    if len(body) > MAX_BYTES:
-                        return None
-                html = body.decode(response.encoding or "utf-8", errors="replace")
-                soup, text = _page_text(html)
-                if not _usable_text(text):
-                    if render_js:
-                        return await render_page(url, verify_ssl, original_url, redirects, used_root, render_wait_ms)
-                    return None
-                title = soup.title.get_text(" ", strip=True) if soup.title else urlsplit(url).netloc
-                return {
-                    "url": url,
-                    "original_url": original_url,
-                    "title": title,
-                    "html": html,
-                    "soup": soup,
-                    "text": text,
-                    "text_hash": hashlib.sha256(text.encode()).hexdigest(),
-                    "http_status": status,
-                    "redirect_count": redirects,
-                    "root_fallback": used_root,
-                    "reachability": 0.7 if (redirects or used_root) else 1.0,
-                    "fetched_at": datetime.now(timezone.utc).isoformat(),
-                    "content_type": content_type,
-                    "rendered": False,
-                }
-        except (httpx.HTTPError, ValueError, UnicodeError, asyncio.TimeoutError):
-            return None
-    return None
-
-
-def extract_json_ld(soup: BeautifulSoup, target_types: Optional[list[str]] = None) -> list[dict]:
-    results = []
-    for script in soup.select("script[type='application/ld+json']"):
-        try:
-            data = json.loads(script.string or "{}")
-            items = data if isinstance(data, list) else [data]
-            for item in items:
-                if not isinstance(item, dict):
-                    continue
-                schema_type = item.get("@type")
-                types = schema_type if isinstance(schema_type, list) else [schema_type] if schema_type else []
-                if target_types and not any(t in target_types for t in types):
-                    continue
-                results.append(item)
-        except (json.JSONDecodeError, TypeError):
+            parsed = json.loads(str(raw).strip())
+        except (TypeError, json.JSONDecodeError):
             continue
-    return results
+        items = parsed if isinstance(parsed, list) else [parsed]
+        values.extend(item for item in items if isinstance(item, dict))
+    return values
 
 
-def extract_microdata(soup: BeautifulSoup) -> list[dict]:
+def _microdata(page: Any) -> list[dict]:
+    """Preserve generic microdata using Scrapling selectors."""
     results = []
-    for item in soup.select("[itemscope][itemtype]"):
-        item_type = item.get("itemtype", "")
-        props = {}
-        for prop in item.select("[itemprop]"):
-            name = prop.get("itemprop")
-            value = prop.get("content") or prop.get("datetime") or prop.get("href") or prop.get_text(" ", strip=True)
-            if name and value:
-                if name in props:
-                    if not isinstance(props[name], list):
-                        props[name] = [props[name]]
-                    props[name].append(value)
-                else:
-                    props[name] = value
+    try:
+        items = page.css("[itemscope][itemtype]")
+    except Exception:
+        return results
+    for item in items:
+        item_type = item.attrib.get("itemtype", "") if hasattr(item, "attrib") else ""
+        props: dict[str, Any] = {}
+        try:
+            elements = item.css("[itemprop]")
+        except Exception:
+            elements = []
+        for element in elements:
+            name = element.attrib.get("itemprop") if hasattr(element, "attrib") else None
+            value = _element_value(element)
+            if not name or not value:
+                continue
+            if name in props:
+                props[name] = props[name] if isinstance(props[name], list) else [props[name]]
+                props[name].append(value)
+            else:
+                props[name] = value
         if props:
-            props["@type"] = item_type.split("/")[-1] if item_type else "Thing"
+            props["@type"] = item_type.rsplit("/", 1)[-1] if item_type else "Thing"
             results.append(props)
     return results
 
 
-def extract_rdfa(soup: BeautifulSoup) -> list[dict]:
+def _rdfa(page: Any) -> list[dict]:
+    """Preserve generic RDFa using Scrapling selectors."""
     results = []
-    for item in soup.select("[typeof]"):
-        props = {}
-        for prop in item.select("[property]"):
-            name = prop.get("property")
-            value = prop.get("content") or prop.get("datetime") or prop.get("href") or prop.get_text(" ", strip=True)
-            if name and value:
-                if name in props:
-                    if not isinstance(props[name], list):
-                        props[name] = [props[name]]
-                    props[name].append(value)
-                else:
-                    props[name] = value
+    try:
+        items = page.css("[typeof]")
+    except Exception:
+        return results
+    for item in items:
+        item_type = item.attrib.get("typeof", "") if hasattr(item, "attrib") else "Thing"
+        props: dict[str, Any] = {}
+        try:
+            elements = item.css("[property]")
+        except Exception:
+            elements = []
+        for element in elements:
+            name = element.attrib.get("property") if hasattr(element, "attrib") else None
+            value = _element_value(element)
+            if not name or not value:
+                continue
+            if name in props:
+                props[name] = props[name] if isinstance(props[name], list) else [props[name]]
+                props[name].append(value)
+            else:
+                props[name] = value
         if props:
-            props["@type"] = item.get("typeof", "").split(":")[-1] if item.get("typeof") else "Thing"
+            props["@type"] = item_type.rsplit(":", 1)[-1]
             results.append(props)
     return results
 
 
-def extract_with_selectors(soup: BeautifulSoup, selectors: dict[str, list[str]]) -> dict[str, list[ExtractedField]]:
-    results = {}
+def _selector_data(page: Any, selectors: Optional[dict[str, list[str]]]) -> dict[str, list[dict]]:
+    """Apply only selectors supplied by the generated contract, if any."""
+    if not selectors:
+        return {}
+    output: dict[str, list[dict]] = {}
     for field_name, selector_list in selectors.items():
+        if not isinstance(field_name, str) or not isinstance(selector_list, list):
+            continue
         for selector in selector_list:
+            if not isinstance(selector, str) or not selector.strip():
+                continue
             try:
-                elements = soup.select(selector)
-                if elements:
-                    values = []
-                    for el in elements:
-                        val = el.get("content") or el.get("datetime") or el.get("href") or el.get_text(" ", strip=True)
-                        if val:
-                            values.append(ExtractedField(
-                                name=field_name,
-                                value=val,
-                                source="selector",
-                                selector=selector,
-                                confidence=0.8,
-                            ))
-                    if values:
-                        results[field_name] = values
-                        break
+                matches = page.css(selector)
             except Exception:
                 continue
-    return results
+            values = []
+            for match in matches:
+                value = _element_value(match)
+                if value:
+                    values.append({"name": field_name, "value": value, "source": "scrapling_selector", "selector": selector})
+            if values:
+                output[field_name] = values
+                break
+    return output
 
 
-def normalize_schema_data(raw: dict, schema_type: str) -> dict:
-    fields_of_interest = SCHEMA_TYPES.get(schema_type, [])
-    normalized = {"@type": schema_type}
-    for field in fields_of_interest:
-        if field in raw:
-            val = raw[field]
-            if isinstance(val, dict) and "@type" in val:
-                normalized[field] = normalize_schema_data(val, val["@type"])
-            elif isinstance(val, list):
-                normalized[field] = [normalize_schema_data(v, schema_type) if isinstance(v, dict) and "@type" in v else v for v in val]
-            else:
-                normalized[field] = val
-    for k, v in raw.items():
-        if k not in normalized:
-            normalized[k] = v
-    return normalized
+def _page_title(page: Any, url: str) -> str:
+    try:
+        title = page.css("title::text").get()
+        if title:
+            return _clean_text(title)
+    except Exception:
+        pass
+    return urlsplit(url).netloc
+
+
+def _normalized_content(page: Any) -> str:
+    """Use Scrapling's RAG-safe Markdown conversion, retaining tables/lists/links."""
+    try:
+        content = page.markdown(main_content_only=True)
+    except Exception:
+        content = page.get_all_text(separator="\n", strip=True, ignore_tags=("script", "style", "noscript", "svg", "iframe"))
+    return str(content or "").strip()[:MAX_CONTENT_CHARS]
+
+
+def _usable_content(content: str) -> bool:
+    return len(content) >= 40 and not re.search(
+        r"(?:access denied|verify you are human|captcha|page not found)", content[:250], re.I
+    )
+
+
+async def _guard_browser_page(page: Any) -> None:
+    """Block browser subrequests that fail the same public URL policy."""
+    async def guard(route: Any) -> None:
+        target = route.request.url
+        if urlsplit(target).scheme in {"about", "blob", "data"} or await public_url(target):
+            await route.continue_()
+        else:
+            logger.warning("[SCRAPLING] Blocked non-public browser request: %s", target)
+            await route.abort()
+
+    await page.route("**/*", guard)
+
+
+async def _fetch_static(url: str, request: ExtractRequest) -> Any:
+    return await AsyncFetcher.get(
+        url,
+        follow_redirects="safe" if request.follow_redirects else False,
+        max_redirects=request.max_redirects,
+        timeout=REQUEST_TIMEOUT,
+        verify=request.verify_ssl,
+        impersonate="chrome",
+        selector_config={"keep_comments": False, "keep_cdata": False},
+    )
+
+
+async def _fetch_dynamic(url: str, request: ExtractRequest, stealth: bool = False) -> Any:
+    fetcher = StealthyFetcher if stealth else DynamicFetcher
+    options = {
+        "headless": True,
+        "load_dom": True,
+        "network_idle": False,
+        "wait": request.render_wait_ms,
+        "timeout": int(REQUEST_TIMEOUT * 1000),
+        "google_search": False,
+        "page_setup": _guard_browser_page,
+        "selector_config": {"keep_comments": False, "keep_cdata": False},
+    }
+    if stealth:
+        options.update({"solve_cloudflare": True, "block_webrtc": True})
+    return await fetcher.async_fetch(url, **options)
+
+
+def _response_result(page: Any, original_url: str, request: ExtractRequest, mode: str, root_fallback: bool = False) -> dict:
+    final_url = str(getattr(page, "url", "") or original_url)
+    status_code = int(getattr(page, "status", 0) or 0)
+    content = _normalized_content(page)
+    if len(getattr(page, "body", b"")) > MAX_BYTES:
+        raise ValueError("response exceeded the maximum content size")
+    if not _usable_content(content):
+        raise ValueError("page returned no usable content")
+
+    structured = _json_ld(page) + _microdata(page) + _rdfa(page)
+    selectors = _selector_data(page, request.custom_selectors)
+    history = getattr(page, "history", []) or []
+    headers = getattr(page, "headers", {}) or {}
+    content_sha256 = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    logger.info("[SCRAPLING] Retrieval successful URL=%s status=%s mode=%s content_size=%d", final_url, status_code, mode, len(content))
+    if structured:
+        logger.info("[SCRAPLING] Structured data found URL=%s items=%d", final_url, len(structured))
+    logger.info("[SCRAPLING] Normalized content generated URL=%s", final_url)
+    return {
+        "url": final_url,
+        "original_url": original_url,
+        "source_url": final_url,
+        "title": _page_title(page, final_url),
+        "schema_type": structured[0].get("@type") if structured else None,
+        "schema_data": structured[0] if structured else {},
+        "all_schemas": structured,
+        "selector_data": selectors,
+        "text_content": content,
+        "text_hash": content_sha256,
+        "content_sha256": content_sha256,
+        "http_status": status_code,
+        "reachability": 0.7 if (root_fallback or history) else 1.0,
+        "redirect_count": len(history),
+        "root_fallback": root_fallback,
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
+        "content_type": headers.get("content-type", "text/html"),
+        "rendered": mode != "static",
+        "retrieval_mode": mode,
+        "extraction_method": "structured_data_and_markdown" if structured else "markdown",
+        "status": "success",
+        "success": True,
+    }
+
+
+async def retrieve_page(url: str, request: ExtractRequest, allow_render: bool = True) -> dict:
+    """Retrieve one page with Scrapling, escalating only when necessary."""
+    logger.info("[SCRAPLING] Starting source retrieval URL=%s", url)
+    if not await public_url(url):
+        logger.warning("[SCRAPLING] Retrieval failed URL=%s Error=blocked_non_public_url", url)
+        return _failed(url, "blocked non-public URL", "ssrf_blocked")
+
+    initial_error: Optional[BaseException] = None
+    static_page = None
+    static_status = 0
+    try:
+        static_page = await _fetch_static(url, request)
+        static_status = int(getattr(static_page, "status", 0) or 0)
+        final_url = str(getattr(static_page, "url", "") or url)
+        if not await public_url(final_url):
+            return _failed(url, "redirected to a non-public URL", "ssrf_blocked", static_status)
+        static_content = _normalized_content(static_page)
+        if static_status == 200 and _usable_content(static_content):
+            return _response_result(static_page, url, request, "static")
+        initial_error = RuntimeError(f"static retrieval returned HTTP {static_status} or unusable content")
+        logger.info("[SCRAPLING] Static retrieval needs escalation URL=%s status=%s", url, static_status)
+    except Exception as exc:
+        initial_error = exc
+        logger.info("[SCRAPLING] Static retrieval failed; considering browser escalation URL=%s Error=%s", url, _error_code(exc))
+
+    # Preserve the old root fallback behavior, but still retrieve the root via
+    # Scrapling and keep its provenance explicit.
+    parsed = urlsplit(url)
+    root_url = f"{parsed.scheme}://{parsed.netloc}/"
+    if parsed.path not in {"", "/"} and static_status in {403, 404}:
+        try:
+            root_page = await _fetch_static(root_url, request)
+            if int(getattr(root_page, "status", 0) or 0) == 200 and await public_url(str(root_page.url)) and _usable_content(_normalized_content(root_page)):
+                return _response_result(root_page, url, request, "static", root_fallback=True)
+        except Exception:
+            pass
+
+    if not allow_render:
+        error = initial_error or RuntimeError("static retrieval failed")
+        logger.warning("[SCRAPLING] Retrieval failed URL=%s Error=%s", url, _error_code(error))
+        return _failed(url, str(error), _error_code(error), getattr(static_page, "status", None))
+
+    async with DYNAMIC_SEMAPHORE:
+        page = None
+        try:
+            page = await _fetch_dynamic(url, request)
+            final_url = str(getattr(page, "url", "") or url)
+            status_code = int(getattr(page, "status", 0) or 0)
+            if not await public_url(final_url):
+                return _failed(url, "redirected to a non-public URL", "ssrf_blocked", status_code)
+            if status_code == 200:
+                return _response_result(page, url, request, "dynamic")
+            initial_error = RuntimeError(f"dynamic retrieval returned HTTP {status_code}")
+        except Exception as exc:
+            initial_error = exc
+        # Escalate only a blocked/failed browser retrieval to Scrapling's
+        # stealth fetcher; ordinary pages never pay this cost.
+        try:
+            page = await _fetch_dynamic(url, request, stealth=True)
+            final_url = str(getattr(page, "url", "") or url)
+            status_code = int(getattr(page, "status", 0) or 0)
+            if await public_url(final_url) and status_code == 200:
+                return _response_result(page, url, request, "stealth")
+            initial_error = RuntimeError(f"stealth retrieval returned HTTP {status_code}")
+        except Exception as stealth_error:
+            initial_error = stealth_error
+
+    logger.warning("[SCRAPLING] Retrieval failed URL=%s Error=%s", url, _error_code(initial_error))
+    return _failed(url, str(initial_error), _error_code(initial_error), getattr(static_page, "status", None))
 
 
 def chunk_text(text: str, chunk_size: int, stride: int, url: str, metadata: dict) -> list[dict]:
@@ -448,11 +436,11 @@ def chunk_text(text: str, chunk_size: int, stride: int, url: str, metadata: dict
     chunks = []
     for start in range(0, len(text), stride):
         end = min(start + chunk_size, len(text))
-        chunk_text = text[start:end]
+        chunk = text[start:end]
         chunk_id = hashlib.sha256(f"{url}:{metadata.get('text_hash', '')}:{start}".encode()).hexdigest()[:20]
         chunks.append({
             "chunk_id": chunk_id,
-            "text": chunk_text,
+            "text": chunk,
             "char_start": start,
             "char_end": end,
             "url": url,
@@ -463,66 +451,6 @@ def chunk_text(text: str, chunk_size: int, stride: int, url: str, metadata: dict
     return chunks
 
 
-async def process_url(
-    client: httpx.AsyncClient,
-    url: str,
-    schema_types: Optional[list[str]],
-    selector_preset: Optional[str],
-    custom_selectors: Optional[dict],
-    follow_redirects: bool,
-    max_redirects: int,
-    verify_ssl: bool,
-    render_js: bool,
-    render_wait_ms: int,
-) -> dict:
-    fetched = await fetch_with_verification(
-        client, url, True, max_redirects, render_js, render_wait_ms, verify_ssl
-    )
-    if not fetched:
-        return {"url": url, "error": "Failed to fetch or verify", "success": False}
-
-    soup = fetched["soup"]
-    schema_results = extract_json_ld(soup, schema_types)
-    schema_results.extend(extract_microdata(soup))
-    schema_results.extend(extract_rdfa(soup))
-
-    normalized_schemas = []
-    for item in schema_results:
-        schema_type = item.get("@type", "Thing")
-        normalized_schemas.append(normalize_schema_data(item, schema_type))
-
-    selector_map = {}
-    if custom_selectors:
-        selector_map.update(custom_selectors)
-    if selector_preset and selector_preset in SELECTOR_PRESETS:
-        for k, v in SELECTOR_PRESETS[selector_preset].items():
-            selector_map.setdefault(k, []).extend(v)
-
-    selector_data = extract_with_selectors(soup, selector_map) if selector_map else {}
-
-    primary_schema = normalized_schemas[0] if normalized_schemas else {}
-    primary_type = primary_schema.get("@type") if primary_schema else None
-
-    return {
-        "url": fetched["url"],
-        "original_url": fetched["original_url"],
-        "title": fetched["title"],
-        "schema_type": primary_type,
-        "schema_data": primary_schema,
-        "all_schemas": normalized_schemas,
-        "selector_data": {k: [asdict(f) for f in v] for k, v in selector_data.items()},
-        "text_content": fetched["text"],
-        "text_hash": fetched["text_hash"],
-        "http_status": fetched["http_status"],
-        "reachability": fetched["reachability"],
-        "fetched_at": fetched["fetched_at"],
-        "content_type": fetched["content_type"],
-        "rendered": fetched.get("rendered", False),
-        "extraction_method": "json_ld" if normalized_schemas else ("selector" if selector_data else "text_only"),
-        "success": True,
-    }
-
-
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "scrapling", "port": SCRAPLING_PORT}
@@ -531,58 +459,47 @@ async def health():
 @app.post("/extract", response_model=ExtractResponse)
 async def extract_endpoint(req: ExtractRequest):
     semaphore = asyncio.Semaphore(CONCURRENCY_LIMIT)
-    client = build_client(req.verify_ssl, REQUEST_TIMEOUT)
 
-    async def process_one(url: HttpUrl):
+    async def process_one(url: HttpUrl) -> dict:
         async with semaphore:
             try:
-                return await process_url(
-                    client, str(url), req.schema_types, req.selector_preset,
-                    req.custom_selectors, req.follow_redirects, req.max_redirects,
-                    req.verify_ssl, req.render_js, req.render_wait_ms
-                )
+                return await retrieve_page(str(url), req, allow_render=req.render_js)
             except Exception as exc:
-                logger.warning("Scrapling failed for %s: %s", url, exc)
-                return {"url": str(url), "error": str(exc), "success": False}
+                logger.exception("[SCRAPLING] Retrieval failed URL=%s", url)
+                return _failed(str(url), str(exc), _error_code(exc))
 
-    results = await asyncio.gather(*(process_one(u) for u in req.urls))
-    await client.aclose()
-
-    successful = sum(1 for r in results if r.get("success"))
-    return ExtractResponse(
-        results=results,
-        total=len(results),
-        successful=successful,
-        failed=len(results) - successful,
-    )
+    results = await asyncio.gather(*(process_one(url) for url in req.urls))
+    successful = sum(1 for result in results if result.get("success"))
+    return ExtractResponse(results=results, total=len(results), successful=successful, failed=len(results) - successful)
 
 
 @app.post("/verify", response_model=VerifyResponse)
 async def verify_endpoint(req: VerifyRequest):
+    request = ExtractRequest(
+        urls=req.urls[:1],
+        follow_redirects=True,
+        max_redirects=req.max_redirects,
+        render_js=False,
+    )
     semaphore = asyncio.Semaphore(CONCURRENCY_LIMIT)
-    client = build_client(True, VERIFY_TIMEOUT)
 
-    async def verify_one(url: HttpUrl):
+    async def verify_one(url: HttpUrl) -> dict:
         async with semaphore:
-            fetched = await fetch_with_verification(
-                client, str(url), req.allow_root_fallback, req.max_redirects, False, 0, True
-            )
-            if fetched:
+            result = await retrieve_page(str(url), request, allow_render=False)
+            if result.get("success"):
                 return {
                     "url": str(url),
-                    "final_url": fetched["url"],
+                    "final_url": result["url"],
                     "reachable": True,
-                    "http_status": fetched["http_status"],
-                    "redirect_count": fetched["redirect_count"],
-                    "root_fallback": fetched["root_fallback"],
-                    "reachability": fetched["reachability"],
+                    "http_status": result["http_status"],
+                    "redirect_count": result["redirect_count"],
+                    "root_fallback": result["root_fallback"],
+                    "reachability": result["reachability"],
                 }
-            return {"url": str(url), "reachable": False, "error": "Unreachable or blocked"}
+            return {"url": str(url), "reachable": False, "error": result.get("error", "Unreachable or blocked")}
 
-    results = await asyncio.gather(*(verify_one(u) for u in req.urls))
-    await client.aclose()
-
-    reachable = sum(1 for r in results if r.get("reachable"))
+    results = await asyncio.gather(*(verify_one(url) for url in req.urls))
+    reachable = sum(1 for result in results if result.get("reachable"))
     return VerifyResponse(results=results, reachable=reachable, unreachable=len(results) - reachable)
 
 
@@ -592,6 +509,10 @@ async def chunk_endpoint(req: ChunkRequest):
     return ChunkResponse(chunks=chunks, total=len(chunks))
 
 
+DYNAMIC_SEMAPHORE = asyncio.Semaphore(DYNAMIC_CONCURRENCY_LIMIT)
+
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="127.0.0.1", port=SCRAPLING_PORT, log_level="info")

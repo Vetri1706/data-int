@@ -1,0 +1,95 @@
+{
+  "fixture_version": 1,
+  "description": "Deterministic replay pages for Laya-before-TF-IDF evaluation. Content is manually reviewed evaluation data, not production source data.",
+  "cases": [
+    {
+      "case_id": "supplier-page",
+      "query": "Find component suppliers with manufacturer, location, certifications, and catalog evidence.",
+      "data_contract": {
+        "entity_type": "supplier",
+        "business_goal": "Build a supplier shortlist",
+        "fields": [
+          {"name": "supplier_name", "field_type": "string", "description": "Supplier or manufacturer name", "required": true},
+          {"name": "location", "field_type": "string", "description": "Supplier location", "required": true},
+          {"name": "certifications", "field_type": "array", "description": "Certifications held", "required": false},
+          {"name": "catalog_url", "field_type": "string", "description": "Direct product catalog link", "required": false}
+        ],
+        "constraints": [],
+        "relationships": [],
+        "evidence_policy": {"required_evidence": ["source excerpt"]}
+      },
+      "source_relevance": "KEEP",
+      "gold_relevant_markers": ["Example Components", "ISO 9001", "catalog.example.com"],
+      "sources": [
+        {
+          "url": "https://fixture.example/suppliers/example-components",
+          "title": "Example Components | Product Catalogue",
+          "content_sha256": "fixture-supplier-v1",
+          "http_status": 200,
+          "reachability": 1.0,
+          "content_prefix": "Home | Products | About | Contact | Search | Login | Cookie settings.\nHome | Products | About | Contact | Search | Login | Cookie settings.\nHome | Products | About | Contact | Search | Login | Cookie settings.\nHome | Products | About | Contact | Search | Login | Cookie settings.\nHome | Products | About | Contact | Search | Login | Cookie settings.\nHome | Products | About | Contact | Search | Login | Cookie settings.\nHome | Products | About | Contact | Search | Login | Cookie settings.\nHome | Products | About | Contact | Search | Login | Cookie settings.\nHome | Products | About | Contact | Search | Login | Cookie settings.\nHome | Products | About | Contact | Search | Login | Cookie settings.\nHome | Products | About | Contact | Search | Login | Cookie settings.\nHome | Products | About | Contact | Search | Login | Cookie settings.",
+          "content": "Home | Products | About | Contact | Cookie settings.\n\nExample Components manufactures battery management components for industrial and electric mobility applications.\n\nOur headquarters and manufacturing facility are in Chennai, Tamil Nadu, India.\n\nThe quality section lists ISO 9001 certification and a current product catalogue at https://catalog.example.com/components.\n\nNews archive | Careers | Privacy policy | Terms of use.\n\nThe page footer repeats Products About Contact Products About Contact."
+        }
+      ]
+    },
+    {
+      "case_id": "jobs-page",
+      "query": "Find open backend engineering roles with title, location, seniority, and application URL.",
+      "data_contract": {
+        "entity_type": "job",
+        "business_goal": "Find currently open backend engineering roles",
+        "fields": [
+          {"name": "role_title", "field_type": "string", "description": "Open role title", "required": true},
+          {"name": "location", "field_type": "string", "description": "Job location", "required": true},
+          {"name": "seniority", "field_type": "string", "description": "Seniority level", "required": false},
+          {"name": "application_url", "field_type": "string", "description": "Application URL", "required": false}
+        ],
+        "constraints": [{"field": "role_title", "operator": "contains", "target_value": "backend", "is_hard": true}],
+        "relationships": [],
+        "evidence_policy": {"required_evidence": ["official career page excerpt"]}
+      },
+      "source_relevance": "KEEP",
+      "gold_relevant_markers": ["Backend Engineer", "Bengaluru", "Apply now"],
+      "sources": [
+        {
+          "url": "https://fixture.example/careers/backend-engineer",
+          "title": "Backend Engineer - Example Careers",
+          "content_sha256": "fixture-jobs-v1",
+          "http_status": 200,
+          "reachability": 1.0,
+          "content_prefix": "Skip to content | Search jobs | Sign in | Teams | Locations.\nSkip to content | Search jobs | Sign in | Teams | Locations.\nSkip to content | Search jobs | Sign in | Teams | Locations.\nSkip to content | Search jobs | Sign in | Teams | Locations.\nSkip to content | Search jobs | Sign in | Teams | Locations.\nSkip to content | Search jobs | Sign in | Teams | Locations.\nSkip to content | Search jobs | Sign in | Teams | Locations.\nSkip to content | Search jobs | Sign in | Teams | Locations.\nSkip to content | Search jobs | Sign in | Teams | Locations.\nSkip to content | Search jobs | Sign in | Teams | Locations.\nSkip to content | Search jobs | Sign in | Teams | Locations.\nSkip to content | Search jobs | Sign in | Teams | Locations.",
+          "content": "Skip to content | Search jobs | Sign in.\n\nBackend Engineer\n\nLocation: Bengaluru, Karnataka, India. Seniority: Mid-level.\n\nBuild reliable services with the platform engineering team. This position is currently open. Apply now: https://jobs.example.com/backend-engineer.\n\nOther open teams include design and marketing.\n\nFooter: About, accessibility, privacy, cookie preferences."
+        }
+      ]
+    },
+    {
+      "case_id": "pricing-page",
+      "query": "Find SaaS pricing tiers with billing cadence, product name, and source evidence.",
+      "data_contract": {
+        "entity_type": "saas_product",
+        "business_goal": "Track competitor pricing",
+        "fields": [
+          {"name": "product_name", "field_type": "string", "description": "SaaS product name", "required": true},
+          {"name": "pricing_tiers", "field_type": "array", "description": "Named pricing tiers and prices", "required": true},
+          {"name": "billing_cadence", "field_type": "string", "description": "Monthly or annual billing cadence", "required": false}
+        ],
+        "constraints": [],
+        "relationships": [],
+        "evidence_policy": {"required_evidence": ["pricing page excerpt"]}
+      },
+      "source_relevance": "KEEP",
+      "gold_relevant_markers": ["Example Work", "Starter", "billed annually"],
+      "sources": [
+        {
+          "url": "https://fixture.example/pricing",
+          "title": "Example Work Pricing",
+          "content_sha256": "fixture-pricing-v1",
+          "http_status": 200,
+          "reachability": 1.0,
+          "content_prefix": "Navigation: platform | resources | login | support.\nNavigation: platform | resources | login | support.\nNavigation: platform | resources | login | support.\nNavigation: platform | resources | login | support.\nNavigation: platform | resources | login | support.\nNavigation: platform | resources | login | support.\nNavigation: platform | resources | login | support.\nNavigation: platform | resources | login | support.\nNavigation: platform | resources | login | support.\nNavigation: platform | resources | login | support.\nNavigation: platform | resources | login | support.\nNavigation: platform | resources | login | support.",
+          "content": "Navigation: platform, resources, login.\n\nExample Work pricing\n\nStarter - $10 per user/month. Team - $24 per user/month. Enterprise - Contact sales.\n\nAnnual plans are billed annually and include a discount. Monthly billing is available for Starter and Team.\n\nCompare features, read customer stories, download our app.\n\nFooter navigation repeats platform resources login."
+        }
+      ]
+    }
+  ]
+}

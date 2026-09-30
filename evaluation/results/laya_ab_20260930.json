@@ -1,0 +1,237 @@
+{
+  "generated_at": "2026-09-30T08:43:10.797400+00:00",
+  "evaluation": {
+    "selection": {
+      "provider": "local",
+      "model": "qwen2.5-coder:1.5b-instruct"
+    },
+    "laya_url": "http://127.0.0.1:18002",
+    "laya_model": "english",
+    "laya_threshold": 0.2,
+    "laya_batch_size": 32,
+    "fixed_inputs": true,
+    "same_search_results_and_scrapling_capture": true,
+    "ground_truth": "unavailable",
+    "current_pipeline_note": "retrieve_chunks currently performs chunking plus TF-IDF before the laya_filter node; both arms share that selected chunk set."
+  },
+  "aggregate": {
+    "queries_tested": 0,
+    "queries_failed_capture": 10,
+    "sources_processed": 0,
+    "candidate_sources": 0,
+    "relevant_sources": 0,
+    "successfully_retrieved_sources": 0,
+    "failed_sources": 0,
+    "chunks_generated": 0,
+    "chunks_sent_to_extraction_baseline": 0,
+    "chunks_sent_to_extraction_laya": 0,
+    "chunk_reduction_absolute": 0,
+    "chunk_reduction_percentage": null,
+    "llm_calls_baseline": 0,
+    "llm_calls_laya": 0,
+    "llm_input_tokens_baseline": 0,
+    "llm_input_tokens_laya": 0,
+    "token_reduction_percentage": null,
+    "average_laya_latency_ms": null,
+    "average_workflow_latency_baseline_ms": null,
+    "average_workflow_latency_laya_ms": null,
+    "latency_difference_ms_baseline_minus_laya": null,
+    "latency_reduction_percentage": null,
+    "verified_records_baseline": 0,
+    "verified_records_laya": 0,
+    "needs_review_baseline": 0,
+    "needs_review_laya": 0,
+    "draft_records_baseline": 0,
+    "draft_records_laya": 0,
+    "evidence_recall_baseline_proxy": null,
+    "baseline_evidence_units": 0,
+    "retained_baseline_evidence_units": 0,
+    "false_negative_cases": 0,
+    "laya_fallback_cases": 0,
+    "ground_truth": "unavailable; baseline evidence is reported only as a clearly labeled proxy"
+  },
+  "threshold_analysis": [
+    {
+      "threshold": 0.05,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.1,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.15,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.2,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.25,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.3,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.4,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    },
+    {
+      "threshold": 0.5,
+      "retention_percentage": null,
+      "chunk_reduction_percentage": null,
+      "evidence_recall_baseline_proxy": null,
+      "false_negative_rate_baseline_proxy": null
+    }
+  ],
+  "fail_open_check": {
+    "status": "disabled",
+    "workflow_continues": false,
+    "metrics": {
+      "chunks_before": 0,
+      "chunks_after": 0,
+      "chunks_filtered": 0,
+      "latency_ms": 0.0,
+      "batch_count": 0,
+      "threshold": 0.2,
+      "model": "english"
+    }
+  },
+  "per_query": [
+    {
+      "captured": {
+        "index": 1,
+        "query": "Find AI startups in South India with founders, websites, locations, and funding evidence.",
+        "errors": [
+          "HTTPException: 422: This model is no longer in the provider catalog. Refresh models and choose again."
+        ],
+        "capture_latency_ms": 69.13
+      },
+      "query": "Find AI startups in South India with founders, websites, locations, and funding evidence."
+    },
+    {
+      "captured": {
+        "index": 2,
+        "query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications.",
+        "errors": [
+          "HTTPException: 422: This model is no longer in the provider catalog. Refresh models and choose again."
+        ],
+        "capture_latency_ms": 0.05
+      },
+      "query": "Find EV battery and component suppliers in India with catalog links, locations, and certifications."
+    },
+    {
+      "captured": {
+        "index": 3,
+        "query": "Find currently open backend engineering roles from official company career pages in India.",
+        "errors": [
+          "HTTPException: 422: This model is no longer in the provider catalog. Refresh models and choose again."
+        ],
+        "capture_latency_ms": 0.02
+      },
+      "query": "Find currently open backend engineering roles from official company career pages in India."
+    },
+    {
+      "captured": {
+        "index": 4,
+        "query": "Find project management SaaS products with pricing tiers, billing cadence, and source links.",
+        "errors": [
+          "HTTPException: 422: This model is no longer in the provider catalog. Refresh models and choose again."
+        ],
+        "capture_latency_ms": 0.01
+      },
+      "query": "Find project management SaaS products with pricing tiers, billing cadence, and source links."
+    },
+    {
+      "captured": {
+        "index": 5,
+        "query": "Find robotics companies headquartered in Tamil Nadu with website and location evidence.",
+        "errors": [
+          "HTTPException: 422: This model is no longer in the provider catalog. Refresh models and choose again."
+        ],
+        "capture_latency_ms": 0.01
+      },
+      "query": "Find robotics companies headquartered in Tamil Nadu with website and location evidence."
+    },
+    {
+      "captured": {
+        "index": 6,
+        "query": "Find companies that could sponsor a robotics hackathon with CSR evidence, previous sponsorships, contact information, and relevance.",
+        "errors": [
+          "HTTPException: 422: This model is no longer in the provider catalog. Refresh models and choose again."
+        ],
+        "capture_latency_ms": 0.01
+      },
+      "query": "Find companies that could sponsor a robotics hackathon with CSR evidence, previous sponsorships, contact information, and relevance."
+    },
+    {
+      "captured": {
+        "index": 7,
+        "query": "Find AI startups in Bengaluru founded after 2020 with funding in the last 18 months and at least one founder.",
+        "errors": [
+          "HTTPException: 422: This model is no longer in the provider catalog. Refresh models and choose again."
+        ],
+        "capture_latency_ms": 0.01
+      },
+      "query": "Find AI startups in Bengaluru founded after 2020 with funding in the last 18 months and at least one founder."
+    },
+    {
+      "captured": {
+        "index": 8,
+        "query": "Find hotels in Chennai with room prices, amenities, address, and current booking availability.",
+        "errors": [
+          "HTTPException: 422: This model is no longer in the provider catalog. Refresh models and choose again."
+        ],
+        "capture_latency_ms": 0.01
+      },
+      "query": "Find hotels in Chennai with room prices, amenities, address, and current booking availability."
+    },
+    {
+      "captured": {
+        "index": 9,
+        "query": "Find Indian battery manufacturers with products, locations, certifications, and contact details.",
+        "errors": [
+          "HTTPException: 422: This model is no longer in the provider catalog. Refresh models and choose again."
+        ],
+        "capture_latency_ms": 0.01
+      },
+      "query": "Find Indian battery manufacturers with products, locations, certifications, and contact details."
+    },
+    {
+      "captured": {
+        "index": 10,
+        "query": "Find current backend engineering jobs where role details are on company career pages, including title, location, seniority, and application URL.",
+        "errors": [
+          "HTTPException: 422: This model is no longer in the provider catalog. Refresh models and choose again."
+        ],
+        "capture_latency_ms": 0.01
+      },
+      "query": "Find current backend engineering jobs where role details are on company career pages, including title, location, seniority, and application URL."
+    }
+  ],
+  "regression_tests": "pending after benchmark"
+}

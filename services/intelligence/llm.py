@@ -8,6 +8,11 @@ from contextvars import ContextVar
 from pathlib import Path
 from urllib.parse import urlparse
 
+try:
+    from asyncio import timeout as async_timeout
+except ImportError:
+    from async_timeout import timeout as async_timeout
+
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
@@ -123,14 +128,14 @@ class ModelGateway:
             raise LLMUnavailable("Choose a model and approve external processing before running")
         try:
             # Deadline includes queueing and fallback, not just network time.
-            async with asyncio.timeout(self.total_timeout):
+            async with async_timeout(self.total_timeout):
                 async with self._semaphore:
                     for provider, client in attempts:
                         if self._cooldown.get(provider.name, 0) > time.monotonic():
                             continue
                         started = time.monotonic()
                         try:
-                            async with asyncio.timeout(self.timeout):
+                            async with async_timeout(self.timeout):
                                 response = await client.ainvoke(messages)
                             if not isinstance(response.content, str) or not response.content.strip():
                                 raise ValueError("empty model output")
@@ -146,5 +151,5 @@ class ModelGateway:
                             logger.warning("LLM provider=%s failure=%s status=%s", provider.name,
                                            type(exc).__name__, status)
                     raise LLMUnavailable("Model provider unavailable or rate-limited. Please retry shortly.")
-        except TimeoutError:
+        except (TimeoutError, asyncio.TimeoutError):
             raise LLMUnavailable("Model request timed out, including queue wait. Please retry.") from None

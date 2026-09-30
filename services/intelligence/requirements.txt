@@ -10,3 +10,4 @@ python-dotenv>=1.0.0
 scikit-learn>=1.5,<2
 beautifulsoup4>=4.12,<5
 tldextract>=5.1,<6
+async-timeout>=4.0.0

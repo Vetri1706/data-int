@@ -161,6 +161,39 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
             await workflow.scrapling_extraction(state)
         scrapling.assert_awaited_once_with(["https://keep.example/"], state["data_contract"])
 
+    async def test_laya_filters_extraction_input_and_preserves_full_validation_chunks(self):
+        state = self.state()
+        source = document()
+        all_chunks = chunk_sources([source])
+        state["retrieved_chunks"] = all_chunks
+        kept = all_chunks[:1]
+        metrics = {"chunks_before": len(all_chunks), "chunks_after": 1,
+                   "chunks_filtered": len(all_chunks) - 1, "latency_ms": 2.0}
+        with patch.object(workflow, "post_run_event", new_callable=AsyncMock), patch.object(
+            workflow, "apply_laya_filter", AsyncMock(return_value=(kept, metrics, "active"))
+        ):
+            result = await workflow.laya_filter(state)
+        self.assertEqual(result["laya_filtered_chunks"], kept)
+        self.assertEqual(result["retrieved_chunks"], all_chunks)
+        self.assertEqual(result["laya_status"], "active")
+
+    async def test_extraction_uses_laya_filtered_chunks_when_present(self):
+        state = self.state()
+        source = document()
+        all_chunks = chunk_sources([source])
+        state["retrieved_chunks"] = all_chunks
+        state["laya_filtered_chunks"] = all_chunks[:1]
+        row = candidate(all_chunks[0])
+        model = SimpleNamespace(ainvoke=AsyncMock(
+            return_value=SimpleNamespace(content=json.dumps({"records": [row]}))))
+        with patch.object(workflow, "post_run_event", new_callable=AsyncMock), patch.object(
+            workflow, "llm", model
+        ):
+            result = await workflow.extract_and_normalize(state)
+        self.assertEqual(result["extracted_records"][0]["chunk_id"], all_chunks[0]["chunk_id"])
+        prompt = model.ainvoke.call_args.args[0][1].content
+        self.assertIn(all_chunks[0]["chunk_id"], prompt)
+
 
 if __name__ == "__main__":
     unittest.main()

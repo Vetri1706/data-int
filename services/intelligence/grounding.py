@@ -168,7 +168,16 @@ def similarities(query, texts):
 
 
 def retrieve_chunks(sources, prompt, contract, top_k=24):
-    chunks = chunk_sources(sources)
+    return rank_chunks(chunk_sources(sources), prompt, contract, top_k=top_k)
+
+
+def rank_chunks(chunks, prompt, contract, top_k=24):
+    """Rank an existing chunk set with the unchanged Datavault TF-IDF policy.
+
+    This additive entry point is used by the evaluation-only Laya-before-TFIDF
+    path.  ``retrieve_chunks`` delegates to it after creating chunks, so the
+    ranking and per-source de-duplication rules remain identical in both paths.
+    """
     query = " ".join([prompt, contract.get("entity_type") or "",
                       *[str(f.get("description") or f["name"]) for f in contract.get("fields", [])]])
     scores = similarities(query, [c["text"] for c in chunks])

@@ -16,8 +16,12 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # Python
-services/intelligence/.venv/
+**/.venv*/
+**/.venv/
 .venv/
+venv/
+**/venv/
+**/.virtualenv/
 **/__pycache__/
 *.py[cod]
 *$py.class
@@ -50,4 +54,4 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
-
+/Users/shruthi/dataint/data-int/services/scrapling/.venv-scrapling
