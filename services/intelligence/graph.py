@@ -51,6 +51,7 @@ INTELLIGENCE_PORT = int(os.getenv("INTELLIGENCE_PORT", "7000"))
 SEARXNG_URL       = os.getenv("SEARXNG_URL", "http://127.0.0.1:8888")
 SCRAPLING_URL     = os.getenv("SCRAPLING_URL", "http://127.0.0.1:8001")
 WORKFLOW_TIMEOUT = float(os.getenv("WORKFLOW_TIMEOUT_SECONDS", "300"))
+MAX_SCRAPE_SITES = max(1, int(os.getenv("MAX_SCRAPE_SITES", "25")))
 
 # Defaults to local-only; NVIDIA requires explicit provider selection and key.
 llm = ModelGateway()
@@ -152,29 +153,40 @@ async def post_run_event(run_id: str, event_type: str, **kwargs):
         raise RuntimeError(f"The API did not persist terminal event {event_type}")
 
 async def scrapling_extract(urls: list[str], contract: dict) -> list[dict]:
-    """Call Scrapling service for structured extraction (JSON-LD + DOM selectors)."""
+    """Call Scrapling service for structured extraction in fault-tolerant concurrent batches."""
     if not urls:
         return []
-    # The generated contract is the source of truth. Scrapling may discover
-    # structured metadata, but field selection happens after retrieval below.
     schema_types = contract.get("schema_types")
     custom_selectors = contract.get("custom_selectors")
-    try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.post(f"{SCRAPLING_URL}/extract", json={
-                "urls": urls,
-                "schema_types": schema_types,
-                "selector_preset": None,
-                "custom_selectors": custom_selectors,
-                "follow_redirects": True,
-                "max_redirects": 5,
-            })
-            if resp.status_code == 200:
-                data = resp.json()
-                return data.get("results", [])
-    except Exception as e:
-        logger.warning(f"Scrapling extraction failed: {e}")
-    return []
+    batch_size = 6
+    batches = [urls[i:i + batch_size] for i in range(0, len(urls), batch_size)]
+
+    async def fetch_batch(batch_urls: list[str]) -> list[dict]:
+        try:
+            async with httpx.AsyncClient(timeout=45) as client:
+                resp = await client.post(f"{SCRAPLING_URL}/extract", json={
+                    "urls": batch_urls,
+                    "schema_types": schema_types,
+                    "selector_preset": None,
+                    "custom_selectors": custom_selectors,
+                    "follow_redirects": True,
+                    "max_redirects": 5,
+                })
+                if resp.status_code == 200:
+                    data = resp.json()
+                    return data.get("results", [])
+                else:
+                    logger.warning("Scrapling returned HTTP %d for batch of %d URLs", resp.status_code, len(batch_urls))
+        except Exception as e:
+            logger.warning("Scrapling batch failed (%d URLs): %r", len(batch_urls), e)
+        return []
+
+    results_lists = await asyncio.gather(*(fetch_batch(b) for b in batches), return_exceptions=True)
+    all_results = []
+    for res in results_lists:
+        if isinstance(res, list):
+            all_results.extend(res)
+    return all_results
 
 # ─── LangGraph Nodes ──────────────────────────────────────────────────────────
 
@@ -317,7 +329,7 @@ async def source_relevance_gate(state: WorkflowState) -> WorkflowState:
                 len(state.get("candidate_sources", [])))
     # Keep the existing UI stage contract: relevance is part of collection.
     await post_run_event(state["run_id"], "stage.updated", stage="collecting", progress=38)
-    candidates = state.get("candidate_sources", [])
+    candidates = state.get("candidate_sources", [])[:MAX_SCRAPE_SITES]
     try:
         evaluations = await evaluate_sources(
             candidates, state["prompt"], state["data_contract"], llm.ainvoke
@@ -336,7 +348,7 @@ async def source_relevance_gate(state: WorkflowState) -> WorkflowState:
             "constraint_relevance": False,
             "reason": "Relevance could not be evaluated",
             "missing_information": ["source relevance decision"],
-        } for index, candidate in enumerate(candidates[:50])]
+        } for index, candidate in enumerate(candidates[:MAX_SCRAPE_SITES])]
     relevant = []
     for evaluation in evaluations:
         if evaluation.get("decision") not in ("KEEP", "UNCERTAIN"):
@@ -370,10 +382,11 @@ async def scrapling_extraction(state: WorkflowState) -> WorkflowState:
         logger.info("  No KEEP sources; Scrapling will not be called")
         return {**state, "scrapling_records": []}
 
-    urls = [s["url"] for s in candidates if s.get("url")]
+    urls = [s["url"] for s in candidates if s.get("url")][:MAX_SCRAPE_SITES]
     if not urls:
         return {**state, "scrapling_records": []}
 
+    logger.info("  Scrapling will retrieve %d sources (capped at max %d)", len(urls), MAX_SCRAPE_SITES)
     scrapling_results = await scrapling_extract(urls, state["data_contract"])
 
     fields = [f for f in state["data_contract"].get("fields", [])

@@ -33,6 +33,7 @@ LLM_PROVIDER="${LLM_PROVIDER:-local}"
 LLM_FALLBACK_PROVIDER="${LLM_FALLBACK_PROVIDER:-}"
 NVIDIA_MODEL="${NVIDIA_MODEL:-meta/llama-3.2-11b-vision-instruct}"
 LAYA_ENABLED="${LAYA_ENABLED:-1}"
+MAX_SCRAPE_SITES="${MAX_SCRAPE_SITES:-25}"
 
 CYAN="\033[0;36m"; GREEN="\033[0;32m"; YELLOW="\033[1;33m"; RED="\033[0;31m"; NC="\033[0m"
 log()  { echo -e "${CYAN}[datavault]${NC} $1"; }
@@ -188,7 +189,7 @@ if [ -d "$INTELLIGENCE_VENV" ] && ! "$INTELLIGENCE_VENV/bin/python" -c 'import s
 fi
 ensure_python_env "$INTELLIGENCE_PYTHON" "$INTELLIGENCE_VENV" "$INTEL_DIR/requirements.txt"
 if ! curl -fsS --max-time 2 "$INTELLIGENCE_URL/health" >/dev/null 2>&1; then
-    start_background bash -c "cd '$INTEL_DIR' && exec env RUST_API_BASE='$RUST_API_BASE' SEARXNG_URL='$SEARXNG_URL' SCRAPLING_URL='$SCRAPLING_URL' LAYA_URL='$LAYA_URL' LAYA_ENABLED='$LAYA_ENABLED' INTELLIGENCE_PORT='$INTELLIGENCE_PORT' LLM_PROVIDER='$LLM_PROVIDER' NVIDIA_MODEL='$NVIDIA_MODEL' '$INTELLIGENCE_VENV/bin/python' graph.py"
+    start_background bash -c "cd '$INTEL_DIR' && exec env RUST_API_BASE='$RUST_API_BASE' SEARXNG_URL='$SEARXNG_URL' SCRAPLING_URL='$SCRAPLING_URL' LAYA_URL='$LAYA_URL' LAYA_ENABLED='$LAYA_ENABLED' INTELLIGENCE_PORT='$INTELLIGENCE_PORT' LLM_PROVIDER='$LLM_PROVIDER' NVIDIA_MODEL='$NVIDIA_MODEL' MAX_SCRAPE_SITES='$MAX_SCRAPE_SITES' '$INTELLIGENCE_VENV/bin/python' graph.py"
     wait_http "$INTELLIGENCE_URL/health" "Intelligence" 45 || die "Intelligence did not become ready"
 else
     ok "Intelligence already ready"

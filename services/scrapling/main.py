@@ -34,7 +34,7 @@ VERIFY_TIMEOUT = 5.0
 
 
 class ExtractRequest(BaseModel):
-    urls: list[HttpUrl] = Field(..., min_length=1, max_length=50)
+    urls: list[HttpUrl] = Field(..., min_length=1, max_length=25)
     # Kept for API compatibility. Structured data is preserved without a
     # domain-specific schema allowlist; the graph filters fields by DataContract.
     schema_types: Optional[list[str]] = None
@@ -277,7 +277,8 @@ async def _guard_browser_page(page: Any) -> None:
     """Block browser subrequests that fail the same public URL policy."""
     async def guard(route: Any) -> None:
         target = route.request.url
-        if urlsplit(target).scheme in {"about", "blob", "data"} or await public_url(target):
+        scheme = urlsplit(target).scheme.lower()
+        if scheme in {"about", "blob", "data", "chrome", "chrome-extension"} or await public_url(target):
             await route.continue_()
         else:
             logger.warning("[SCRAPLING] Blocked non-public browser request: %s", target)
@@ -309,6 +310,7 @@ async def _fetch_dynamic(url: str, request: ExtractRequest, stealth: bool = Fals
         "google_search": False,
         "page_setup": _guard_browser_page,
         "selector_config": {"keep_comments": False, "keep_cdata": False},
+        "retries": 0,
     }
     if stealth:
         options.update({"solve_cloudflare": True, "block_webrtc": True})
@@ -395,6 +397,10 @@ async def retrieve_page(url: str, request: ExtractRequest, allow_render: bool = 
                 return _response_result(root_page, url, request, "static", root_fallback=True)
         except Exception:
             pass
+
+    # Do not escalate binary files, documents, or PDFs to headless browser
+    if parsed.path.lower().endswith((".pdf", ".doc", ".docx", ".zip", ".tar", ".gz", ".mp4", ".mp3", ".png", ".jpg", ".jpeg", ".svg")):
+        allow_render = False
 
     if not allow_render:
         error = initial_error or RuntimeError("static retrieval failed")
