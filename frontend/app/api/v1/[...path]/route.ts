@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const maxDuration = 60;
+
 const SESSION_COOKIE = "dv_session";
 const API_BASE = (process.env.RUST_API_BASE || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000/v1").replace(/\/$/, "");
 const ALLOWED_ROOTS = new Set(["auth", "collections", "datasets", "sources", "runs", "workspaces", "me", "health"]);
@@ -28,6 +30,9 @@ async function handle(request: NextRequest, context: Context) {
     return NextResponse.json({ error: "Sign in to continue." }, { status: 401 });
   }
   const headers = new Headers();
+  // Optional server-to-server credential for a restricted demo gateway.
+  // This value never enters the browser bundle or upstream response.
+  if (process.env.DATAVAULT_GATEWAY_KEY) headers.set("X-Datavault-Gateway-Key", process.env.DATAVAULT_GATEWAY_KEY);
   if (token) headers.set("Authorization", `Bearer ${token}`);
   if (request.headers.has("content-type")) headers.set("Content-Type", request.headers.get("content-type")!);
   try {

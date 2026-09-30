@@ -1,0 +1,16 @@
+.env*
+.git/
+.runtime/
+.venv/
+logs/
+backend/
+services/
+scripts/
+evaluation/
+infra/
+migrations/
+searxng/
+frontend/node_modules/
+frontend/.next/
+frontend/.env*
+frontend/.vercel/

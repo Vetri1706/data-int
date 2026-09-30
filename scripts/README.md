@@ -68,3 +68,18 @@ Ollama remains separate: start it and install a model yourself, or configure a h
 After setup, run `.venv/Scripts/python.exe -m unittest discover -s scripts -p 'test_*.py'` on Windows, or `.venv/bin/python -m unittest discover -s scripts -p 'test_*.py'` on macOS/Linux. These exercise environment preservation, configuration guards and process ownership. Platform wrappers can be syntax checked independently with PowerShell's parser and `bash -n`.
 
 Implementation references: [Docker Compose readiness](https://docs.docker.com/reference/cli/docker/compose/up/) and [Psycopg connection transactions](https://www.psycopg.org/psycopg3/docs/basic/usage.html).
+
+## Temporary Vercel demo connection (Windows)
+
+The Vercel project builds `frontend/`. The Rust API, database, search and model services stay on this computer. For an explicitly approved temporary demo, place the official Windows `cloudflared.exe` in ignored `.runtime/`, start the normal app services, then run:
+
+```powershell
+.venv/Scripts/python.exe scripts/demo_connection.py start
+.venv/Scripts/python.exe scripts/demo_connection.py status
+# Stops only this demo connection; the local app and Docker stay running.
+.venv/Scripts/python.exe scripts/demo_connection.py stop
+```
+
+The gateway binds to `127.0.0.1:8010`, requires a generated shared server key, and blocks internal callbacks. Set Vercel's server-only `DATAVAULT_GATEWAY_KEY` from `.runtime/demo-gateway-key` and `RUST_API_BASE` to the printed tunnel URL plus `/v1`, then deploy. Never upload the root `.env` or expose port 3000 directly. The deployment upload excludes local credentials, logs, services and runtime files through `.vercelignore`.
+
+Keep this computer awake and its app/Docker services running during judging. Restarting the tunnel changes its URL, requiring a Vercel environment update and redeployment. This is temporary hosting, not an independent cloud deployment. Quick Tunnels do not support SSE; this dashboard uses polling. Details: [Cloudflare Quick Tunnels](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/).

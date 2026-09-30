@@ -43,6 +43,7 @@ build/
 *.log
 logs/
 .runtime/
+.vercel/
 
 # OS and Editor files
 .DS_Store
