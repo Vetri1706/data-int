@@ -35,6 +35,12 @@ from pydantic import BaseModel, Field, HttpUrl
 from extruct import extract as extruct_extract
 from w3lib.html import get_base_url
 
+try:
+    from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
+except ImportError:  # Browser support remains optional for lightweight local installs.
+    async_playwright = None
+    PlaywrightTimeoutError = TimeoutError
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("scrapling")
 
@@ -126,6 +132,8 @@ class ExtractRequest(BaseModel):
     follow_redirects: bool = True
     max_redirects: int = 5
     verify_ssl: bool = True
+    render_js: bool = True
+    render_wait_ms: int = Field(800, ge=0, le=5000)
 
 
 class VerifyRequest(BaseModel):
@@ -189,11 +197,84 @@ def build_client(verify_ssl: bool, timeout: float) -> httpx.AsyncClient:
     )
 
 
+def _page_text(html: str) -> tuple[BeautifulSoup, str]:
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup.select("script:not([type='application/ld+json']), style, nav, footer, header, noscript, form"):
+        tag.decompose()
+    text = " ".join(soup.get_text(" ", strip=True).split())[:50000]
+    return soup, text
+
+
+def _usable_text(text: str) -> bool:
+    return len(text) >= 40 and not re.search(
+        r"(?:access denied|verify you are human|captcha|page not found)", text[:250], re.I
+    )
+
+
+async def render_page(url: str, verify_ssl: bool, original_url: str, redirects: int,
+                      root_fallback: bool, wait_ms: int) -> Optional[dict]:
+    """Render only when static retrieval produced no usable page content."""
+    if async_playwright is None:
+        logger.info("Browser fallback unavailable for %s; Playwright is not installed", url)
+        return None
+    if not await public_url(url):
+        return None
+    try:
+        async with async_playwright() as playwright:
+            browser = await playwright.chromium.launch(headless=True)
+            try:
+                context = await browser.new_context(ignore_https_errors=not verify_ssl)
+                page = await context.new_page()
+                response = await page.goto(url, wait_until="domcontentloaded", timeout=int(REQUEST_TIMEOUT * 1000))
+                if response is not None and response.status != 200:
+                    logger.info("Browser retrieval returned HTTP %s for %s", response.status, url)
+                    return None
+                if wait_ms:
+                    await page.wait_for_timeout(wait_ms)
+                try:
+                    await page.wait_for_load_state("networkidle", timeout=3000)
+                except PlaywrightTimeoutError:
+                    pass
+                final_url = page.url
+                if not await public_url(final_url):
+                    return None
+                html = await page.content()
+                if len(html.encode("utf-8")) > MAX_BYTES:
+                    return None
+                soup, text = _page_text(html)
+                if not _usable_text(text):
+                    return None
+                return {
+                    "url": final_url,
+                    "original_url": original_url,
+                    "title": soup.title.get_text(" ", strip=True) if soup.title else urlsplit(final_url).netloc,
+                    "html": html,
+                    "soup": soup,
+                    "text": text,
+                    "text_hash": hashlib.sha256(text.encode()).hexdigest(),
+                    "http_status": response.status if response else 200,
+                    "redirect_count": redirects,
+                    "root_fallback": root_fallback,
+                    "reachability": 0.7 if (redirects or root_fallback) else 1.0,
+                    "fetched_at": datetime.now(timezone.utc).isoformat(),
+                    "content_type": "text/html; rendered",
+                    "rendered": True,
+                }
+            finally:
+                await browser.close()
+    except (PlaywrightTimeoutError, ValueError, UnicodeError, asyncio.TimeoutError) as exc:
+        logger.warning("Browser rendering failed for %s: %s", url, exc)
+        return None
+
+
 async def fetch_with_verification(
     client: httpx.AsyncClient,
     url: str,
     allow_root_fallback: bool,
     max_redirects: int,
+    render_js: bool = False,
+    render_wait_ms: int = 800,
+    verify_ssl: bool = True,
 ) -> Optional[dict]:
     original_url = url
     used_root = False
@@ -230,11 +311,10 @@ async def fetch_with_verification(
                     if len(body) > MAX_BYTES:
                         return None
                 html = body.decode(response.encoding or "utf-8", errors="replace")
-                soup = BeautifulSoup(html, "html.parser")
-                for tag in soup.select("script:not([type='application/ld+json']), style, nav, footer, header, noscript, form"):
-                    tag.decompose()
-                text = " ".join(soup.get_text(" ", strip=True).split())[:50000]
-                if len(text) < 40 or re.search(r"(?:access denied|verify you are human|captcha|page not found)", text[:250], re.I):
+                soup, text = _page_text(html)
+                if not _usable_text(text):
+                    if render_js:
+                        return await render_page(url, verify_ssl, original_url, redirects, used_root, render_wait_ms)
                     return None
                 title = soup.title.get_text(" ", strip=True) if soup.title else urlsplit(url).netloc
                 return {
@@ -251,6 +331,7 @@ async def fetch_with_verification(
                     "reachability": 0.7 if (redirects or used_root) else 1.0,
                     "fetched_at": datetime.now(timezone.utc).isoformat(),
                     "content_type": content_type,
+                    "rendered": False,
                 }
         except (httpx.HTTPError, ValueError, UnicodeError, asyncio.TimeoutError):
             return None
@@ -391,8 +472,12 @@ async def process_url(
     follow_redirects: bool,
     max_redirects: int,
     verify_ssl: bool,
+    render_js: bool,
+    render_wait_ms: int,
 ) -> dict:
-    fetched = await fetch_with_verification(client, url, True, max_redirects)
+    fetched = await fetch_with_verification(
+        client, url, True, max_redirects, render_js, render_wait_ms, verify_ssl
+    )
     if not fetched:
         return {"url": url, "error": "Failed to fetch or verify", "success": False}
 
@@ -432,6 +517,7 @@ async def process_url(
         "reachability": fetched["reachability"],
         "fetched_at": fetched["fetched_at"],
         "content_type": fetched["content_type"],
+        "rendered": fetched.get("rendered", False),
         "extraction_method": "json_ld" if normalized_schemas else ("selector" if selector_data else "text_only"),
         "success": True,
     }
@@ -449,10 +535,15 @@ async def extract_endpoint(req: ExtractRequest):
 
     async def process_one(url: HttpUrl):
         async with semaphore:
-            return await process_url(
-                client, str(url), req.schema_types, req.selector_preset,
-                req.custom_selectors, req.follow_redirects, req.max_redirects, req.verify_ssl
-            )
+            try:
+                return await process_url(
+                    client, str(url), req.schema_types, req.selector_preset,
+                    req.custom_selectors, req.follow_redirects, req.max_redirects,
+                    req.verify_ssl, req.render_js, req.render_wait_ms
+                )
+            except Exception as exc:
+                logger.warning("Scrapling failed for %s: %s", url, exc)
+                return {"url": str(url), "error": str(exc), "success": False}
 
     results = await asyncio.gather(*(process_one(u) for u in req.urls))
     await client.aclose()
@@ -473,7 +564,9 @@ async def verify_endpoint(req: VerifyRequest):
 
     async def verify_one(url: HttpUrl):
         async with semaphore:
-            fetched = await fetch_with_verification(client, str(url), req.allow_root_fallback, req.max_redirects)
+            fetched = await fetch_with_verification(
+                client, str(url), req.allow_root_fallback, req.max_redirects, False, 0, True
+            )
             if fetched:
                 return {
                     "url": str(url),

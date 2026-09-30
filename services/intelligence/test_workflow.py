@@ -84,7 +84,8 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
 
     def state(self):
         return {"run_id": "test-run", "prompt": "robotics companies in Chennai", "data_contract": CONTRACT,
-                "queries": ["robotics Chennai"], "search_results": [], "retrieved_chunks": [],
+                "queries": ["robotics Chennai"], "candidate_sources": [], "source_relevance": [],
+                "relevant_sources": [], "search_results": [], "retrieved_chunks": [],
                 "extracted_records": [], "validated_records": [], "iteration": 0, "max_iterations": 1}
 
     async def test_extraction_validation_and_terminal_event_preserve_attribution(self):
@@ -122,16 +123,43 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
     async def test_replanning_preserves_existing_sources_and_chunks(self):
         state = self.state()
         old = document()
-        state["search_results"] = [old]
+        state["candidate_sources"] = [old]
         state["retrieved_chunks"] = chunk_sources([old])
         fresh = document("https://news.example/story", "Acme Robotics is a robotics company in Chennai, building robots for factories.")
         with patch.object(workflow, "post_run_event", new_callable=AsyncMock), patch.object(
-            workflow, "rust_post", AsyncMock(return_value={"results": [{"url": fresh["url"]}]})) as search, patch.object(
-            workflow, "collect_sources", AsyncMock(return_value=[fresh])):
+            workflow, "rust_post", AsyncMock(return_value={"results": [{"url": fresh["url"], "title": "Fresh", "snippet": "Robotics"}]})) as search:
             state = await workflow.execute_search(state)
-        self.assertEqual(len(state["search_results"]), 2)
-        self.assertIn(chunk_sources([old])[0]["chunk_id"], {c["chunk_id"] for c in state["retrieved_chunks"]})
+        self.assertEqual(len(state["candidate_sources"]), 2)
+        self.assertEqual(state["retrieved_chunks"], chunk_sources([old]))
         self.assertEqual(search.call_args.args[1]["domain_filters"], [])
+
+    async def test_source_relevance_gate_only_passes_keep_sources(self):
+        state = self.state()
+        state["candidate_sources"] = [
+            {"url": "https://keep.example/", "title": "Keep", "snippet": "robotics company"},
+            {"url": "https://reject.example/", "title": "Reject", "snippet": "unrelated"},
+        ]
+        model = SimpleNamespace(ainvoke=AsyncMock(return_value=SimpleNamespace(content=json.dumps({"evaluations": [
+            {"candidate_index": 0, "decision": "KEEP", "relevance_score": .9},
+            {"candidate_index": 1, "decision": "REJECT", "relevance_score": .1},
+        ]}))))
+        with patch.object(workflow, "post_run_event", new_callable=AsyncMock), patch.object(workflow, "llm", model):
+            result = await workflow.source_relevance_gate(state)
+        self.assertEqual([s["url"] for s in result["relevant_sources"]], ["https://keep.example/"])
+        self.assertEqual([e["decision"] for e in result["source_relevance"]], ["KEEP", "REJECT"])
+
+    async def test_scrapling_receives_only_keep_sources(self):
+        state = self.state()
+        state["relevant_sources"] = [{"url": "https://keep.example/", "title": "Keep"}]
+        result = {"url": "https://keep.example/", "original_url": "https://keep.example/",
+                  "title": "Keep", "text_content": "Keep Robotics is based in Chennai.",
+                  "text_hash": "hash", "http_status": 200, "reachability": 1.0,
+                  "fetched_at": "2026-09-30T00:00:00+00:00", "schema_data": {},
+                  "selector_data": {}, "extraction_method": "text_only", "success": True}
+        with patch.object(workflow, "post_run_event", new_callable=AsyncMock), patch.object(
+            workflow, "scrapling_extract", AsyncMock(return_value=[result])) as scrapling:
+            await workflow.scrapling_extraction(state)
+        scrapling.assert_awaited_once_with(["https://keep.example/"], state["data_contract"])
 
 
 if __name__ == "__main__":

@@ -72,6 +72,9 @@ cd "$ROOT/services/scrapling"
 if [ ! -d ".venv" ]; then
     python3 -m venv .venv
     .venv/bin/pip install -q -r requirements.txt
+elif ! .venv/bin/python -c 'import fastapi, httpx, bs4, extruct, playwright' >/dev/null 2>&1; then
+    # Refresh an existing environment when the adaptive browser dependency is added.
+    .venv/bin/pip install -q -r requirements.txt
 fi
 SCRAPLING_PORT="${SCRAPLING_PORT:-8001}" \
 .venv/bin/python main.py &
