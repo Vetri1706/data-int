@@ -339,7 +339,7 @@ async def source_relevance_gate(state: WorkflowState) -> WorkflowState:
         } for index, candidate in enumerate(candidates[:50])]
     relevant = []
     for evaluation in evaluations:
-        if evaluation.get("decision") != "KEEP":
+        if evaluation.get("decision") not in ("KEEP", "UNCERTAIN"):
             continue
         index = evaluation.get("candidate_index")
         if isinstance(index, int) and 0 <= index < len(candidates):

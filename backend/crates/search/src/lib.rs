@@ -169,18 +169,20 @@ impl SearxProvider {
             .expect("http client");
         Self {
             client,
-            base_url: base_url.into(),
+            base_url: base_url.into().trim_end_matches('/').to_string(),
         }
     }
 }
 
 #[derive(Debug, Deserialize)]
 struct SearxResponse {
+    #[serde(default)]
     results: Vec<SearxResult>,
 }
 
 #[derive(Debug, Deserialize)]
 struct SearxResult {
+    #[serde(default)]
     url: String,
     title: Option<String>,
     content: Option<String>,
@@ -445,15 +447,22 @@ impl FederatedSearch {
                 Ok(results) if !results.is_empty() => {
                     let mut results = verified_results(&self.verifier, results, true).await;
                     if !req.domain_filters.is_empty() {
-                        results.retain(|r| {
-                            Url::parse(&r.url).ok().is_some_and(|url| {
-                                let host = url.host_str().unwrap_or("").to_lowercase();
-                                req.domain_filters.iter().any(|d| {
-                                    host == d.to_lowercase()
-                                        || host.ends_with(&format!(".{}", d.to_lowercase()))
+                        let domain_matched: Vec<_> = results
+                            .iter()
+                            .filter(|r| {
+                                Url::parse(&r.url).ok().is_some_and(|url| {
+                                    let host = url.host_str().unwrap_or("").to_lowercase();
+                                    req.domain_filters.iter().any(|d| {
+                                        host == d.to_lowercase()
+                                            || host.ends_with(&format!(".{}", d.to_lowercase()))
+                                    })
                                 })
                             })
-                        });
+                            .cloned()
+                            .collect();
+                        if !domain_matched.is_empty() {
+                            results = domain_matched;
+                        }
                     }
                     if !results.is_empty() {
                         results.truncate(req.max_results);

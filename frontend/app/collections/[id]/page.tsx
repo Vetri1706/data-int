@@ -71,6 +71,15 @@ export default function CollectionDetailPage({
     loadDetails();
   }, [id]);
 
+  useEffect(() => {
+    if (collection?.status?.toLowerCase() === "running") {
+      const interval = setInterval(() => {
+        loadDetails();
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [id, collection?.status]);
+
   const records = collection?.records ?? [];
   const title = collection?.title ?? "Collection";
 

@@ -73,16 +73,28 @@ ensure_python_env() {
     fi
 }
 
-# PostgreSQL
-log "Checking PostgreSQL..."
+# PostgreSQL (Local Homebrew)
+log "Checking PostgreSQL (local)..."
 if ! pg_isready -h 127.0.0.1 -p 5432 -q; then
+    # Auto-heal: Check if a stale postmaster.pid from a previous crash/reboot is blocking PostgreSQL
+    for pg_data in "/opt/homebrew/var/postgresql@15" "/opt/homebrew/var/postgresql@17" "/opt/homebrew/var/postgres"; do
+        if [ -f "$pg_data/postmaster.pid" ]; then
+            stale_pid=$(head -n 1 "$pg_data/postmaster.pid" 2>/dev/null || true)
+            if [ -n "$stale_pid" ]; then
+                if ! ps -p "$stale_pid" -o comm= 2>/dev/null | grep -q postgres; then
+                    warn "Removing stale postmaster.pid (PID $stale_pid) from $pg_data"
+                    rm -f "$pg_data/postmaster.pid"
+                fi
+            fi
+        fi
+    done
     brew services start postgresql@15 2>/dev/null || brew services start postgresql 2>/dev/null || true
-    remaining=30
+    remaining=20
     until pg_isready -h 127.0.0.1 -p 5432 -q || [ "$remaining" -le 0 ]; do
         sleep 1; remaining=$((remaining - 1))
     done
 fi
-pg_isready -h 127.0.0.1 -p 5432 -q || die "PostgreSQL is unavailable"
+pg_isready -h 127.0.0.1 -p 5432 -q || die "Local PostgreSQL is unavailable. Start it with: brew services start postgresql@15"
 if ! psql "$DATABASE_URL" -c "SELECT 1" -q >/dev/null 2>&1; then
     if ! psql -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME'" 2>/dev/null | grep -q 1; then
         createdb "$DB_NAME" 2>/dev/null || psql -d postgres -c "CREATE DATABASE $DB_NAME" >/dev/null
@@ -93,8 +105,8 @@ if ! psql "$DATABASE_URL" -tAc "SELECT to_regclass('public.users')" 2>/dev/null 
 fi
 ok "PostgreSQL ready: $DB_NAME"
 
-# Redis
-log "Checking Redis..."
+# Redis (Local)
+log "Checking Redis (local)..."
 if ! redis-cli -h 127.0.0.1 -p 6379 ping >/dev/null 2>&1; then
     brew services start redis 2>/dev/null || true
     sleep 2
@@ -102,19 +114,12 @@ fi
 redis-cli -h 127.0.0.1 -p 6379 ping >/dev/null 2>&1 || die "Redis is unavailable"
 ok "Redis ready"
 
-# SearXNG
-log "Checking SearXNG..."
-if ! curl -fsS --max-time 2 http://127.0.0.1:8888/healthz >/dev/null 2>&1; then
-    command -v docker >/dev/null 2>&1 || die "SearXNG is unavailable and Docker is not installed"
-    if docker ps -a --format '{{.Names}}' | grep -qx searxng; then
-        docker start searxng >/dev/null 2>&1 || true
-    else
-        docker run -d --name searxng -p 8888:8080 \
-            -e "SEARXNG_SECRET=$(openssl rand -hex 32)" searxng/searxng:latest >/dev/null
-    fi
-    wait_http http://127.0.0.1:8888/healthz "SearXNG" 45 || die "SearXNG did not become ready"
+# Search Provider (SearXNG optional local or fallback cascade)
+log "Checking Search Provider..."
+if curl -fsS --max-time 2 "$SEARXNG_URL" >/dev/null 2>&1 || curl -fsS --max-time 2 "$SEARXNG_URL/healthz" >/dev/null 2>&1; then
+    ok "SearXNG available ($SEARXNG_URL)"
 else
-    ok "SearXNG already ready"
+    ok "Using local search cascade (DuckDuckGo / Wikipedia / Grounded Discovery)"
 fi
 
 # LLM provider
@@ -138,7 +143,7 @@ fi
 
 # D4Vinci/Scrapling
 log "Starting D4Vinci/Scrapling..."
-SCRAPLING_PYTHON="${SCRAPLING_PYTHON:-$(command -v python3.12 || command -v python3.11 || command -v python3.10 || true)}"
+SCRAPLING_PYTHON="${SCRAPLING_PYTHON:-$(command -v python3.14 || command -v python3.13 || command -v python3.12 || command -v python3.11 || command -v python3.10 || command -v python3 || true)}"
 [ -n "$SCRAPLING_PYTHON" ] || die "Scrapling requires Python 3.10+"
 SCRAPLING_DIR="$ROOT/services/scrapling"
 SCRAPLING_VENV="$SCRAPLING_DIR/.venv-scrapling"
@@ -154,7 +159,7 @@ fi
 # Official Laya service
 if [[ "$LAYA_ENABLED" != "0" && "$LAYA_ENABLED" != "false" && "$LAYA_ENABLED" != "off" ]]; then
     log "Starting official Laya service..."
-    LAYA_PYTHON="${LAYA_PYTHON:-$(command -v python3.12 || command -v python3.11 || command -v python3.10 || true)}"
+    LAYA_PYTHON="${LAYA_PYTHON:-$(command -v python3.14 || command -v python3.13 || command -v python3.12 || command -v python3.11 || command -v python3.10 || command -v python3 || true)}"
     [ -n "$LAYA_PYTHON" ] || die "Laya requires Python 3.10+"
     LAYA_DIR="$ROOT/services/laya"
     LAYA_VENV="$LAYA_DIR/.venv"
@@ -175,7 +180,7 @@ fi
 # Intelligence
 log "Starting Intelligence service..."
 INTEL_DIR="$ROOT/services/intelligence"
-INTELLIGENCE_PYTHON="${INTELLIGENCE_PYTHON:-$(command -v python3.12 || command -v python3.11 || true)}"
+INTELLIGENCE_PYTHON="${INTELLIGENCE_PYTHON:-$(command -v python3.14 || command -v python3.13 || command -v python3.12 || command -v python3.11 || command -v python3 || true)}"
 [ -n "$INTELLIGENCE_PYTHON" ] || die "Intelligence requires Python 3.11+"
 INTELLIGENCE_VENV="${INTELLIGENCE_VENV:-$INTEL_DIR/.venv-runtime}"
 if [ -d "$INTELLIGENCE_VENV" ] && ! "$INTELLIGENCE_VENV/bin/python" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1; then
