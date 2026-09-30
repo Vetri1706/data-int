@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, dataset_id, entity_id, canonical_name, status,\n                    confidence_score, confidence_breakdown, primary_attributes,\n                    created_at, updated_at\n             FROM dataset_records\n             WHERE dataset_id = $1\n             ORDER BY created_at ASC, id ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "dataset_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "entity_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "canonical_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "confidence_score",
+        "type_info": "Float4"
+      },
+      {
+        "ordinal": 6,
+        "name": "confidence_breakdown",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 7,
+        "name": "primary_attributes",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b001f8cea3b70036367204209414bb1e49c35bdec33e69f85efc7cec5c24fca0"
+}

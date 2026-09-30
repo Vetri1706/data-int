@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, run_id, collection_id, name, entity_type, record_count, avg_confidence, created_at\n         FROM datasets WHERE workspace_id = $1 ORDER BY created_at DESC LIMIT 50",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "run_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "collection_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "entity_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "record_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "avg_confidence",
+        "type_info": "Float4"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "b66d8822f5fdf4a1157efa10c47ffe26b23d4bd09de954eefe2d540291aacd78"
+}

@@ -1,8 +1,9 @@
-"""Schema-aware source relevance gating for search candidates.
+"""Schema-aware advisory relevance ranking for search candidates.
 
 The gate sees only search-result metadata. It never fetches pages and never
-provides evidence to downstream validation. KEEP candidates are fetched later
-by Scrapling; permitted UNCERTAIN candidates may also be fetched for evidence.
+provides evidence to downstream validation. All permitted candidates can be
+fetched; model metadata judgments prioritize them but cannot establish geography
+or exclude an institution before reading its page.
 """
 
 import json

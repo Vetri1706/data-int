@@ -91,6 +91,10 @@ fn search_terms(text: &str) -> Vec<String> {
                     | "as"
                     | "information"
                     | "about"
+                    | "premier"
+                    | "best"
+                    | "top"
+                    | "leading"
             )
         {
             continue;
@@ -100,6 +104,23 @@ fn search_terms(text: &str) -> Vec<String> {
         }
     }
     terms
+}
+
+fn discovery_queries(terms: &[String]) -> Vec<String> {
+    let academic = terms.iter().any(|t| matches!(t.as_str(), "research" | "labs" | "laboratories" | "university" | "universities"));
+    if academic {
+        // Separate the subject/geography from entity synonyms. Long lists of
+        // "premier universities" attract admissions/ranking aggregators.
+        let topic = terms.iter().filter(|t| !matches!(t.as_str(),
+            "research" | "labs" | "lab" | "laboratories" | "university" | "universities" |
+            "institutes" | "institute" | "centers" | "centres" | "department"))
+            .cloned().collect::<Vec<_>>().join(" ");
+        if !topic.is_empty() {
+            return vec![format!("{topic} department research facilities"),
+                        format!("{topic} research laboratories"), terms.join(" ")];
+        }
+    }
+    vec![terms.join(" ")]
 }
 
 fn candidate_matches(result: &SearchResult, terms: &[String]) -> bool {
@@ -159,7 +180,10 @@ fn grouped_candidates(
     }
     groups
         .into_iter()
-        .map(|(domain, pages)| json!({"domain": domain, "pages": pages}))
+        .map(|(domain, mut pages)| {
+            pages.truncate(3);
+            json!({"domain": domain, "pages": pages})
+        })
         .collect()
 }
 
@@ -210,36 +234,53 @@ pub async fn discover(
                 .to_owned()
         })
         .collect();
-    let results = tokio::time::timeout(
+    let searches = discovery_queries(&discovery_terms).into_iter().map(|query| {
+        let filters = filters.clone();
+        let search = &state.search;
+        async move { tokio::time::timeout(
         std::time::Duration::from_secs(20),
-        state.search.discover_sources(SearchRequest {
-            query: discovery_terms.join(" "),
+        search.discover_sources(SearchRequest {
+            query,
             max_results: 20,
             domain_filters: filters,
             freshness_days: None,
             model_config: None,
         }),
     )
-    .await
-    .map_err(|_| {
-        err(
-            StatusCode::GATEWAY_TIMEOUT,
-            "Source discovery timed out. Retry or enter a domain you already know.",
-        )
-    })?
-    .map_err(|_| {
-        err(
-            StatusCode::BAD_GATEWAY,
-            "Search is unavailable. Retry or enter a domain you already know.",
-        )
-    })?;
-    let domains = grouped_candidates(results, &blocked, &terms);
+    .await }
+    });
+    let mut results = Vec::new();
+    let mut successful = 0;
+    for batch in futures_util::future::join_all(searches).await {
+        if let Ok(Ok(rows)) = batch { successful += 1; results.extend(rows); }
+    }
+    if successful == 0 {
+        return Err(err(StatusCode::BAD_GATEWAY, "Search is unavailable. Retry or enter a domain you already know."));
+    }
+    let mut domains = grouped_candidates(results, &blocked, &terms);
+    // Ranking preference only: an academic hostname is not claim verification.
+    if discovery_queries(&discovery_terms).len() > 1 {
+        domains.sort_by_key(|d| {
+            let host = d["domain"].as_str().unwrap_or("");
+            ![".ac.in", ".edu", ".edu.in", ".res.in", ".gov.in"].iter().any(|suffix| host.ends_with(suffix))
+        });
+    }
+    domains.truncate(25);
     Ok(Json(json!({ "domains": domains, "total": domains.len() })))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn academic_discovery_preserves_topic_and_region_without_seeding_institutions() {
+        let terms = search_terms("Find premier research labs and university institutes in aerospace engineering in South India");
+        let queries = discovery_queries(&terms);
+        assert_eq!(queries[0], "aerospace engineering south india department research facilities");
+        assert!(queries.iter().all(|q| q.contains("south india") && q.contains("aerospace")));
+        assert!(!queries.iter().any(|q| q.contains("iisc") || q.contains("iitm")));
+    }
 
     #[test]
     fn restrictions_are_optional_but_invalid_values_never_become_unrestricted() {

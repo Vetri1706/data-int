@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, collection_id, status, current_stage, iteration,\n                records_found, records_verified, avg_confidence, started_at, completed_at, error_message\n         FROM workflow_runs WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "collection_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "current_stage",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "iteration",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "records_found",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "records_verified",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "avg_confidence",
+        "type_info": "Float4"
+      },
+      {
+        "ordinal": 8,
+        "name": "started_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "completed_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "error_message",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "3de8cb096abdb198c1dfa77df453129a1b802f463985983c983c64b3eddb8898"
+}

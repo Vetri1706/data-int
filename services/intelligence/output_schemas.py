@@ -36,7 +36,10 @@ def extraction_schema(fields, limit):
     for field in fields:
         kind = types.get(field.get('field_type'), 'string')
         properties[field['name']] = {'type': [kind, 'null']}
+        if kind == 'string':
+            properties[field['name']]['maxLength'] = 300
         if kind == 'array':
             properties[field['name']]['items'] = TEXT
-    properties.update({key: TEXT for key in ('canonical_name', 'chunk_id', 'source_url', 'evidence_excerpt')})
+    properties.update({key: {'type': 'string', 'maxLength': length} for key, length in
+                       [('canonical_name', 160), ('chunk_id', 80), ('source_url', 2048), ('evidence_excerpt', 250)]})
     return object_schema({'records': {'type': 'array', 'maxItems': limit, 'items': object_schema(properties)}})

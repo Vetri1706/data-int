@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO run_events (run_id, event_type, payload)\n             VALUES ($1, $2, $3)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0c2ffa6ad12ceb2181db3d795f9bb8b93cab8996f0b9539ab23fc5c8b4085221"
+}

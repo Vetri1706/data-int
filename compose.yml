@@ -1,0 +1,217 @@
+name: datavault
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-datavault}
+      POSTGRES_DB: ${POSTGRES_DB:-datavault}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging: *logging
+
+  redis:
+    image: ${SEARXNG_VALKEY_IMAGE:-valkey/valkey:9-alpine}
+    restart: unless-stopped
+    command: [valkey-server, --appendonly, "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [CMD, valkey-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging: *logging
+
+  valkey:
+    image: ${SEARXNG_VALKEY_IMAGE:-valkey/valkey:9-alpine}
+    restart: unless-stopped
+    command: [valkey-server, --save, "30", "1", --loglevel, warning]
+    volumes:
+      - search-data:/data
+    healthcheck:
+      test: [CMD, valkey-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging: *logging
+
+  searxng:
+    image: ${SEARXNG_IMAGE:-searxng/searxng:latest}
+    restart: unless-stopped
+    environment:
+      SEARXNG_SECRET: ${SEARXNG_SECRET:?Set SEARXNG_SECRET in .env}
+      SEARXNG_BASE_URL: http://searxng:8080/
+      SEARXNG_BIND_ADDRESS: 0.0.0.0
+      SEARXNG_PORT: "8080"
+    volumes:
+      - ./infra/searxng/settings.yml:/etc/searxng/settings.yml:ro
+      - searxng-cache:/var/cache/searxng
+    depends_on:
+      valkey:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wget, -q, --spider, http://127.0.0.1:8080/healthz]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 12
+    logging: *logging
+
+  migrate:
+    build:
+      context: .
+      dockerfile: infra/docker/migrate.Dockerfile
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-datavault}
+      POSTGRES_DB: ${POSTGRES_DB:-datavault}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    logging: *logging
+
+  scrapling:
+    build:
+      context: .
+      dockerfile: services/scrapling/Dockerfile
+    restart: unless-stopped
+    init: true
+    shm_size: 512mb
+    environment:
+      RUST_API_BASE: http://api:3000/v1
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 12
+    logging: *logging
+
+  intelligence:
+    build:
+      context: .
+      dockerfile: services/intelligence/Dockerfile
+    restart: unless-stopped
+    init: true
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    environment:
+      RUST_API_BASE: http://api:3000/v1
+      SCRAPLING_URL: http://scrapling:8001
+      SEARXNG_URL: http://searxng:8080
+      LAYA_ENABLED: "0"
+      LLM_PROVIDER: ${LLM_PROVIDER:-local}
+      LLM_FALLBACK_PROVIDER: ${LLM_FALLBACK_PROVIDER:-}
+      LOCAL_LLM_BASE_URL: ${DOCKER_OLLAMA_URL:-http://host.docker.internal:11434/v1}
+      LOCAL_LLM_ALLOW_DOCKER_HOST: "1"
+      LOCAL_LLM_MODEL: ${LOCAL_LLM_MODEL:-qwen2.5:3b}
+      LOCAL_LLM_DISABLED_MODELS: ${LOCAL_LLM_DISABLED_MODELS:-}
+      LOCAL_LLM_NUM_CTX: ${LOCAL_LLM_NUM_CTX:-8192}
+      LOCAL_LLM_MAX_TOKENS: ${LOCAL_LLM_MAX_TOKENS:-1024}
+      LLM_MAX_CONCURRENCY: ${LLM_MAX_CONCURRENCY:-1}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-40}
+      LLM_TOTAL_TIMEOUT_SECONDS: ${LLM_TOTAL_TIMEOUT_SECONDS:-55}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-2048}
+      WORKFLOW_TIMEOUT_SECONDS: ${WORKFLOW_TIMEOUT_SECONDS:-180}
+      MAX_SCRAPE_SITES: ${MAX_SCRAPE_SITES:-25}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GLM_API_KEY: ${GLM_API_KEY:-}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-20b}
+      GLM_MODEL: ${GLM_MODEL:-glm-4.5-flash}
+      NVIDIA_MODEL: ${NVIDIA_MODEL:-meta/llama-3.3-70b-instruct}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openrouter/free}
+      HUGGINGFACE_MODEL: ${HUGGINGFACE_MODEL:-openai/gpt-oss-20b}
+    depends_on:
+      scrapling:
+        condition: service_healthy
+      searxng:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      start_period: 40s
+      retries: 12
+    stop_grace_period: 30s
+    logging: *logging
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3000"
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-datavault}
+      POSTGRES_DB: ${POSTGRES_DB:-datavault}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      INTELLIGENCE_URL: http://intelligence:7000
+      SCRAPLING_URL: http://scrapling:8001
+      SEARXNG_URL: http://searxng:8080
+      RUST_LOG: info
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      intelligence:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, curl, -fsS, http://127.0.0.1:3000/v1/health]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    logging: *logging
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      RUST_API_BASE: http://api:3000/v1
+    ports:
+      - "${DOCKER_BIND_ADDRESS:-127.0.0.1}:${DOCKER_FRONTEND_PORT:-3003}:3001"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3001/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 12
+    logging: *logging
+
+volumes:
+  postgres-data:
+  redis-data:
+  search-data:
+  searxng-cache:

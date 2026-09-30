@@ -1,0 +1,80 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO collections (workspace_id, created_by, title, prompt, data_contract)\n             VALUES ($1, $2, $3, $4, $5)\n             RETURNING id, workspace_id, created_by, title, prompt, status,\n                       data_contract, tags, created_at, updated_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "workspace_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "created_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "prompt",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "data_contract",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 7,
+        "name": "tags",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Jsonb"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "da6f85dd7e7b161f569357daa17ffd096a1948e3999d007b7ed22f443da6508f"
+}

@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO sessions (user_id, token_hash, expires_at)\n             VALUES ($1, $2, $3)\n             ON CONFLICT (token_hash) DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b95282ff7127571e457d8c0d19ab5095993f500241df58e062146dca371be494"
+}

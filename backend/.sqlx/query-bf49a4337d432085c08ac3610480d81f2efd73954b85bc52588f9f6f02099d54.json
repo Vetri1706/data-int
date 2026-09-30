@@ -1,0 +1,55 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO sources (domain, source_type, trust_tier, workspace_id)\n         VALUES ($1, COALESCE($2, 'general'), COALESCE($3, 'tier2'), $4)\n         RETURNING id, domain, source_type, trust_tier, enabled, created_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "domain",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "source_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "trust_tier",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "bf49a4337d432085c08ac3610480d81f2efd73954b85bc52588f9f6f02099d54"
+}

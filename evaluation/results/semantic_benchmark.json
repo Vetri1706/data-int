@@ -1,0 +1,322 @@
+{
+  "scope": "Author-labelled synthetic cases; not a claim of live-web accuracy",
+  "model": "qwen2.5:3b",
+  "elapsed_seconds": 43.11,
+  "metrics": {
+    "typed": {
+      "cases": 43,
+      "supported_correct": 14,
+      "false_support": 0,
+      "abstentions": 20
+    },
+    "reviewed": {
+      "cases": 43,
+      "supported_correct": 19,
+      "false_support": 0,
+      "abstentions": 15
+    }
+  },
+  "cases": [
+    {
+      "id": "wrong_city",
+      "expected": "contradicted",
+      "typed": "contradicted",
+      "reviewed": "contradicted",
+      "model_calls": 0
+    },
+    {
+      "id": "wrong_certificate",
+      "expected": "unknown",
+      "typed": "unknown",
+      "reviewed": "unknown",
+      "model_calls": 1
+    },
+    {
+      "id": "wrong_amount",
+      "expected": "contradicted",
+      "typed": "contradicted",
+      "reviewed": "contradicted",
+      "model_calls": 0
+    },
+    {
+      "id": "partial_name",
+      "expected": "unknown",
+      "typed": "unknown",
+      "reviewed": "unknown",
+      "model_calls": 0
+    },
+    {
+      "id": "neighbor_sentence",
+      "expected": "contradicted",
+      "typed": "contradicted",
+      "reviewed": "contradicted",
+      "model_calls": 0
+    },
+    {
+      "id": "neighbor_same_sentence",
+      "expected": "contradicted",
+      "typed": "contradicted",
+      "reviewed": "contradicted",
+      "model_calls": 0
+    },
+    {
+      "id": "negation",
+      "expected": "contradicted",
+      "typed": "contradicted",
+      "reviewed": "contradicted",
+      "model_calls": 0
+    },
+    {
+      "id": "correct_city",
+      "expected": "supported",
+      "typed": "supported",
+      "reviewed": "supported",
+      "model_calls": 0
+    },
+    {
+      "id": "correct_certificate",
+      "expected": "supported",
+      "typed": "supported",
+      "reviewed": "supported",
+      "model_calls": 0
+    },
+    {
+      "id": "correct_amount",
+      "expected": "supported",
+      "typed": "supported",
+      "reviewed": "supported",
+      "model_calls": 0
+    },
+    {
+      "id": "unit_equivalence",
+      "expected": "supported",
+      "typed": "supported",
+      "reviewed": "supported",
+      "model_calls": 0
+    },
+    {
+      "id": "zero",
+      "expected": "supported",
+      "typed": "supported",
+      "reviewed": "supported",
+      "model_calls": 0
+    },
+    {
+      "id": "false_boolean",
+      "expected": "supported",
+      "typed": "supported",
+      "reviewed": "supported",
+      "model_calls": 0
+    },
+    {
+      "id": "correct_date",
+      "expected": "supported",
+      "typed": "supported",
+      "reviewed": "supported",
+      "model_calls": 0
+    },
+    {
+      "id": "wrong_date",
+      "expected": "contradicted",
+      "typed": "contradicted",
+      "reviewed": "contradicted",
+      "model_calls": 0
+    },
+    {
+      "id": "industry",
+      "expected": "supported",
+      "typed": "supported",
+      "reviewed": "supported",
+      "model_calls": 0
+    },
+    {
+      "id": "missing_revenue",
+      "expected": "unknown",
+      "typed": "unknown",
+      "reviewed": "unknown",
+      "model_calls": 1
+    },
+    {
+      "id": "correct_name",
+      "expected": "supported",
+      "typed": "supported",
+      "reviewed": "supported",
+      "model_calls": 0
+    },
+    {
+      "id": "wrong_currency_amount",
+      "expected": "contradicted",
+      "typed": "contradicted",
+      "reviewed": "contradicted",
+      "model_calls": 0
+    },
+    {
+      "id": "correct_currency",
+      "expected": "supported",
+      "typed": "supported",
+      "reviewed": "supported",
+      "model_calls": 0
+    },
+    {
+      "id": "different_field_same_number",
+      "expected": "unknown",
+      "typed": "unknown",
+      "reviewed": "unknown",
+      "model_calls": 1
+    },
+    {
+      "id": "different_relation_same_city",
+      "expected": "unknown",
+      "typed": "unknown",
+      "reviewed": "unknown",
+      "model_calls": 1
+    },
+    {
+      "id": "quoted_claim",
+      "expected": "unknown",
+      "typed": "unknown",
+      "reviewed": "unknown",
+      "model_calls": 1
+    },
+    {
+      "id": "future_plan",
+      "expected": "unknown",
+      "typed": "unknown",
+      "reviewed": "unknown",
+      "model_calls": 1
+    },
+    {
+      "id": "past_location",
+      "expected": "unknown",
+      "typed": "unknown",
+      "reviewed": "unknown",
+      "model_calls": 1
+    },
+    {
+      "id": "conditional",
+      "expected": "unknown",
+      "typed": "unknown",
+      "reviewed": "unknown",
+      "model_calls": 1
+    },
+    {
+      "id": "ambiguous_range",
+      "expected": "unknown",
+      "typed": "unknown",
+      "reviewed": "unknown",
+      "model_calls": 1
+    },
+    {
+      "id": "ambiguous_date",
+      "expected": "unknown",
+      "typed": "unknown",
+      "reviewed": "unknown",
+      "model_calls": 1
+    },
+    {
+      "id": "paraphrase_location",
+      "expected": "supported",
+      "typed": "unknown",
+      "reviewed": "supported",
+      "model_calls": 1
+    },
+    {
+      "id": "paraphrase_revenue",
+      "expected": "supported",
+      "typed": "unknown",
+      "reviewed": "supported",
+      "model_calls": 1
+    },
+    {
+      "id": "plural_multi_location",
+      "expected": "supported",
+      "typed": "unknown",
+      "reviewed": "supported",
+      "model_calls": 1
+    },
+    {
+      "id": "label_location",
+      "expected": "supported",
+      "typed": "supported",
+      "reviewed": "supported",
+      "model_calls": 0
+    },
+    {
+      "id": "new_city",
+      "expected": "supported",
+      "typed": "supported",
+      "reviewed": "supported",
+      "model_calls": 0
+    },
+    {
+      "id": "new_number",
+      "expected": "supported",
+      "typed": "supported",
+      "reviewed": "supported",
+      "model_calls": 0
+    },
+    {
+      "id": "zero_wrong",
+      "expected": "contradicted",
+      "typed": "contradicted",
+      "reviewed": "contradicted",
+      "model_calls": 0
+    },
+    {
+      "id": "wrong_boolean",
+      "expected": "contradicted",
+      "typed": "contradicted",
+      "reviewed": "contradicted",
+      "model_calls": 0
+    },
+    {
+      "id": "irrelevant_mention",
+      "expected": "unknown",
+      "typed": "unknown",
+      "reviewed": "unknown",
+      "model_calls": 1
+    },
+    {
+      "id": "list_identity",
+      "expected": "supported",
+      "typed": "unknown",
+      "reviewed": "unknown",
+      "model_calls": 1
+    },
+    {
+      "id": "unknown_profile",
+      "expected": "unknown",
+      "typed": "unknown",
+      "reviewed": "unknown",
+      "model_calls": 1
+    },
+    {
+      "id": "correct_url",
+      "expected": "supported",
+      "typed": "supported",
+      "reviewed": "supported",
+      "model_calls": 0
+    },
+    {
+      "id": "heading_location",
+      "expected": "supported",
+      "typed": "unknown",
+      "reviewed": "supported",
+      "model_calls": 1
+    },
+    {
+      "id": "heading_specialization",
+      "expected": "supported",
+      "typed": "unknown",
+      "reviewed": "supported",
+      "model_calls": 1
+    },
+    {
+      "id": "neighbor_heading",
+      "expected": "unknown",
+      "typed": "unknown",
+      "reviewed": "unknown",
+      "model_calls": 1
+    }
+  ]
+}

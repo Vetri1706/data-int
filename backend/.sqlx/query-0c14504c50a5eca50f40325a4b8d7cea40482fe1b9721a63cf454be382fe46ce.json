@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT default_target_count, default_freshness_days, preferred_regions,\n                preferred_source_types, default_export_format, saved_categories, blocked_domains\n         FROM user_preferences WHERE user_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "default_target_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "default_freshness_days",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "preferred_regions",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 3,
+        "name": "preferred_source_types",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 4,
+        "name": "default_export_format",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "saved_categories",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 6,
+        "name": "blocked_domains",
+        "type_info": "TextArray"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "0c14504c50a5eca50f40325a4b8d7cea40482fe1b9721a63cf454be382fe46ce"
+}

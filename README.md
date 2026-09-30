@@ -45,6 +45,10 @@ Normal browser rendering is allowed for permitted pages without usable static co
 
 ## Local setup
 
+To run the **entire application in Docker**, see the
+[Docker deployment guide](infra/docker/README.md). The container dashboard runs
+at http://localhost:3003 with separate persistent database volumes.
+
 Use the [cross-platform scripts](scripts/README.md) for setup, start, status and stop. Requires Docker with Compose, Rust, Python 3.11+ and Node.js 20.9+. Docker provides local PostgreSQL, Redis-compatible Valkey and SearXNG; application services run on the host. Setup preserves existing `.env` values, backs it up before changes, and fills missing settings/secrets.
 
 ```powershell

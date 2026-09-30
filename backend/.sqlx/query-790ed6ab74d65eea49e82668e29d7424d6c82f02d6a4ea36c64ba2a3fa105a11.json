@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, domain, display_name, source_type, trust_tier,\n                extraction_success_rate, freshness_score, enabled, last_success_at, last_checked_at, last_status_code\n         FROM sources WHERE workspace_id = $1 ORDER BY trust_tier, domain LIMIT 200",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "domain",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "source_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "trust_tier",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "extraction_success_rate",
+        "type_info": "Float4"
+      },
+      {
+        "ordinal": 6,
+        "name": "freshness_score",
+        "type_info": "Float4"
+      },
+      {
+        "ordinal": 7,
+        "name": "enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "last_success_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "last_checked_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "last_status_code",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "790ed6ab74d65eea49e82668e29d7424d6c82f02d6a4ea36c64ba2a3fa105a11"
+}

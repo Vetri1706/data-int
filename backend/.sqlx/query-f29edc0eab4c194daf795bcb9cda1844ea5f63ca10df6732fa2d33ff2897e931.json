@@ -1,0 +1,80 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE collections\n         SET title = $1, tags = $2, status = $3, updated_at = NOW()\n         WHERE id = $4 AND workspace_id = $5\n         RETURNING id, workspace_id, created_by, title, prompt, status,\n                   data_contract, tags, created_at, updated_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "workspace_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "created_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "prompt",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "data_contract",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 7,
+        "name": "tags",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "TextArray",
+        "Text",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f29edc0eab4c194daf795bcb9cda1844ea5f63ca10df6732fa2d33ff2897e931"
+}

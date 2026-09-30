@@ -11,7 +11,7 @@ use axum::{
 use datavault_auth::AuthService;
 use datavault_storage::{Cache, Db};
 use dotenvy::dotenv;
-use sqlx::PgPool;
+use sqlx::{PgPool, postgres::PgConnectOptions};
 use std::env;
 use tower_http::{
     compression::CompressionLayer,
@@ -32,8 +32,19 @@ async fn main() -> Result<()> {
         .init();
 
     // ── PostgreSQL ────────────────────────────────────────────────────────────
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let pool = PgPool::connect(&database_url).await?;
+    let pool = match env::var("DATABASE_URL").ok().filter(|value| !value.is_empty()) {
+        Some(database_url) => PgPool::connect(&database_url).await?,
+        None => {
+            // Separate container settings avoid embedding raw passwords in URIs.
+            let options = PgConnectOptions::new()
+                .host(&env::var("POSTGRES_HOST").expect("DATABASE_URL or POSTGRES_HOST must be set"))
+                .port(env::var("POSTGRES_PORT").unwrap_or_else(|_| "5432".into()).parse()?)
+                .username(&env::var("POSTGRES_USER").expect("POSTGRES_USER must be set"))
+                .password(&env::var("POSTGRES_PASSWORD").expect("POSTGRES_PASSWORD must be set"))
+                .database(&env::var("POSTGRES_DB").expect("POSTGRES_DB must be set"));
+            PgPool::connect_with(options).await?
+        }
+    };
     sqlx::raw_sql(include_str!(
         "../../../../migrations/002_trust_and_workflow.sql"
     ))

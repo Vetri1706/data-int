@@ -1,0 +1,40 @@
+{
+  "deployment": "http://127.0.0.1:3003",
+  "checks": {
+    "api_health": true,
+    "internal_routes_private": true,
+    "registration_and_session": true,
+    "available_providers": [
+      "glm",
+      "groq",
+      "local",
+      "huggingface"
+    ],
+    "search_domains": [
+      "docs.python.org"
+    ],
+    "workflow": {
+      "status": "completed",
+      "current_stage": "finalizing",
+      "records_found": 2,
+      "records_verified": 1,
+      "error_message": null
+    },
+    "persisted_events": 19,
+    "retrieved_sources": [
+      "https://www.nal.res.in/en/facilities"
+    ],
+    "csv_export": true
+  },
+  "isolated_workspace_removed": true,
+  "scope": "One targeted deployment smoke test, not a general extraction-accuracy benchmark.",
+  "linux_regression_tests": {
+    "intelligence": 122,
+    "scraping": 15
+  },
+  "browser": {
+    "login_rendered": true,
+    "page_errors": 0,
+    "headless_chromium_launch": true
+  }
+}

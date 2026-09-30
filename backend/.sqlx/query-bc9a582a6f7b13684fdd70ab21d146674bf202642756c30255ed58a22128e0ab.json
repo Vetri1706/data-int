@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, run_id, collection_id, name, entity_type, record_count, avg_confidence,\n                schema, created_at, updated_at\n         FROM datasets WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "run_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "collection_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "entity_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "record_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "avg_confidence",
+        "type_info": "Float4"
+      },
+      {
+        "ordinal": 7,
+        "name": "schema",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "bc9a582a6f7b13684fdd70ab21d146674bf202642756c30255ed58a22128e0ab"
+}

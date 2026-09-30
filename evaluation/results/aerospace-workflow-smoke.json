@@ -1,0 +1,29 @@
+{
+  "prompt": "Find premier research labs and university institutes in aerospace engineering in South India.",
+  "model": "qwen2.5:3b",
+  "scope": "One live development run; acceptance is the pipeline verdict, not independent adjudication. Final contract-compiler fixes were applied afterwards and tested separately.",
+  "before": {
+    "sources": 7,
+    "review_candidates": 2,
+    "accepted_records": 0
+  },
+  "after": {
+    "status": "partial",
+    "sources": 15,
+    "review_candidates": 6,
+    "accepted_records": 1,
+    "elapsed_seconds": 190.58,
+    "stop_reason": "Workflow time budget exhausted",
+    "records": [
+      {
+        "name": "CSIR-NAL",
+        "location": "Bengaluru-560 017, Karnataka, India",
+        "field_of_study": "aerospace research and development",
+        "sources": [
+          "https://www.nal.res.in/en/facilities"
+        ]
+      }
+    ]
+  },
+  "limitation": "Still substantially below the requested coverage; a separate full Groq run failed with HTTP 429. No user collection or historic run was modified."
+}

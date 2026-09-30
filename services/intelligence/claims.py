@@ -159,6 +159,8 @@ def verify_claim(entity, field, value, chunk):
     findings = []
     for clause, start, end in subject_clauses(text, entity):
         verdict, reason = None, None
+        if identity and "![" in clause:
+            continue  # image alt text alone is not an entity assertion
         if identity and exact(value, clause):
             verdict, reason = "supported", "Exact subject identity"
         else:

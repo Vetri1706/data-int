@@ -18,6 +18,7 @@ import logging
 import asyncio
 import hashlib
 import sys
+import re
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_policy import permission_decision
@@ -35,6 +36,8 @@ from model_catalog import provider_catalog
 from grounding import chunk_sources, rank_chunks, retrieve_chunks, sanitize_query, validate_candidates, extract_canonical_name
 from relevance import evaluate_sources
 from output_schemas import CONTRACT_SCHEMA, QUERY_SCHEMA, extraction_schema
+from geography import preserve_geographic_scope
+from semantic_evidence import review_records
 from laya_filter import filter_chunks as apply_laya_filter
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel
@@ -67,7 +70,7 @@ ACTIVE_TASKS: Dict[str, asyncio.Task] = {}
 CANCELLED_RUNS: set[str] = set()
 
 
-def normalize_data_contract(contract: Any, prompt: str) -> Dict[str, Any]:
+def normalize_data_contract(contract: Any, prompt: str, *, generated=False) -> Dict[str, Any]:
     """Keep the generated contract complete without adding domain assumptions."""
     normalized = dict(contract) if isinstance(contract, dict) else {}
     if not isinstance(normalized.get("entity_type"), str) or not normalized["entity_type"].strip():
@@ -92,11 +95,35 @@ def normalize_data_contract(contract: Any, prompt: str) -> Dict[str, Any]:
         item.setdefault("field_type", "string")
         item.setdefault("description", "")
         item.setdefault("required", False)
+        if generated and item["name"] in {"type", "institution_type", "entity_type"} and not re.search(r"\b(?:types?|categories|classification)\b", prompt, re.I):
+            item["required"] = False
+        if generated and item["name"] in {"website", "website_url"} and not re.search(r"\b(?:websites?|urls?|links?|catalogs?|catalogues?)\b", prompt, re.I):
+            item["required"] = False
         fields.append(item)
+    # A constraint cannot be satisfied if its field is absent from extraction.
+    for constraint in normalized["constraints"]:
+        name = constraint.get("field")
+        if constraint.get("is_hard") and isinstance(name, str) and name and not any(f["name"] == name for f in fields):
+            fields.append({"name": name, "field_type": "string", "required": True,
+                           "description": "Source-backed value for the requested " + name.replace('_', ' ')})
     normalized["fields"] = fields
-    normalized["target_count"] = max(1, min(int(normalized.get("target_count") or 100), 1000))
+    # Preserve an explicit academic subject in "institutes in X in Y" requests.
+    # Otherwise a well-supported geology institute could satisfy an aerospace run.
+    topic = re.search(r"\bin\s+(.+?)\s+in\s+", prompt, re.I)
+    if topic and re.search(r"\b(?:research|labs?|institutes?|universit(?:y|ies))\b", prompt, re.I):
+        value = re.sub(r"\bengineering\b", "", topic[1], flags=re.I).strip()
+        focus = next((f for f in fields if f["name"] in {"field_of_study", "specialization", "research_focus", "research_area", "subject"}), None)
+        if value and focus:
+            if generated:
+                for c in normalized["constraints"]:
+                    if c.get("field") == focus["name"] and c.get("operator") == "contains" and str(c.get("target_value", "")).casefold() == topic[1].casefold():
+                        c["target_value"] = value
+            constraint = {"field": focus["name"], "operator": "contains", "target_value": value, "is_hard": True}
+            if constraint not in normalized["constraints"]:
+                normalized["constraints"].append(constraint)
+    normalized["target_count"] = max(1, min(int(normalized.get("target_count") or 10), 1000))
     normalized["min_field_coverage"] = min(1., max(0., float(normalized.get("min_field_coverage", 1.))))
-    return normalized
+    return preserve_geographic_scope(normalized, prompt)
 
 
 # ─── State ────────────────────────────────────────────────────────────────────
@@ -122,7 +149,9 @@ class WorkflowState(TypedDict):
     laya_enabled:       bool
     processed_chunks:   List[str]
     extracted_records:  List[Dict[str, Any]]
+    scrapling_records:  List[Dict[str, Any]]
     validated_records:  List[Dict[str, Any]]
+    claim_review_cache:  Dict[str, Any]
     coverage_score:     float
     iteration:          int
     max_iterations:     int
@@ -131,6 +160,7 @@ class WorkflowState(TypedDict):
     field_coverage:      float
     accepted_count:      int
     stop_reason:         str
+    stop_kind:           str
     source_failures:     List[Dict[str, Any]]
     status:             str
     messages:           Annotated[List, add_messages]
@@ -252,7 +282,7 @@ Return ONLY valid JSON. No markdown.
         end   = content.rfind("}") + 1
         contract = json.loads(content[start:end]) if start >= 0 else {}
 
-    contract = normalize_data_contract(contract, state["prompt"])
+    contract = normalize_data_contract(contract, state["prompt"], generated=True)
     logger.info(f"  DataContract: entity_type={contract.get('entity_type')}, target={contract.get('target_count')}")
     return {
         **state,
@@ -339,12 +369,14 @@ async def execute_search(state: WorkflowState) -> WorkflowState:
     logger.info("  Search providers produced %d unique candidate sources", len(candidate_sources))
     await post_run_event(state["run_id"], "search.completed",
                          payload={"candidate_count": len(candidate_sources),
-                                  "result_count": len(candidate_sources)})
+                                  "result_count": len(candidate_sources),
+                                  "new_candidates": len(set(candidates) - {r["url"] for r in state.get("candidate_sources", [])}),
+                                  "queries": state["queries"]})
     return {**state, "candidate_sources": candidate_sources, "status": "SEARCH_RESULTS"}
 
 
 async def source_relevance_gate(state: WorkflowState) -> WorkflowState:
-    """Gate search metadata before any webpage is retrieved."""
+    """Enforce source permission and rank metadata before retrieving pages."""
     logger.info("[source_relevance_gate] run=%s candidates=%d", state["run_id"],
                 len(state.get("candidate_sources", [])))
     # Keep the existing UI stage contract: relevance is part of collection.
@@ -380,24 +412,23 @@ async def source_relevance_gate(state: WorkflowState) -> WorkflowState:
             "missing_information": ["source relevance decision"],
         } for index, candidate in enumerate(candidates[:MAX_SCRAPE_SITES])]
     relevant = []
-    for evaluation in evaluations:
-        if evaluation.get("decision") not in ("KEEP", "UNCERTAIN"):
+    for evaluation in sorted(evaluations, key=lambda e: {"KEEP": 0, "UNCERTAIN": 1, "REJECT": 2}.get(e.get("decision"), 1)):
+        if evaluation.get("decision") not in ("KEEP", "UNCERTAIN", "REJECT"):
             continue
         index = evaluation.get("candidate_index")
         if isinstance(index, int) and 0 <= index < len(candidates):
             relevant.append({**candidates[index], "relevance": evaluation})
-    logger.info("  Source relevance: %d KEEP, %d not retrieved", len(relevant),
+    logger.info("  Source relevance: %d eligible, %d not retrieved", len(relevant),
                 max(0, len(evaluations) - len(relevant)))
     await post_run_event(
         state["run_id"], "source.relevance.completed",
         payload={"candidate_count": len(candidates),
                  "keep_count": len(relevant),
-                 "reject_count": sum(e.get("decision") == "REJECT" for e in evaluations),
+                 "reject_count": 0,
+                 "deprioritized_count": sum(e.get("decision") == "REJECT" for e in evaluations),
                  "uncertain_count": sum(e.get("decision") == "UNCERTAIN" for e in evaluations)},
     )
-    failures = list(state.get("source_failures", [])) + blocked + [
-        {"url": e.get("url"), "reason": e.get("reason"), "stage": "relevance"}
-        for e in evaluations if e.get("decision") == "REJECT"]
+    failures = list(state.get("source_failures", [])) + blocked
     return {**state, "source_failures": failures, "attempted_urls": sorted(attempted), "source_relevance": evaluations, "relevant_sources": relevant,
             "status": "SOURCES_GATED"}
 
@@ -530,8 +561,20 @@ async def extract_and_normalize(state: WorkflowState) -> WorkflowState:
     record_limit = 2 if local else 4
     all_records = list(state.get("extracted_records", []))
 
-    for i in range(0, min(len(results), 80), batch_size):
-        batch = results[i:i+batch_size]
+    pages = {}
+    for chunk in results[:80]:
+        pages.setdefault(chunk['url'], []).append(chunk)
+    # Give an entity its own page context, including contact blocks omitted by
+    # topic ranking. Never mix different institutions' webpages in one batch.
+    for url, chunks in pages.items():
+        contacts = [c for c in state.get('chunk_pool', []) if c['url'] == url
+                    and re.search(r'\b(?:contact|address)\b|\b\d{6}\b', c['text'], re.I)]
+        if contacts:
+            contact = max(contacts, key=lambda c: len(re.findall(r'\b\d{6}\b', c['text'])))
+            if contact['chunk_id'] not in {c['chunk_id'] for c in chunks}:
+                chunks.insert(1, contact)
+    batches = [chunks[i:i+batch_size] for chunks in pages.values() for i in range(0, len(chunks), batch_size)]
+    for i, batch in enumerate(batches):
         sources_text = "\n".join(
             f"[{j+1}] CHUNK_ID: {r['chunk_id']}\nURL: {r['url']}\nText: {r['text']}"
             for j, r in enumerate(batch)
@@ -551,6 +594,14 @@ For each {entity} found, return a JSON object with:
 - source_url: the exact URL attached to that passage
 - evidence_excerpt: a verbatim excerpt of the provided text; do not invent or paraphrase
 Do not infer missing facts from URLs, page titles, or prior knowledge.
+Copy short field values directly from the passage, including place spelling.
+Do not expand an acronym or add a state/country absent from the passage.
+All passages in this request come from the SAME page. Combine complementary
+facts about the same named entity across these passages. chunk_id anchors its
+identity; individual fields can be supported by other passages from this page.
+Do not combine attributes of distinct entities listed on the page.
+Use only source text as field values. The requested geography is a filter, never
+a substitute for a missing address. This page may describe an out-of-scope entity.
 
 Return JSON: {{"records": [...]}}
 Return at most {record_limit} distinct {entity} records per response. Keep excerpts below 250 characters.
@@ -609,6 +660,17 @@ fields outside the generated schema.
             if data is not None:
                 processed.update(chunk["chunk_id"] for chunk in batch)
             logger.info(f"  Batch extracted {len(records)} records")
+            if records and (i + 1) % 3 == 0:
+                # Leave time to validate each small wave; a deadline must not
+                # discard every useful row while we are still drafting more.
+                checkpoint = await validate_records({**state, "extracted_records": all_records,
+                    "processed_chunks": sorted(processed)})
+                state = {**state, "validated_records": checkpoint["validated_records"],
+                         "claim_review_cache": checkpoint.get("claim_review_cache", {})}
+                if checkpoint.get("stop_reason"):
+                    state = {**state, "stop_reason": checkpoint["stop_reason"], "stop_kind": checkpoint.get("stop_kind", "")}
+                    break
+                await post_run_event(state["run_id"], "stage.updated", stage="extracting", progress=50)
         except LLMUnavailable as exc:
             if all_records:
                 state = {**state, "stop_reason": str(exc), "stop_kind": "model_error"}
@@ -702,10 +764,23 @@ async def validate_records(state: WorkflowState) -> WorkflowState:
     """Validate every candidate against fetched chunks and measure confidence."""
     ACTIVE_RUN_STATES[state["run_id"]] = state
     await post_run_event(state["run_id"], "stage.updated", stage="validating", progress=70)
-    validated = await asyncio.to_thread(
-        validate_candidates, state["extracted_records"],
-        state.get("retrieved_chunks", []), state["data_contract"],
-    )
+    chunks = {c["chunk_id"]: c for c in [*state.get("chunk_pool", []), *state.get("retrieved_chunks", [])]}
+    def validate(reviews=None):
+        return validate_candidates(state["extracted_records"], list(chunks.values()), state["data_contract"], reviewed_claims=reviews)
+    validated = await asyncio.to_thread(validate)
+    # Save completed reviews so a later timeout cannot discard validated rows.
+    async def save_progress(reviews, cache):
+        nonlocal validated
+        validated = await asyncio.to_thread(validate, reviews)
+        ACTIVE_RUN_STATES[state["run_id"]] = {**state, "validated_records": validated, "claim_review_cache": cache}
+    try:
+        reviews, cache, calls = await review_records(state["extracted_records"], list(chunks.values()),
+            state["data_contract"], llm.ainvoke, state.get("claim_review_cache"), on_progress=save_progress)
+        validated = await asyncio.to_thread(validate, reviews)
+        state = {**state, "claim_review_cache": cache}
+        await post_run_event(state["run_id"], "claims.reviewed", payload={"model_calls": calls, "reviewed_records": len(reviews), "method": "model-reviewed-quote-v1"})
+    except LLMUnavailable as exc:
+        state = {**state, "stop_reason": str(exc), "stop_kind": "model_error"}
     await post_run_event(
         state["run_id"], "records.validated",
         records_found=len(state["extracted_records"]),
@@ -752,6 +827,9 @@ async def semantic_verify(state: WorkflowState) -> WorkflowState:
     if not accepted and state.get("stop_kind") == "model_error":
         status = "failed"
     reason = "Acceptance target and field coverage met" if status == "completed" else state.get("stop_reason") or "Search budget exhausted before acceptance target was met"
+    if status == "exhausted" and not state.get("search_results") and state.get("source_failures"):
+        failure_types = sorted({str(f.get("code") or f.get("stage") or "source policy") for f in state["source_failures"]})
+        reason = "No permitted source pages could be retrieved (" + ", ".join(failure_types) + "). Inspect source failures before retrying."
     await post_run_event(state["run_id"], "run." + status, error=reason if status == "failed" else None,
         records_found=len(state.get("extracted_records", [])), records_verified=len(accepted),
         payload={"records": accepted, "review_candidates": [r for r in state.get("validated_records", []) if not r.get("accepted")],
@@ -784,6 +862,8 @@ Source failures: {json.dumps(state.get("source_failures", [])[-30:])}
 Field coverage: {state.get("field_coverage", 0)}
 The entity type is: {contract.get('entity_type')}
 Current constraints: {json.dumps(contract.get('constraints', []))}
+Original request: {state['prompt']}
+Approved domains: {json.dumps(contract.get('source_policy', {}).get('approved_domains', []))}
 
 Generate 3-5 distinct web search queries using natural, practical keywords to find more {contract.get('entity_type', 'entities')}.
 Do not append meta instructions or labels like 'association website', 'news article', or 'official registry' to the query terms.
@@ -950,6 +1030,9 @@ Fields:
 - allowed_domains: [string]
 Extract requirements from the user's words, not your own quality preferences.
 Only include the identity and fields the user requested; do not add contact details.
+Preserve the requested geography and subject as mandatory requirements. Supporting
+columns such as institution type are optional unless explicitly requested. A word
+like premier is not a measurable ranking; never invent a ranking threshold.
 Do not invent certification names, freshness limits, or mandatory document types.
 Defaults unless explicitly requested: target_count=10, freshness_days=null,
 evidence_policy={"min_sources":1,"prefer_official":true,"require_date":false,"required_evidence":[]}.
@@ -972,7 +1055,7 @@ field_type=url; do not invent an is_valid_url constraint. Keep allowed_domains=[
         contract = json.loads(content[start:end])
         if not isinstance(contract, dict) or not isinstance(contract.get("fields"), list) or not contract["fields"]:
             raise ValueError("missing contract fields")
-        contract = normalize_data_contract(contract, req.prompt)
+        contract = normalize_data_contract(contract, req.prompt, generated=True)
         if not contract["fields"]:
             raise ValueError("missing usable contract fields")
         contract["_model_config"] = selection

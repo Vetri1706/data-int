@@ -13,6 +13,22 @@ from test_grounding import CONTRACT, document, candidate
 
 
 class WorkflowTests(unittest.IsolatedAsyncioTestCase):
+    async def test_extraction_never_mixes_pages_and_keeps_contact_context(self):
+        state = self.state()
+        first = chunk_sources([document('https://one.example', text='Alpha researches aerospace.')])[0]
+        second = chunk_sources([document('https://two.example', text='Beta researches aerospace.')])[0]
+        contact = {**first, 'chunk_id': 'contact', 'text': 'Alpha contact address: Chennai 600001'}
+        state['retrieved_chunks'] = [first, second]
+        state['chunk_pool'] = [first, second, contact]
+        model = SimpleNamespace(ainvoke=AsyncMock(return_value=SimpleNamespace(content='{"records":[]}')))
+        with patch.object(workflow, 'post_run_event', AsyncMock()), patch.object(workflow, 'llm', model):
+            await workflow.extract_and_normalize(state)
+        self.assertEqual(model.ainvoke.await_count, 2)
+        texts = [c.args[0][1].content for c in model.ainvoke.call_args_list]
+        self.assertIn('600001', texts[0])
+        self.assertNotIn('two.example', texts[0])
+        self.assertNotIn('one.example', texts[1])
+
     async def test_local_extraction_bounds_batches_and_processes_every_chunk(self):
         state = self.state()
         state['data_contract']['_model_config'] = {'provider': 'local', 'model': 'fixture'}
@@ -162,7 +178,7 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
         ]}))))
         with patch.object(workflow, "post_run_event", new_callable=AsyncMock), patch.object(workflow, "llm", model):
             result = await workflow.source_relevance_gate(state)
-        self.assertEqual([s["url"] for s in result["relevant_sources"]], ["https://keep.example/"])
+        self.assertEqual([s["url"] for s in result["relevant_sources"]], ["https://keep.example/", "https://reject.example/"])
         self.assertEqual([e["decision"] for e in result["source_relevance"]], ["KEEP", "REJECT"])
 
     async def test_scrapling_receives_only_keep_sources(self):

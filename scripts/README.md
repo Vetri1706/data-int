@@ -69,6 +69,14 @@ After setup, run `.venv/Scripts/python.exe -m unittest discover -s scripts -p 't
 
 Implementation references: [Docker Compose readiness](https://docs.docker.com/reference/cli/docker/compose/up/) and [Psycopg connection transactions](https://www.psycopg.org/psycopg3/docs/basic/usage.html).
 
+## Full Docker deployment
+
+Use `scripts/windows/docker.ps1 start`, `bash scripts/linux/docker.sh start`, or
+`bash scripts/macos/docker.sh start` to build and run the complete application.
+The dashboard is at http://localhost:3003. Commands also include `status`, `logs`,
+`build` and `stop`. This uses separate persistent volumes and does not replace
+the host development setup. See [Docker deployment details](../infra/docker/README.md).
+
 ## Temporary Vercel demo connection (Windows)
 
 The Vercel project builds `frontend/`. The Rust API, database, search and model services stay on this computer. For an explicitly approved temporary demo, place the official Windows `cloudflared.exe` in ignored `.runtime/`, start the normal app services, then run:

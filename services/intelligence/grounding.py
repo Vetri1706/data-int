@@ -153,7 +153,7 @@ async def collect_sources(results, client=None, url_guard=public_url, source_pol
     return list(unique.values())
 
 
-def chunk_sources(sources, size=500, stride=100):
+def chunk_sources(sources, size=1600, stride=1200):
     if size <= 0 or stride <= 0 or stride > size:
         raise ValueError("Chunk stride must be between 1 and chunk size")
     chunks = []
@@ -195,12 +195,21 @@ def rank_chunks(chunks, prompt, contract, top_k=24):
                       *[str(f.get("description") or f["name"]) for f in contract.get("fields", [])]])
     scores = similarities(query, [c["text"] for c in chunks])
     ranked = sorted(zip(chunks, scores), key=lambda item: item[1], reverse=True)
+    # Cover distinct pages before allocating extra passages to a long directory.
+    best, rest = [], []
+    seen_urls = set()
+    for item in ranked:
+        if item[0]["url"] not in seen_urls:
+            best.append(item)
+            seen_urls.add(item[0]["url"])
+        else:
+            rest.append(item)
     selected, per_source = [], {}
-    for chunk, score in ranked:
+    for chunk, score in [*best, *rest]:
         if score <= 0 or per_source.get(chunk["url"], 0) >= 4:
             continue
         # Do not spend the context window repeating overlapping passages.
-        if any(c["url"] == chunk["url"] and abs(c["char_start"] - chunk["char_start"]) < 300 for c in selected):
+        if any(c["url"] == chunk["url"] and abs(c["char_start"] - chunk["char_start"]) < min(300, len(chunk["text"])) for c in selected):
             continue
         selected.append({**chunk, "retrieval_score": round(score, 6)})
         per_source[chunk["url"]] = per_source.get(chunk["url"], 0) + 1
@@ -241,6 +250,9 @@ def constraint_passes(value, operator, target, kind="string"):
     if value is None:
         return False
     op = str(operator).lower().strip()
+    if op == "in_region":
+        from geography import in_region
+        return in_region(value, target)
     if op in {"is_not_empty", "not_empty", "exists", "not_null", "non_empty"}:
         return bool(str(value).strip())
     if op in {"is_empty", "empty", "null", "is_null"}:
@@ -317,7 +329,7 @@ def extract_canonical_name(record: dict, contract: dict = None) -> str:
     return ""
 
 
-def validate_candidates(records, chunks, contract, now=None):
+def validate_candidates(records, chunks, contract, now=None, reviewed_claims=None):
     """Keep review candidates separate; acceptance requires explicit supported claims.
 
     A missing field or conflicting claim is retained as a diagnostic, not promoted
@@ -327,7 +339,7 @@ def validate_candidates(records, chunks, contract, now=None):
     policy = contract.get("evidence_policy") or {}
     by_id = {c["chunk_id"]: c for c in chunks if c.get("http_status") == 200}
     candidates = []
-    for raw in records:
+    for index, raw in enumerate(records):
         if not isinstance(raw, dict):
             continue
         name = extract_canonical_name(raw, contract)
@@ -337,18 +349,26 @@ def validate_candidates(records, chunks, contract, now=None):
         if raw.get("chunk_id") and raw["chunk_id"] not in by_id:
             continue
         anchor = by_id.get(raw.get("chunk_id"))
-        eligible = [anchor] if anchor else [c for c in by_id.values() if c.get("url") == raw.get("source_url")]
+        url = anchor["url"] if anchor else raw.get("source_url")
+        eligible = [c for c in by_id.values() if c.get("url") == url]
         identity_field = {"name": "canonical_name", "identity": True}
-        eligible = [c for c in eligible if verify_claim(name, identity_field, name, c)["state"] == "supported"]
-        if not eligible:
+        reviews = (reviewed_claims or {}).get(index, {})
+        identity = reviews.get("canonical_name", {})
+        named = [c for c in eligible if verify_claim(name, identity_field, name, c)["state"] == "supported"]
+        if not named and identity.get("state") != "supported":
             continue
-        anchor = eligible[0]
+        anchor = anchor or eligible[0]
         claims = {}
         for field in fields:
             value = raw.get(field["name"])
             if field["name"] in {"name", "canonical_name"} and value is None:
                 value = name
             decisions = [verify_claim(name, field, value, c) for c in eligible]
+            reviewed = reviews.get(field["name"])
+            if reviewed:
+                decisions.append(reviewed)
+            elif field["name"] in {"name", "canonical_name"} and identity.get("state") == "supported":
+                decisions.append({**identity, "field_name": field["name"]})
             states = {d["state"] for d in decisions}
             state = "contradicted" if "contradicted" in states else "supported" if "supported" in states else "unknown"
             evidence = [e for d in decisions for e in d["evidence"]]
@@ -428,10 +448,12 @@ def validate_candidates(records, chunks, contract, now=None):
         # Empty schemas and no supported business attributes never form accepted datasets.
         accepted = bool(fields) and supported_fields > 0 and not reasons
         citations = [{"field_name": n, "extracted_value": str(c["value"]), **e} for n, c in claims.items() if c["state"] == "supported" for e in c["evidence"] if e["state"] == "supported"]
+        method = "typed-and-model-reviewed-quotes-v1" if any(e.get("verification_method") == "model-reviewed-quote-v1" for e in citations) else "typed-claims-v1"
         row.update(accepted=accepted, status="verified" if accepted else "needs_review", confidence_score=None,
                    confidence_breakdown={}, verification={"version": "typed-claims-v1", "accepted": accepted,
+                   "method": method,
                    "field_coverage": coverage, "acceptance_failures": reasons},
-                   provenance={"validation_method": "typed-claims-v1", "source_urls": sorted({e["source_url"] for e in citations}),
+                   provenance={"validation_method": method, "source_urls": sorted({e["source_url"] for e in citations}),
                                "field_evidence": citations, "http_status": sources[0].get("http_status"),
                                "fetched_at": sources[0].get("fetched_at"), "content_sha256": sources[0].get("content_sha256")})
         output.append(row)

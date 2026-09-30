@@ -29,6 +29,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, HttpUrl
 from scrapling.fetchers import AsyncFetcher, DynamicFetcher
 from search_provider import search as search_metadata
+from trafilatura import extract as extract_main_text
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("scrapling")
@@ -289,12 +290,33 @@ def _page_title(page: Any, url: str) -> str:
 
 
 def _normalized_content(page: Any) -> str:
-    """Use Scrapling's RAG-safe Markdown conversion, retaining tables/lists/links."""
+    """Scrapling fetches; Trafilatura removes menus before context selection."""
+    content = None
+    body = getattr(page, "body", b"")
+    if body and (b"<" in body if isinstance(body, bytes) else "<" in body):
+        try:
+            content = extract_main_text(body, url=str(getattr(page, "url", "")),
+                output_format="txt", include_formatting=True, include_links=True,
+                include_tables=True, include_comments=False, favor_precision=True)
+            if content:
+                # Contact addresses are often in the footer, outside the article.
+                # Preserve their original text; never create synthetic claims.
+                for node in page.css("footer, address, [role='contentinfo']"):
+                    footer = node.get_all_text(separator="\n", strip=True)
+                    if footer and footer not in content:
+                        content += "\n\n" + footer[:5000]
+        except (ValueError, TypeError, AttributeError):
+            content = None
     try:
-        content = page.markdown(main_content_only=True)
+        content = content or page.markdown(main_content_only=True)
     except Exception:
         content = page.get_all_text(separator="\n", strip=True, ignore_tags=("script", "style", "noscript", "svg", "iframe"))
-    return str(content or "").strip()[:MAX_CONTENT_CHARS]
+    # Image alt text is not an entity assertion. Decorative Markdown dividers
+    # must not consume the extraction window or become partial name evidence.
+    content = re.sub(r"!\[[^\]]*\]\([^\n)]*\)", "", str(content or ""))
+    content = re.sub(r"(?m)^\s*[-_=]{4,}\s*$", "", content)
+    content = re.sub(r"\n{3,}", "\n\n", content)
+    return content.strip()[:MAX_CONTENT_CHARS]
 
 
 def _usable_content(content: str) -> bool:

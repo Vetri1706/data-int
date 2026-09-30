@@ -83,8 +83,12 @@ def provider_config(name, env):
     if name == "local":
         base = env.get("LOCAL_LLM_BASE_URL", "http://127.0.0.1:11434/v1").rstrip("/")
         url = urlparse(base)
-        if url.scheme not in {"http", "https"} or url.hostname not in {"localhost", "127.0.0.1", "::1"} or url.username or url.password:
-            raise ValueError("LOCAL_LLM_BASE_URL must point to a loopback OpenAI-compatible server")
+        allowed_hosts = {"localhost", "127.0.0.1", "::1"}
+        # Opt-in for Docker Desktop's host bridge; never allow arbitrary hosted URLs.
+        if env.get("LOCAL_LLM_ALLOW_DOCKER_HOST") == "1":
+            allowed_hosts.add("host.docker.internal")
+        if url.scheme not in {"http", "https"} or url.hostname not in allowed_hosts or url.username or url.password or url.query or url.fragment:
+            raise ValueError("LOCAL_LLM_BASE_URL must point to loopback or an explicitly enabled Docker host bridge")
         return Provider(name, env.get("LOCAL_LLM_MODEL", "qwen2.5-coder:7b"), base, "local-no-key")
     key = env.get(spec.key_env, "").strip()
     if not key:

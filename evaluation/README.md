@@ -1,5 +1,13 @@
 # Claim verification evaluation
 
+`python evaluation/run_semantic_benchmark.py` runs the selected local Ollama model
+against the same 40 cases plus three heading/address cases. It never selects a
+hosted provider. The result in `results/semantic_benchmark.json` is a development
+benchmark: these cases were used to refine the guards, not an independent holdout.
+The recorded Qwen 2.5 3B run recognized 19 supported claims versus 14 for the typed
+grammar, with zero observed false supports across 43 cases. It still abstained on
+a valid identity in a list. These results do not establish production accuracy.
+
 Run `python evaluation/run_claim_benchmark.py` from the repository root. No model keys or network are needed. The fixture is `fixtures/claim_adversarial.json`; predictions and timings are written to `results/claim_benchmark.json`.
 
 ## What is measured

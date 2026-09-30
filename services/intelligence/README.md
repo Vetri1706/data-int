@@ -5,7 +5,31 @@
 Choose **Provider** and **Model** in New collection, then review before running.
 The selection is stored with that collection and applies to parsing, planning,
 source suggestions, extraction, and replanning. Legacy collections default local.
-Validation remains source-backed and deterministic, not an LLM confidence guess.
+Validation combines typed rules with a separate model review for prose and heading
+relationships. Model-reviewed support requires an exact quotation from an HTTP 200
+source, a matching value and a field relation cue. Invented quotes and citations,
+historical/hypothetical statements and deterministic contradictions are rejected.
+Each citation records its verification method. This is not a calibrated truth score.
+
+Academic discovery now searches department facilities and research laboratories
+separately, preserving the subject and region instead of relying on one rankings-heavy
+query. The planner does not seed institution names or URLs. User-approved domains
+remain hard limits; create a new collection to discover a new scope. Existing runs
+and their approval records are not rewritten.
+Model judgments on search snippets are advisory: a model cannot exclude a page
+by inventing a location. The source-permission and robots checks still block access.
+Generated contracts add fields referenced by hard constraints, and regional
+constraints use geographic matching rather than requiring the literal words
+"South India" in an address. Explicit academic subjects in "in X in Y" requests
+are preserved as field constraints. Verification runs between extraction waves,
+so later timeouts retain rows that have already passed the checks.
+
+Scrapling retrieves pages; Trafilatura removes navigation boilerplate while contact
+footers remain available. Retrieval uses 1,600-character passages, covers distinct
+pages before repeating a directory, removes image-only name evidence, and reviews claims using context from
+the same fetched page. Explicit South India scope is checked against known state/city
+aliases; unknown locations fail closed. Other geographic scopes still depend on the
+generated constraints. Institution type is optional unless the user requests it.
 
 - Local: Ollama at `http://127.0.0.1:11434/v1`. The selector lists every installed
   model returned by `/api/tags`, including custom models. No automatic downloads.
