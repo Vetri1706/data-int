@@ -31,8 +31,8 @@ function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const [navigationOpen, setNavigationOpen] = useState(false);
 
   return (
-    <div className="app-canvas min-h-dvh bg-[#e9eef4] text-[#10213a]">
-      <div className="app-frame mx-auto flex w-full rounded-none border-0 border-[#d7e0ea] bg-[#f7f9fc] shadow-none lg:rounded-[14px] lg:border lg:shadow-[0_18px_55px_rgba(34,52,73,0.10)]">
+    <div className="app-canvas min-h-dvh bg-[var(--background)] text-[#10213a]">
+      <div className="app-frame flex min-h-dvh w-full">
         <Sidebar
           open={navigationOpen}
           onClose={() => setNavigationOpen(false)}

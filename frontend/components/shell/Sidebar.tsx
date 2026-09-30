@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { BrandMark } from "@/components/BrandMark";
 
 const NAV_ITEMS = [
   { label: "Overview", href: "/", icon: Home },
@@ -39,7 +40,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-50 flex w-[var(--workspace-sidebar)] flex-col justify-between border-r border-[#e1e7ef] bg-white px-3 py-4 transition-transform duration-200 lg:relative lg:inset-auto lg:z-10 lg:min-h-full lg:translate-x-0 lg:rounded-l-[14px] 2xl:px-4 2xl:py-5",
+        "fixed inset-y-0 left-0 z-50 flex w-[var(--workspace-sidebar)] shrink-0 flex-col justify-between overflow-y-auto border-r border-[#e1e7ef] bg-white px-3 py-4 transition-transform duration-200 lg:sticky lg:top-0 lg:bottom-auto lg:h-dvh lg:z-10 lg:translate-x-0 2xl:px-4 2xl:py-5",
         open ? "translate-x-0" : "-translate-x-full"
       )}
       aria-label="Primary navigation"
@@ -51,19 +52,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             onClick={onClose}
             className="flex items-center gap-2.5 rounded-md px-1 py-1 select-none"
           >
-            <div className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-[#246bde] text-white">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path d="M6.5 16.5V7.5L13.75 12L6.5 16.5Z" fill="white" />
-                <circle cx="16.4" cy="12" r="2.25" fill="#BFD5FF" />
-              </svg>
-            </div>
+            <BrandMark />
             <span className="text-[15px] font-bold tracking-[-0.025em] text-[#10213a]">
               Datavault
             </span>

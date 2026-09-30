@@ -26,7 +26,8 @@ export function RecentCollectionsTable() {
   };
 
   useEffect(() => {
-    loadTasks();
+    const timer = setTimeout(() => { void loadTasks(); }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const rows = tasks.slice(0, 5).map((task) => ({

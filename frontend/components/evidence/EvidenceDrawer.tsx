@@ -58,9 +58,8 @@ export function EvidenceDrawer({ entity, onClose }: EvidenceDrawerProps) {
 
   if (!entity) return null;
 
-  const confidencePct = Math.round(entity.confidence_score * 100);
+
   const sources = entity.provenance?.source_urls ?? [];
-  const percent = (score?: number) => typeof score === "number" && Number.isFinite(score) ? `${Math.round(score * 100)}%` : "Not measured";
   const httpStatus = entity.provenance?.http_status;
   const linkChecked = typeof httpStatus === "number";
 
@@ -101,40 +100,18 @@ export function EvidenceDrawer({ entity, onClose }: EvidenceDrawerProps) {
 
         <div className="flex-1 space-y-7 overflow-y-auto px-5 py-5 sm:px-6">
           <section aria-labelledby="confidence-heading" className="border-b border-[#e8edf3] pb-6">
-            <h3 id="confidence-heading" className="text-[11px] font-semibold text-[#607089]">Composite confidence</h3>
-            <div className="mt-2 flex items-end gap-3">
-              <span className="font-mono text-[30px] font-semibold tracking-[-0.04em] text-[#197248]">{confidencePct}%</span>
-              <span className="mb-1 text-[11px] leading-4 text-[#718096]">Evidence score based on measured grounding, retrieval, freshness, and corroboration.</span>
-            </div>
-            <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-[11px]">
-              <div className="flex justify-between border-t border-[#edf1f5] pt-2">
-                <dt className="text-[#718096]">Authority prior</dt>
-                <dd className="font-mono font-semibold text-[#23354f]">{percent(entity.provenance?.authority_score)}</dd>
-              </div>
-              <div className="flex justify-between border-t border-[#edf1f5] pt-2">
-                <dt className="text-[#718096]">Agreement</dt>
-                <dd className="font-mono font-semibold text-[#23354f]">{percent(entity.provenance?.agreement_rate)}</dd>
-              </div>
-              <div className="flex justify-between border-t border-[#edf1f5] pt-2">
-                <dt className="text-[#718096]">Link check</dt>
-                <dd className="font-semibold text-[#23354f]">{linkChecked ? (httpStatus === 200 ? "Reachable" : "Failed") : "Not checked"}</dd>
-              </div>
-              <div className="flex justify-between border-t border-[#edf1f5] pt-2">
-                <dt className="text-[#718096]">Retrieval</dt>
-                <dd className="font-mono font-semibold text-[#23354f]">{linkChecked ? `HTTP ${httpStatus}` : "Unknown"}</dd>
-              </div>
+            <h3 id="confidence-heading" className="text-sm font-semibold">Claim verification</h3>
+            <p className="mt-2 text-sm">{entity.verification ? `${entity.verification.accepted ? "Accepted" : "Needs review"} - ${Math.round(entity.verification.field_coverage * 100)}% of requested fields supported` : "Legacy record: typed verification unavailable"}</p>
+            <p className="mt-2 text-xs text-slate-600">{linkChecked ? `Retrieved with HTTP ${httpStatus}` : "Retrieval status unknown"}. No probability of correctness is assigned.</p>
+            <dl className="mt-3 space-y-3">
+              {Object.entries(entity.claims ?? {}).map(([name, claim]) => <div key={name} className="rounded border p-3 text-xs">
+                <dt className="font-semibold">{name}: {claim.state}</dt>
+                <dd className="mt-1">{claim.value === null ? "No value found" : JSON.stringify(claim.value)}</dd>
+                <dd className="mt-1 text-slate-600">{claim.reason}</dd>
+                {claim.evidence?.map((e, i) => <blockquote key={i} className="mt-2 border-l-2 pl-2">{e.verbatim_quote} <a href={e.source_url} target="_blank" rel="noopener noreferrer" className="text-blue-700">Source</a></blockquote>)}
+              </div>)}
             </dl>
-            {!!entity.provenance?.factors?.length && (
-              <dl className="mt-5 space-y-3 text-[11px]">
-                {entity.provenance.factors.map((factor) => (
-                  <div key={factor.factor_name}>
-                    <div className="mb-1 flex justify-between gap-3"><dt className="capitalize text-[#607089]">{factor.factor_name.replaceAll("_", " ")}</dt><dd className="font-mono text-[#23354f]">{percent(factor.score)}</dd></div>
-                    <meter min={0} max={1} value={factor.score} className="h-2 w-full" aria-label={factor.factor_name.replaceAll("_", " ")} />
-                  </div>
-                ))}
-              </dl>
-            )}
-            <p className="mt-3 text-[10px] leading-4 text-[#718096]">Similarity scores measure text support; they are not probabilities of correctness. {entity.provenance?.freshness_basis === "crawl" && "Freshness uses the crawl date because publication time is unknown."}</p>
+            {entity.verification?.acceptance_failures.map((failure, i) => <p key={i} className="mt-2 text-xs text-amber-800">{failure.field}: {failure.reason}</p>)}
           </section>
 
           {/* Extracted Business Attributes */}

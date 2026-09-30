@@ -1,4 +1,4 @@
-"""Shared, bounded local Ollama / opt-in NVIDIA gateway. No implicit Groq fallback."""
+"""Shared, bounded model gateway. Hosted processing requires explicit consent."""
 import asyncio
 import logging
 import os
@@ -15,11 +15,14 @@ except ImportError:
 
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
+import httpx
+from ollama_client import OllamaClient
+from providers import PROVIDERS
 
 ROOT = Path(__file__).resolve().parents[2]
-# Process variables win; private local overrides win over legacy .env.
-load_dotenv(ROOT / ".env.llm.local")
+# Process variables win; .env is the primary server configuration.
 load_dotenv(ROOT / ".env")
+load_dotenv(ROOT / ".env.llm.local")
 logger = logging.getLogger("datavault.llm")
 selected_model = ContextVar("selected_model", default=None)
 
@@ -30,20 +33,39 @@ def validate_selection(value=None, env=None):
     if not isinstance(value, dict):
         raise ValueError("Choose a provider and model")
     provider = value.get("provider", "local")
-    if provider not in {"local", "nvidia"}:
-        raise ValueError("Choose Ollama or NVIDIA as the provider")
-    model = value.get("model") or (env.get("LOCAL_LLM_MODEL", "qwen2.5-coder:1.5b-instruct")
-                                  if provider == "local" else env.get("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct"))
+    if not isinstance(provider, str) or provider not in PROVIDERS:
+        raise ValueError("Choose a supported model provider")
+    spec = PROVIDERS[provider]
+    model = value.get("model") or env.get(spec.model_env, spec.default_model)
     if not isinstance(model, str) or not model.strip() or len(model) > 256 or any(ord(c) < 32 for c in model):
         raise ValueError("Choose a valid model ID")
-    if provider == "nvidia" and value.get("allow_external") is not True:
-        raise ValueError("Approve sending this collection's inputs to NVIDIA before running")
+    if provider != "local" and value.get("allow_external") is not True:
+        raise ValueError(f"Approve sending this collection's inputs to {spec.label} before running")
     provider_config(provider, env)
-    return {"provider": provider, "model": model, "allow_external": provider == "nvidia"}
+    return {"provider": provider, "model": model.strip(), "allow_external": provider != "local"}
 
 
 class LLMUnavailable(RuntimeError):
     """Safe user-visible error without credentials or provider response bodies."""
+
+
+def failure_message(provider, exc):
+    label = f"{PROVIDERS[provider.name].label} ({provider.model})"
+    status = getattr(exc, "status_code", None)
+    if isinstance(exc, (TimeoutError, asyncio.TimeoutError, httpx.TimeoutException)) or type(exc).__name__ == "APITimeoutError":
+        hint = " Try an installed instruction model or increase the local inference timeout." if provider.name == "local" else " Retry when the provider responds faster."
+        return f"{label}: inference timed out.{hint}"
+    if status == 429:
+        return f"{label}: HTTP 429, request or token quota exceeded. Wait for the provider limit to reset or choose another model."
+    if status in (401, 403):
+        return f"{label}: access rejected (HTTP {status}). Check this provider's API key and model access."
+    if status == 503 and provider.name == "local":
+        return f"{label}: Ollama is overloaded (HTTP 503). Wait for other local requests to finish."
+    if status == 404:
+        return f"{label}: model or endpoint not found (HTTP 404). Refresh the model list."
+    if isinstance(exc, LLMUnavailable):
+        return f"{label}: {exc}"
+    return f"{label}: model request failed" + (f" (HTTP {status})." if isinstance(status, int) else ". Check the provider connection and server logs.")
 
 
 @dataclass(frozen=True)
@@ -55,67 +77,109 @@ class Provider:
 
 
 def provider_config(name, env):
-    if name == "nvidia":
-        key = env.get("NVIDIA_API_KEY", "").strip()
-        if not key:
-            raise ValueError("NVIDIA_API_KEY is required for the NVIDIA provider")
-        return Provider(name, env.get("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct"),
-                        "https://integrate.api.nvidia.com/v1", key)
+    if name not in PROVIDERS:
+        raise ValueError("Unknown model provider")
+    spec = PROVIDERS[name]
     if name == "local":
         base = env.get("LOCAL_LLM_BASE_URL", "http://127.0.0.1:11434/v1").rstrip("/")
         url = urlparse(base)
         if url.scheme not in {"http", "https"} or url.hostname not in {"localhost", "127.0.0.1", "::1"} or url.username or url.password:
             raise ValueError("LOCAL_LLM_BASE_URL must point to a loopback OpenAI-compatible server")
         return Provider(name, env.get("LOCAL_LLM_MODEL", "qwen2.5-coder:7b"), base, "local-no-key")
-    raise ValueError("LLM_PROVIDER must be nvidia or local; no implicit Groq fallback")
+    key = env.get(spec.key_env, "").strip()
+    if not key:
+        raise ValueError(f"Add {spec.key_env} to the server's .env and restart intelligence.")
+    return Provider(name, env.get(spec.model_env, spec.default_model), spec.base_url, key)
 
 
 class ModelGateway:
-    def __init__(self, env=None, client_factory=ChatOpenAI):
+    def __init__(self, env=None, client_factory=ChatOpenAI, local_client_factory=OllamaClient):
         env = os.environ if env is None else env
         self.env = env
         self.client_factory = client_factory
+        self.local_client_factory = local_client_factory
         primary = env.get("LLM_PROVIDER", "local").lower()
         fallback = env.get("LLM_FALLBACK_PROVIDER", "").lower()
         names = [primary] + ([fallback] if fallback and fallback != primary else [])
-        self.providers = [provider_config(name, env) for name in names]
+        self.providers = []
+        for name in names:
+            if name not in PROVIDERS:
+                raise ValueError("Unknown configured LLM provider")
+            try:
+                self.providers.append(provider_config(name, env))
+            except ValueError:
+                # Removing the preferred provider's key must not take down the
+                # catalog or prevent choosing a different configured provider.
+                logger.warning("LLM provider=%s is not configured", name)
         self.concurrency = max(1, min(4, int(env.get("LLM_MAX_CONCURRENCY", "2"))))
         self.timeout = max(1.0, float(env.get("LLM_TIMEOUT_SECONDS", "30")))
         self.total_timeout = max(self.timeout, float(env.get("LLM_TOTAL_TIMEOUT_SECONDS", "55")))
         self.max_tokens = max(256, min(4096, int(env.get("LLM_MAX_TOKENS", "4096"))))
+        self.local_max_tokens = max(256, min(self.max_tokens, int(env.get("LOCAL_LLM_MAX_TOKENS", "1024"))))
+        self.local_num_ctx = max(2048, min(32768, int(env.get("LOCAL_LLM_NUM_CTX", "8192"))))
         self._semaphore = asyncio.Semaphore(self.concurrency)
         self._cooldown = {}
         self._clients = {
-            p.name: client_factory(model=p.model, api_key=p.api_key, base_url=p.base_url,
-                                   temperature=0.1, max_tokens=self.max_tokens,
-                                   timeout=self.timeout, max_retries=0).bind(
-                                       response_format={"type": "json_object"})
-            for p in self.providers
+            p.name: self._local_client(p)
+            for p in self.providers if p.name == "local"
         }
+
+    def _local_client(self, provider):
+        return self.local_client_factory(model=provider.model, base_url=provider.base_url,
+                                         timeout=self.timeout, max_tokens=self.local_max_tokens,
+                                         num_ctx=self.local_num_ctx)
 
     def _selection_client(self, selection):
         config = validate_selection(selection, self.env)
         base = provider_config(config["provider"], self.env)
         provider = Provider(base.name, config["model"], base.base_url, base.api_key)
-        key = (provider.name, provider.model)
+        # A rotated credential or changed local URL must not reuse an old client.
+        key = (provider.name, provider.model, provider.base_url, provider.api_key)
+        if provider.name == "local":
+            if key not in self._clients:
+                self._clients[key] = self._local_client(provider)
+            return provider, self._clients[key]
         if key not in self._clients:
+            options = {"extra_body": {"thinking": {"type": "disabled"}}} if provider.name == "glm" else {}
+            if provider.name == "groq" and provider.model in {"openai/gpt-oss-20b", "openai/gpt-oss-120b"}:
+                options["reasoning_effort"] = "low"
             client = self.client_factory(
                 model=provider.model, api_key=provider.api_key, base_url=provider.base_url,
                 temperature=0.1, max_tokens=self.max_tokens, timeout=self.timeout, max_retries=0,
+                **options,
             )
-            # NVIDIA's catalog spans models with different structured-output support.
-            # The workflow prompts and validates JSON without forcing an unsupported
-            # response_format parameter on every hosted model.
-            self._clients[key] = client.bind(response_format={"type": "json_object"}) if provider.name == "local" else client
+            # GLM supports JSON mode. Other catalogs span models with
+            # different capabilities, so do not force it on every hosted model.
+            self._clients[key] = client.bind(response_format={"type": "json_object"}) if provider.name == "glm" else client
         return provider, self._clients[key]
 
     def status(self):
-        return {"provider": self.providers[0].name, "model": self.providers[0].model,
+        return {"provider": self.providers[0].name if self.providers else None,
+                "model": self.providers[0].model if self.providers else None,
                 "fallback": self.providers[1].name if len(self.providers) > 1 else None,
                 "max_concurrency": self.concurrency, "request_timeout_seconds": self.timeout,
                 "total_timeout_seconds": self.total_timeout}
 
-    async def ainvoke(self, messages):
+    async def _invoke(self, client, messages, options):
+        # Retry only a short, explicit provider Retry-After. The caller's total
+        # deadline still covers this wait; quota exhaustion never switches models.
+        for attempt in range(2):
+            try:
+                async with async_timeout(self.timeout):
+                    return await client.ainvoke(messages, **options)
+            except Exception as exc:
+                headers = getattr(getattr(exc, "response", None), "headers", {})
+                try:
+                    delay = float(headers.get("retry-after", "nan"))
+                except (ValueError, TypeError):
+                    delay = float("nan")
+                if attempt == 0 and getattr(exc, "status_code", None) == 429 and 0 <= delay <= 15:
+                    logger.info("Provider requested a %.2fs quota wait; retrying once", delay)
+                    await asyncio.sleep(delay)
+                    continue
+                raise
+
+    async def ainvoke(self, messages, *, response_schema=None):
         selection = selected_model.get()
         if selection is not None:
             provider, client = self._selection_client(selection)
@@ -131,25 +195,29 @@ class ModelGateway:
             async with async_timeout(self.total_timeout):
                 async with self._semaphore:
                     for provider, client in attempts:
-                        if self._cooldown.get(provider.name, 0) > time.monotonic():
-                            continue
+                        cooldown_until, cooldown_reason = self._cooldown.get(provider.name, (0, ""))
+                        if cooldown_until > time.monotonic():
+                            raise LLMUnavailable(cooldown_reason)
                         started = time.monotonic()
                         try:
-                            async with async_timeout(self.timeout):
-                                response = await client.ainvoke(messages)
-                            if not isinstance(response.content, str) or not response.content.strip():
-                                raise ValueError("empty model output")
+                            options = {"response_schema": response_schema} if provider.name == "local" and response_schema else {}
+                            response = await self._invoke(client, messages, options)
                             if getattr(response, "response_metadata", {}).get("finish_reason") == "length":
-                                raise ValueError("model output truncated by token limit")
-                            logger.info("LLM provider=%s model=%s elapsed=%.2fs", provider.name,
-                                        provider.model, time.monotonic() - started)
+                                raise LLMUnavailable("output was truncated at the token limit; choose an instruction model or increase the output budget.")
+                            if not isinstance(response.content, str) or not response.content.strip():
+                                raise LLMUnavailable("returned empty output; this model did not produce a usable structured response.")
+                            logger.info("LLM provider=%s model=%s elapsed=%.2fs input_tokens=%s output_tokens=%s", provider.name,
+                                        provider.model, time.monotonic() - started,
+                                        getattr(response, "response_metadata", {}).get("input_tokens"),
+                                        getattr(response, "response_metadata", {}).get("output_tokens"))
                             return response
                         except Exception as exc:
                             status = getattr(exc, "status_code", None)
+                            reason = failure_message(provider, exc)
                             if status == 429 or (isinstance(status, int) and status >= 500):
-                                self._cooldown[provider.name] = time.monotonic() + 30
+                                self._cooldown[provider.name] = (time.monotonic() + 30, reason)
                             logger.warning("LLM provider=%s failure=%s status=%s", provider.name,
                                            type(exc).__name__, status)
-                    raise LLMUnavailable("Model provider unavailable or rate-limited. Please retry shortly.")
+                            raise LLMUnavailable(reason) from None
         except (TimeoutError, asyncio.TimeoutError):
             raise LLMUnavailable("Model request timed out, including queue wait. Please retry.") from None

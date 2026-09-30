@@ -17,6 +17,10 @@ import uuid
 import logging
 import asyncio
 import hashlib
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from source_policy import permission_decision
 from typing import TypedDict, List, Dict, Any, Optional, Annotated
 from datetime import datetime, timedelta
 
@@ -30,6 +34,7 @@ from llm import LLMUnavailable, ModelGateway, selected_model, validate_selection
 from model_catalog import provider_catalog
 from grounding import chunk_sources, rank_chunks, retrieve_chunks, sanitize_query, validate_candidates, extract_canonical_name
 from relevance import evaluate_sources
+from output_schemas import CONTRACT_SCHEMA, QUERY_SCHEMA, extraction_schema
 from laya_filter import filter_chunks as apply_laya_filter
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel
@@ -58,6 +63,8 @@ llm = ModelGateway()
 
 # Track in-flight workflow state for salvage on timeout
 ACTIVE_RUN_STATES: Dict[str, Any] = {}
+ACTIVE_TASKS: Dict[str, asyncio.Task] = {}
+CANCELLED_RUNS: set[str] = set()
 
 
 def normalize_data_contract(contract: Any, prompt: str) -> Dict[str, Any]:
@@ -87,6 +94,8 @@ def normalize_data_contract(contract: Any, prompt: str) -> Dict[str, Any]:
         item.setdefault("required", False)
         fields.append(item)
     normalized["fields"] = fields
+    normalized["target_count"] = max(1, min(int(normalized.get("target_count") or 100), 1000))
+    normalized["min_field_coverage"] = min(1., max(0., float(normalized.get("min_field_coverage", 1.))))
     return normalized
 
 
@@ -117,6 +126,12 @@ class WorkflowState(TypedDict):
     coverage_score:     float
     iteration:          int
     max_iterations:     int
+    attempted_urls:      List[str]
+    evidence_gaps:       List[Dict[str, Any]]
+    field_coverage:      float
+    accepted_count:      int
+    stop_reason:         str
+    source_failures:     List[Dict[str, Any]]
     status:             str
     messages:           Annotated[List, add_messages]
 
@@ -149,7 +164,7 @@ async def post_run_event(run_id: str, event_type: str, **kwargs):
         "event_type": event_type,
         **kwargs,
     })
-    if event_type in {"run.completed", "run.failed"} and not result.get("ok"):
+    if event_type in {"run.completed", "run.partial", "run.exhausted", "run.cancelled", "run.failed"} and not result.get("ok"):
         raise RuntimeError(f"The API did not persist terminal event {event_type}")
 
 async def scrapling_extract(urls: list[str], contract: dict) -> list[dict]:
@@ -169,6 +184,8 @@ async def scrapling_extract(urls: list[str], contract: dict) -> list[dict]:
                     "schema_types": schema_types,
                     "selector_preset": None,
                     "custom_selectors": custom_selectors,
+                    "source_policy": contract.get("source_policy", {}),
+                    "run_id": contract.get("_run_id"),
                     "follow_redirects": True,
                     "max_redirects": 5,
                 })
@@ -179,7 +196,7 @@ async def scrapling_extract(urls: list[str], contract: dict) -> list[dict]:
                     logger.warning("Scrapling returned HTTP %d for batch of %d URLs", resp.status_code, len(batch_urls))
         except Exception as e:
             logger.warning("Scrapling batch failed (%d URLs): %r", len(batch_urls), e)
-        return []
+        return [{"url": url, "success": False, "error_code": "retrieval_service_unavailable", "error": "Retrieval service did not return a successful response"} for url in batch_urls]
 
     results_lists = await asyncio.gather(*(fetch_batch(b) for b in batches), return_exceptions=True)
     all_results = []
@@ -225,7 +242,7 @@ Return ONLY valid JSON. No markdown.
 """)
     human = HumanMessage(content=state["prompt"])
 
-    response = await llm.ainvoke([system, human])
+    response = await llm.ainvoke([system, human], response_schema=CONTRACT_SCHEMA)
     try:
         contract = json.loads(response.content)
     except json.JSONDecodeError:
@@ -254,24 +271,27 @@ async def build_plan(state: WorkflowState) -> WorkflowState:
 
     contract = state["data_contract"]
 
+    if state.get("iteration", 0) == 0 and contract.get("_discovery_sources"):
+        return {**state, "queries": [], "status": "PLANNED"}
+
     system = SystemMessage(content="""
 You are a research strategist.
-Given a DataContract, generate 5-8 distinct web search queries that will collectively
+Given a DataContract, generate 2-3 concise web search queries that will collectively
 surface authoritative sources containing the required data.
 
 Vary query style:
 - Direct entity search
 - Broad natural language keywords covering entity, location, and relevant attributes
 Do not use quotes, boolean operators, site:, filetype:, or other search syntax.
-- Event/news-based angle
-- Official registry / government source angle
+Only use news or government registry queries if requested. Respect the approved
+source scope. Do not add certification names, dates or constraints absent from the request.
 
 Return JSON: {"queries": ["...", "..."]}
 No markdown.
 """)
     human = HumanMessage(content=json.dumps(contract))
 
-    response = await llm.ainvoke([system, human])
+    response = await llm.ainvoke([system, human], response_schema=QUERY_SCHEMA)
     try:
         content = response.content
         start = content.find("{")
@@ -295,7 +315,7 @@ async def execute_search(state: WorkflowState) -> WorkflowState:
     await post_run_event(state["run_id"], "stage.updated", stage="collecting", progress=30)
 
     contract = state["data_contract"]
-    all_results = []
+    all_results = list(contract.get("_discovery_sources", [])) if state.get("iteration", 0) == 0 else []
 
     async def search_one(query):
         result = await rust_post("/internal/search", {
@@ -303,8 +323,8 @@ async def execute_search(state: WorkflowState) -> WorkflowState:
             "model_config": selected_model.get(),
             "max_results": 10,
             "freshness_days": contract.get("freshness_days"),
-            # Planner suggestions prioritize domains; do not silently restrict recall.
-            "domain_filters": contract.get("domain_filters", []),
+            # User-approved domains are hard restrictions, including provider fallback.
+            "domain_filters": contract.get("source_policy", {}).get("approved_domains", []),
         })
         return [{**item, "search_query": query} for item in result.get("results", [])
                 if isinstance(item, dict)]
@@ -316,7 +336,7 @@ async def execute_search(state: WorkflowState) -> WorkflowState:
     previous = {r["url"]: r for r in state.get("candidate_sources", []) if r.get("url")}
     previous.update(candidates)
     candidate_sources = list(previous.values())
-    logger.info("  SearXNG produced %d unique candidate sources", len(candidate_sources))
+    logger.info("  Search providers produced %d unique candidate sources", len(candidate_sources))
     await post_run_event(state["run_id"], "search.completed",
                          payload={"candidate_count": len(candidate_sources),
                                   "result_count": len(candidate_sources)})
@@ -324,16 +344,26 @@ async def execute_search(state: WorkflowState) -> WorkflowState:
 
 
 async def source_relevance_gate(state: WorkflowState) -> WorkflowState:
-    """Gate SearXNG metadata before any webpage is retrieved."""
+    """Gate search metadata before any webpage is retrieved."""
     logger.info("[source_relevance_gate] run=%s candidates=%d", state["run_id"],
                 len(state.get("candidate_sources", [])))
     # Keep the existing UI stage contract: relevance is part of collection.
     await post_run_event(state["run_id"], "stage.updated", stage="collecting", progress=38)
-    candidates = state.get("candidate_sources", [])[:MAX_SCRAPE_SITES]
+    attempted = set(state.get("attempted_urls", []))
+    policy = state["data_contract"].get("source_policy", {})
+    pending = [s for s in state.get("candidate_sources", []) if s.get("url") not in attempted]
+    allowed = [s for s in pending if permission_decision(s.get("url", ""), policy)[0]]
+    blocked = [{"url": s.get("url"), "reason": permission_decision(s.get("url", ""), policy)[1]} for s in pending if s not in allowed]
+    candidates = allowed[:MAX_SCRAPE_SITES]
+    attempted.update(s["url"] for s in candidates)
+    attempted.update(s["url"] for s in blocked)
+    await post_run_event(state["run_id"], "source.policy.completed", payload={"approved": len(candidates), "blocked": blocked})
     try:
         evaluations = await evaluate_sources(
             candidates, state["prompt"], state["data_contract"], llm.ainvoke
         )
+    except LLMUnavailable:
+        raise
     except Exception as exc:
         # A gate failure must not accidentally allow unreviewed pages through.
         logger.warning("Source relevance gate failed; treating candidates as UNCERTAIN: %s", exc)
@@ -341,7 +371,7 @@ async def source_relevance_gate(state: WorkflowState) -> WorkflowState:
             "candidate_index": index,
             "url": candidate.get("url", ""),
             "decision": "UNCERTAIN",
-            "relevance_score": 0.0,
+            "relevance_score": None,
             "source_type": "unknown",
             "entity_relevance": False,
             "evidence_capability": [],
@@ -365,7 +395,10 @@ async def source_relevance_gate(state: WorkflowState) -> WorkflowState:
                  "reject_count": sum(e.get("decision") == "REJECT" for e in evaluations),
                  "uncertain_count": sum(e.get("decision") == "UNCERTAIN" for e in evaluations)},
     )
-    return {**state, "source_relevance": evaluations, "relevant_sources": relevant,
+    failures = list(state.get("source_failures", [])) + blocked + [
+        {"url": e.get("url"), "reason": e.get("reason"), "stage": "relevance"}
+        for e in evaluations if e.get("decision") == "REJECT"]
+    return {**state, "source_failures": failures, "attempted_urls": sorted(attempted), "source_relevance": evaluations, "relevant_sources": relevant,
             "status": "SOURCES_GATED"}
 
 
@@ -375,7 +408,7 @@ async def scrapling_extraction(state: WorkflowState) -> WorkflowState:
     Runs in parallel with LLM extraction for higher coverage.
     """
     logger.info(f"[scrapling_extraction] run={state['run_id']}")
-    await post_run_event(state["run_id"], "stage.updated", stage="extracting", progress=45)
+    await post_run_event(state["run_id"], "stage.updated", stage="collecting", progress=45)
 
     candidates = state.get("relevant_sources", [])
     if not candidates:
@@ -394,10 +427,12 @@ async def scrapling_extraction(state: WorkflowState) -> WorkflowState:
     field_names = [f["name"] for f in fields]
     sources = []
     records = []
+    failures = list(state.get("source_failures", []))
     candidate_by_url = {s.get("url"): s for s in candidates}
     for result in scrapling_results:
         if not result.get("success"):
             logger.warning("  Scrapling failed for %s: %s", result.get("url"), result.get("error"))
+            failures.append({"url": result.get("url"), "reason": result.get("error"), "code": result.get("error_code"), "stage": "retrieval"})
             continue
         text = str(result.get("text_content") or "")
         if not text.strip():
@@ -413,7 +448,7 @@ async def scrapling_extraction(state: WorkflowState) -> WorkflowState:
             "content": text,
             "content_sha256": result.get("text_hash") or hashlib.sha256(text.encode()).hexdigest(),
             "http_status": result.get("http_status", 0),
-            "reachability": result.get("reachability", 0.0),
+            "reachability": result.get("reachability"),
             "fetched_at": result.get("fetched_at"),
             "published_at": result.get("published_at"),
             "redirect_count": result.get("redirect_count", 0),
@@ -456,9 +491,11 @@ async def scrapling_extraction(state: WorkflowState) -> WorkflowState:
     await post_run_event(state["run_id"], "scrapling.completed",
                          payload={"attempted": len(urls), "retrieved": len(sources),
                                   "failed": len(urls) - len(sources), "records_found": len(records)})
-    return {**state, "search_results": fetched_sources, "chunk_pool": complete_chunks,
+    result_state = {**state, "source_failures": failures, "search_results": fetched_sources, "chunk_pool": complete_chunks,
             "retrieved_chunks": list(chunks.values()), "scrapling_records": records,
             "status": "PAGES_RETRIEVED"}
+    ACTIVE_RUN_STATES[state["run_id"]] = result_state
+    return result_state
 
 
 async def extract_and_normalize(state: WorkflowState) -> WorkflowState:
@@ -486,8 +523,11 @@ async def extract_and_normalize(state: WorkflowState) -> WorkflowState:
     if not results:
         return {**state, "extracted_records": state.get("extracted_records", [])}
 
-    # Batch results in groups of 10 to stay within token budget
-    batch_size = 10
+    # Local generation has a smaller output budget. More small batches retain
+    # every candidate while avoiding long, truncated multi-record responses.
+    local = (selected_model.get() or contract.get("_model_config") or {}).get("provider", "local") == "local"
+    batch_size = 4 if local else 10
+    record_limit = 2 if local else 4
     all_records = list(state.get("extracted_records", []))
 
     for i in range(0, min(len(results), 80), batch_size):
@@ -509,19 +549,18 @@ For each {entity} found, return a JSON object with:
 - Every requested schema field, with null when the field is not found
 - chunk_id: the exact CHUNK_ID of the passage supporting this record
 - source_url: the exact URL attached to that passage
-- extraction_confidence: float 0.0-1.0 based on data completeness
 - evidence_excerpt: a verbatim excerpt of the provided text; do not invent or paraphrase
 Do not infer missing facts from URLs, page titles, or prior knowledge.
 
 Return JSON: {{"records": [...]}}
-Extract as many distinct {entity} entities as you can find.
+Return at most {record_limit} distinct {entity} records per response. Keep excerpts below 250 characters.
 Only extract real entities with a canonical name. Skip generic pages. Do not return
 fields outside the generated schema.
 """)
         human = HumanMessage(content=sources_text)
 
         try:
-            response = await llm.ainvoke([system, human])
+            response = await llm.ainvoke([system, human], response_schema=extraction_schema(field_specs, record_limit))
             content  = response.content.strip()
 
             # Robust JSON extraction from markdown or direct JSON
@@ -570,9 +609,10 @@ fields outside the generated schema.
             if data is not None:
                 processed.update(chunk["chunk_id"] for chunk in batch)
             logger.info(f"  Batch extracted {len(records)} records")
-        except LLMUnavailable:
+        except LLMUnavailable as exc:
             if all_records:
-                logger.warning("LLM timed out on batch %d, but %d records were already extracted. Continuing with extracted records.", i, len(all_records))
+                state = {**state, "stop_reason": str(exc), "stop_kind": "model_error"}
+                logger.warning("Model unavailable on batch %d; validating %d existing drafts: %s", i, len(all_records), exc)
                 break
             raise
         except Exception as e:
@@ -604,7 +644,7 @@ async def laya_filter(state: WorkflowState) -> WorkflowState:
         state["run_id"], "laya.started",
         payload={"chunks_before": len(chunks)},
     )
-    if state.get("laya_enabled") is False:
+    if state.get("laya_enabled", False) is False:
         filtered, metrics, status = chunks, {
             "chunks_before": len(chunks), "chunks_after": len(chunks),
             "chunks_filtered": 0, "latency_ms": 0.0, "threshold": None,
@@ -678,71 +718,50 @@ async def validate_records(state: WorkflowState) -> WorkflowState:
 
 
 async def evaluate_coverage(state: WorkflowState) -> WorkflowState:
-    """
-    Node 6: Decide whether we have enough records or need to replan.
-    """
-    ACTIVE_RUN_STATES[state["run_id"]] = state
-    logger.info(f"[evaluate_coverage] run={state['run_id']}")
-    contract = state["data_contract"]
-    target   = contract.get("target_count", 100)
-    verified = [r for r in state["validated_records"] if r["status"] in ("verified", "needs_review")]
-    coverage = len(verified) / max(target, 1)
+    rows = state.get("validated_records", [])
+    accepted = [r for r in rows if r.get("accepted") is True]
+    target = max(1, state["data_contract"].get("target_count", 100))
+    coverage = sum(r["verification"]["field_coverage"] for r in accepted) / len(accepted) if accepted else 0.
+    gaps = [{"entity": r["canonical_name"], "fields": [
+        {"field": f, "state": c["state"], "reason": c["reason"]}
+        for f, c in r.get("claims", {}).items() if c["state"] != "supported"
+    ], "failures": r.get("verification", {}).get("acceptance_failures", [])} for r in rows
+        if not r.get("accepted") or r["verification"]["field_coverage"] < 1]
+    if not rows:
+        gaps = [{"entity": None, "fields": [{"field": f["name"], "state": "unknown", "reason": "No candidate with source-bound identity"} for f in state["data_contract"].get("fields", [])]}]
+    result = {**state, "coverage_score": min(1., len(accepted) / target), "accepted_count": len(accepted),
+              "field_coverage": coverage, "evidence_gaps": gaps}
+    ACTIVE_RUN_STATES[state["run_id"]] = result
+    await post_run_event(state["run_id"], "coverage.evaluated", payload={
+        "accepted": len(accepted), "target": target, "field_coverage": coverage, "evidence_gaps": gaps})
+    return result
 
-    logger.info(f"  Coverage: {len(verified)}/{target} = {coverage:.1%}")
 
-    res_state = {**state, "coverage_score": coverage}
-    ACTIVE_RUN_STATES[state["run_id"]] = res_state
-    return res_state
+def completion(state):
+    target = max(1, state["data_contract"].get("target_count", 100))
+    rows = [r for r in state.get("validated_records", []) if r.get("accepted") is True]
+    coverage = sum(r["verification"]["field_coverage"] for r in rows) / len(rows) if rows else 0.
+    complete = len(rows) >= target and coverage >= state["data_contract"].get("min_field_coverage", 1.)
+    return rows, coverage, "completed" if complete else "partial" if rows else "exhausted"
 
 
 async def semantic_verify(state: WorkflowState) -> WorkflowState:
-    """Finalize records already checked by the evidence validator."""
-    ACTIVE_RUN_STATES[state["run_id"]] = state
+    """Persist accepted rows only. Review candidates and reasons stay in run history."""
     await post_run_event(state["run_id"], "stage.updated", stage="finalizing", progress=90)
-    final = state["validated_records"]
-    if not final:
-        extracted = state.get("extracted_records", [])
-        if extracted:
-            logger.info("Validated records empty; salvaging %d extracted records as draft", len(extracted))
-            salvaged = []
-            for r in extracted:
-                name = extract_canonical_name(r, state.get("data_contract"))
-                if name and len(str(name).strip()) > 1:
-                    salvaged.append({
-                        **r,
-                        "canonical_name": str(name).strip(),
-                        "status": "draft",
-                        "confidence_score": 0.35,
-                        "confidence_breakdown": {
-                            "source_authority": 0.5,
-                            "grounding_score": 0.3,
-                            "ml_validation_score": 0.3,
-                            "agreement": 0.0,
-                            "freshness": 0.5,
-                            "completeness": 0.5,
-                            "reachability": 1.0,
-                            "extraction_certainty": 0.5,
-                        },
-                    })
-            if salvaged:
-                final = salvaged
-        if not final:
-            await post_run_event(state["run_id"], "run.failed",
-                                 error="No candidates were supported by reachable source evidence")
-            return {**state, "status": "FAILED"}
-    await post_run_event(
-        state["run_id"], "run.completed",
-        records_found=len(state["extracted_records"]),
-        records_verified=sum(r["status"] == "verified" for r in final),
-        avg_confidence=_avg_confidence(final),
-        payload={"records": final, "sources": [
-            {k: v for k, v in source.items() if k != "content"}
-            for source in state["search_results"]
-        ]},
-    )
-    res_state = {**state, "status": "COMPLETED"}
-    ACTIVE_RUN_STATES[state["run_id"]] = res_state
-    return res_state
+    accepted, coverage, status = completion(state)
+    if not accepted and state.get("stop_kind") == "model_error":
+        status = "failed"
+    reason = "Acceptance target and field coverage met" if status == "completed" else state.get("stop_reason") or "Search budget exhausted before acceptance target was met"
+    await post_run_event(state["run_id"], "run." + status, error=reason if status == "failed" else None,
+        records_found=len(state.get("extracted_records", [])), records_verified=len(accepted),
+        payload={"records": accepted, "review_candidates": [r for r in state.get("validated_records", []) if not r.get("accepted")],
+                 "field_coverage": coverage, "target_count": state["data_contract"].get("target_count", 100),
+                 "reason": reason, "evidence_gaps": state.get("evidence_gaps", []),
+                 "source_failures": state.get("source_failures", []),
+                 "sources": [{k:v for k,v in source.items() if k != "content"} for source in state.get("search_results", [])]})
+    result = {**state, "status": status.upper(), "stop_reason": reason}
+    ACTIVE_RUN_STATES[state["run_id"]] = result
+    return result
 
 
 async def replan(state: WorkflowState) -> WorkflowState:
@@ -750,13 +769,19 @@ async def replan(state: WorkflowState) -> WorkflowState:
     Replanning node: generate follow-up queries when coverage is insufficient.
     """
     ACTIVE_RUN_STATES[state["run_id"]] = state
+    await post_run_event(state["run_id"], "stage.updated", stage="replanning", payload={"iteration": state["iteration"] + 1})
     logger.info(f"[replan] run={state['run_id']} iteration={state['iteration']}")
     contract  = state["data_contract"]
-    current   = len(state["validated_records"])
+    current   = sum(r.get("accepted") is True for r in state["validated_records"])
     target    = contract.get("target_count", 100)
 
     system = SystemMessage(content=f"""
-We have {current} verified records but need {target}.
+We have {current} accepted records but need {target}.
+Prioritize targeted queries for missing fields and failed evidence requirements.
+Do not relax hard constraints or source policy.
+Evidence gaps: {json.dumps(state.get("evidence_gaps", [])[:30])}
+Source failures: {json.dumps(state.get("source_failures", [])[-30:])}
+Field coverage: {state.get("field_coverage", 0)}
 The entity type is: {contract.get('entity_type')}
 Current constraints: {json.dumps(contract.get('constraints', []))}
 
@@ -767,7 +792,7 @@ Return JSON: {{"queries": ["...", ...]}}
 """)
     human = HumanMessage(content=f"Previous queries tried: {state['queries'][:5]}")
 
-    response = await llm.ainvoke([system, human])
+    response = await llm.ainvoke([system, human], response_schema=QUERY_SCHEMA)
     try:
         content = response.content
         start   = content.find("{")
@@ -789,26 +814,13 @@ Return JSON: {{"queries": ["...", ...]}}
 # ─── Routing ──────────────────────────────────────────────────────────────────
 
 def should_replan(state: WorkflowState) -> str:
-    if state["iteration"] >= state["max_iterations"]:
+    _, _, status = completion(state)
+    if status == "completed" or state.get("stop_reason") or state["iteration"] >= state["max_iterations"]:
         return "semantic_verify"
-    
-    target = state.get("data_contract", {}).get("target_count", 100)
-    validated = state.get("validated_records", [])
-    extracted = state.get("extracted_records", [])
-    
-    # If coverage score is >= 0.5 (50%), or we have at least min(target, 10) validated records
-    if state.get("coverage_score", 0.0) >= 0.5:
+    if state["iteration"] > 0 and not state.get("queries"):
         return "semantic_verify"
-    if len(validated) >= min(target, 10):
-        return "semantic_verify"
-    # If we completed iteration >= 1 and already have records, stop early to avoid timeouts
-    if state["iteration"] >= 1 and (len(validated) >= 5 or len(extracted) >= 10):
-        return "semantic_verify"
-        
     return "replan"
 
-
-# ─── Build LangGraph ──────────────────────────────────────────────────────────
 
 def build_graph() -> StateGraph:
     g = StateGraph(WorkflowState)
@@ -856,7 +868,9 @@ graph = build_graph()
 def _avg_confidence(records: list) -> Optional[float]:
     if not records:
         return None
-    scores = [r.get("confidence_score", 0) for r in records]
+    scores = [r["confidence_score"] for r in records if isinstance(r.get("confidence_score"), (int, float))]
+    if not scores:
+        return None
     return round(sum(scores) / len(scores), 4)
 
 
@@ -888,9 +902,7 @@ async def checked_selection(value):
 
 @app.get("/models")
 async def models_endpoint():
-    providers = await asyncio.gather(provider_catalog.get("local", refresh=True),
-                                     provider_catalog.get("nvidia", refresh=True))
-    return {"default": validate_selection(), "providers": providers}
+    return await provider_catalog.list(refresh=True)
 
 @app.get("/health")
 async def health():
@@ -930,18 +942,25 @@ Fields:
 - entity_type: string
 - business_goal: string
 - fields: [{name, field_type, description, required}]
-- constraints: [{field, operator, target_value, is_hard}]
+- constraints: [{field, operator, target_value, is_hard}]. Operators ONLY: eq, contains, gte, lte, in.
 - relationships: [{source, relationship, target}], or []
 - target_count: int
 - freshness_days: int or null
 - evidence_policy: {min_sources, prefer_official, require_date, required_evidence}
 - allowed_domains: [string]
+Extract requirements from the user's words, not your own quality preferences.
+Only include the identity and fields the user requested; do not add contact details.
+Do not invent certification names, freshness limits, or mandatory document types.
+Defaults unless explicitly requested: target_count=10, freshness_days=null,
+evidence_policy={"min_sources":1,"prefer_official":true,"require_date":false,"required_evidence":[]}.
+Use required=true for the requested fields. URL validity is already enforced by
+field_type=url; do not invent an is_valid_url constraint. Keep allowed_domains=[].
 """)
     human = HumanMessage(content=req.prompt)
     selection = await checked_selection(req.model_selection)
     token = selected_model.set(selection)
     try:
-        resp = await llm.ainvoke([system, human])
+        resp = await llm.ainvoke([system, human], response_schema=CONTRACT_SCHEMA)
     except LLMUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from None
     finally:
@@ -965,7 +984,9 @@ Fields:
 async def run_endpoint(req: RunRequest, background: BackgroundTasks):
     """Start a full agentic workflow in the background."""
     req.data_contract["_model_config"] = await checked_selection(req.data_contract.get("_model_config"))
-    background.add_task(_execute_run, req)
+    if req.run_id in ACTIVE_TASKS:
+        raise HTTPException(409, "Run already active")
+    ACTIVE_TASKS[req.run_id] = asyncio.create_task(_execute_run(req))
     return {"status": "accepted", "run_id": req.run_id}
 
 async def _execute_run(req: RunRequest):
@@ -993,7 +1014,13 @@ async def _execute_run(req: RunRequest):
         "chunk_pool":       [],
         "tfidf_metrics":    {},
         "laya_before_tfidf": False,
-        "laya_enabled":     True,
+        "laya_enabled":     False,
+        "attempted_urls":   [],
+        "evidence_gaps":    [],
+        "field_coverage":   0.,
+        "accepted_count":   0,
+        "stop_reason":      "",
+        "source_failures":  [],
         "processed_chunks":  [],
         "extracted_records": [],
         "validated_records": [],
@@ -1003,72 +1030,78 @@ async def _execute_run(req: RunRequest):
         "status":            "PENDING",
         "messages":          [],
     }
+    req.data_contract["_run_id"] = req.run_id
     ACTIVE_RUN_STATES[req.run_id] = initial
+    monitor = asyncio.create_task(monitor_control(req.run_id))
     try:
         async with async_timeout(WORKFLOW_TIMEOUT):
+            if req.run_id in CANCELLED_RUNS:
+                raise asyncio.CancelledError
             token = selected_model.set(await checked_selection(req.data_contract.get("_model_config")))
             await graph.ainvoke(initial)
+    except asyncio.CancelledError:
+        async with httpx.AsyncClient(timeout=5) as client:
+            try:
+                await client.post(f"{SCRAPLING_URL}/runs/{req.run_id}/cancel")
+            except httpx.HTTPError:
+                pass
+        await post_run_event(req.run_id, "run.cancelled", payload={"reason": "Cancelled by user"})
     except (TimeoutError, asyncio.TimeoutError):
-        logger.warning(f"Workflow timeout ({WORKFLOW_TIMEOUT:g}s) on run={req.run_id}")
-        latest_state = ACTIVE_RUN_STATES.get(req.run_id, initial)
-        extracted = latest_state.get("extracted_records", [])
-        validated = latest_state.get("validated_records", [])
-
-        final = validated
-        if not final and extracted:
-            logger.info(f"Salvaging {len(extracted)} extracted records on timeout for run={req.run_id}")
-            chunks = latest_state.get("retrieved_chunks", [])
-            if chunks:
-                try:
-                    final = validate_candidates(extracted, chunks, req.data_contract)
-                except Exception as ve:
-                    logger.warning(f"Validation failed during timeout salvage: {ve}")
-            if not final:
-                salvaged = []
-                for r in extracted:
-                    name = extract_canonical_name(r, req.data_contract)
-                    if name and len(str(name).strip()) > 1:
-                        salvaged.append({
-                            **r,
-                            "canonical_name": str(name).strip(),
-                            "status": "draft",
-                            "confidence_score": 0.35,
-                            "confidence_breakdown": {
-                                "source_authority": 0.5,
-                                "grounding_score": 0.3,
-                                "ml_validation_score": 0.3,
-                                "agreement": 0.0,
-                                "freshness": 0.5,
-                                "completeness": 0.5,
-                                "reachability": 1.0,
-                                "extraction_certainty": 0.5,
-                            },
-                        })
-                final = salvaged
-
-        if final:
-            logger.info(f"Successfully salvaged {len(final)} records on timeout for run={req.run_id}")
-            await post_run_event(
-                req.run_id, "run.completed",
-                records_found=len(extracted) if extracted else len(final),
-                records_verified=sum(r.get("status") == "verified" for r in final),
-                avg_confidence=_avg_confidence(final),
-                payload={"records": final, "sources": [
-                    {k: v for k, v in source.items() if k != "content"}
-                    for source in latest_state.get("search_results", [])
-                ]},
-            )
-            return
-        await post_run_event(req.run_id, "run.failed", error=f"Workflow exceeded its {WORKFLOW_TIMEOUT:g}s time limit. Try a narrower requirement.")
+        latest = ACTIVE_RUN_STATES.get(req.run_id, initial)
+        latest["stop_reason"] = "Workflow time budget exhausted"
+        await semantic_verify(latest)
+    except LLMUnavailable as exc:
+        latest = ACTIVE_RUN_STATES.get(req.run_id, initial)
+        if any(r.get("accepted") for r in latest.get("validated_records", [])):
+            latest["stop_reason"] = str(exc)
+            await semantic_verify(latest)
+        else:
+            await post_run_event(req.run_id, "run.failed", error=str(exc), payload={
+                "review_candidates": latest.get("validated_records", []),
+                "source_failures": latest.get("source_failures", []),
+                "evidence_gaps": latest.get("evidence_gaps", []),
+                "sources": [{k:v for k,v in s.items() if k != "content"} for s in latest.get("search_results", [])]})
     except Exception as e:
         logger.error(f"run {req.run_id} failed: {e}", exc_info=True)
         await post_run_event(req.run_id, "run.failed", error=str(e))
     finally:
+        monitor.cancel()
+        await asyncio.gather(monitor, return_exceptions=True)
+        ACTIVE_TASKS.pop(req.run_id, None)
+        CANCELLED_RUNS.discard(req.run_id)
         ACTIVE_RUN_STATES.pop(req.run_id, None)
         if token is not None:
             selected_model.reset(token)
 
 # ─── Entry point ──────────────────────────────────────────────────────────────
+
+async def monitor_control(run_id):
+    while True:
+        result = await rust_get(f"/internal/runs/{run_id}/control")
+        if result.get("status") == "cancelled":
+            task = ACTIVE_TASKS.get(run_id)
+            if task:
+                task.cancel()
+            return
+        current = ACTIVE_RUN_STATES.get(run_id)
+        if current is not None and result.get("source_policy"):
+            current["data_contract"]["source_policy"] = result["source_policy"]
+        await asyncio.sleep(1)
+
+
+@app.post("/runs/{run_id}/cancel")
+async def cancel_endpoint(run_id: str):
+    CANCELLED_RUNS.add(run_id)
+    task = ACTIVE_TASKS.get(run_id)
+    if task:
+        task.cancel()
+    async with httpx.AsyncClient(timeout=5) as client:
+        try:
+            await client.post(f"{SCRAPLING_URL}/runs/{run_id}/cancel")
+        except httpx.HTTPError:
+            pass
+    return {"cancelled": True, "active": task is not None}
+
 
 if __name__ == "__main__":
     import uvicorn

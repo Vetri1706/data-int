@@ -2,24 +2,29 @@
 
 import React, { useEffect, useState } from "react";
 import { FileText, Database, CheckCircle2, AlertTriangle } from "lucide-react";
-import { collections, datasets, type DatasetRecord } from "@/lib/api";
+import { collections, datasets, runs, type DatasetRecord } from "@/lib/api";
 import { NumberTicker } from "@/components/ui/number-ticker";
 
 export function MetricCards() {
-  const [summary, setSummary] = useState<{collections: number; records: DatasetRecord[]} | null>(null);
+  const [summary, setSummary] = useState<{collections: number; reviewCount: number; records: DatasetRecord[]} | null>(null);
   const [error, setError] = useState("");
   useEffect(() => {
     let active = true;
     Promise.all([collections.list(), datasets.list()]).then(async ([cols, list]) => {
       const latest = [...new Map([...list.data].reverse().map((ds) => [ds.collection_id, ds])).values()];
       const responses = await Promise.all(latest.map((ds) => datasets.records(ds.id)));
-      if (active) setSummary({ collections: cols.data.length, records: responses.flatMap((r) => r.data) });
+      const reviews = await Promise.all(cols.data.map(async col => {
+        const list = await runs.list(col.id);
+        return list.data[0] ? (await runs.history(list.data[0].id)).review_candidates.length : 0;
+      }));
+      if (active) setSummary({ collections: cols.data.length, reviewCount: reviews.reduce((a,b) => a+b,0), records: responses.flatMap((r) => r.data) });
     }).catch((error: Error) => { if (active) setError(error.message); });
     return () => { active = false; };
   }, []);
   const records = summary?.records ?? [];
-  const averageConfidence = records.length ? Math.round(records.reduce((sum, record) => sum + record.confidence_score, 0) / records.length * 100) : null;
-  const reviewCount = records.filter((record) => record.status === "needs_review").length;
+  const coverages = records.map(r => (r.primary_attributes.verification as {field_coverage?: number} | undefined)?.field_coverage).filter((v): v is number => typeof v === "number");
+  const averageCoverage = coverages.length ? Math.round(coverages.reduce((a,b) => a+b,0) / coverages.length * 100) : null;
+
   const METRICS = [
     {
       id: "collections",
@@ -39,8 +44,8 @@ export function MetricCards() {
     },
     {
       id: "accuracy",
-      label: "Avg. confidence",
-      value: averageConfidence,
+      label: "Supported field coverage",
+      value: averageCoverage,
       suffix: "%",
       icon: CheckCircle2,
       tone: "text-[#238a59] bg-[#edf8f2]",
@@ -48,7 +53,7 @@ export function MetricCards() {
     {
       id: "review",
       label: "Need review",
-      value: summary ? reviewCount : null,
+      value: summary?.reviewCount ?? null,
       suffix: "",
       icon: AlertTriangle,
       tone: "text-[#b97908] bg-[#fff7e8]",

@@ -1,0 +1,434 @@
+{
+  "scope": "40 synthetic author-labelled cases, including regression and challenge cases. Not independent human adjudication or live-web validation. Challenge labels include supported paraphrases that a conservative verifier may miss.",
+  "baseline_commit": "2981853",
+  "metrics": {
+    "all": {
+      "baseline": {
+        "cases": 40,
+        "true_support": 15,
+        "false_support": 17,
+        "support_precision": 0.46875,
+        "support_recall": 0.8333333333333334,
+        "three_state_accuracy": 0.425,
+        "abstentions": 8,
+        "total_ms": 0.672
+      },
+      "typed": {
+        "cases": 40,
+        "true_support": 14,
+        "false_support": 0,
+        "support_precision": 1.0,
+        "support_recall": 0.7777777777777778,
+        "three_state_accuracy": 0.9,
+        "abstentions": 17,
+        "total_ms": 3.671
+      }
+    },
+    "regression": {
+      "baseline": {
+        "cases": 20,
+        "true_support": 7,
+        "false_support": 8,
+        "support_precision": 0.4666666666666667,
+        "support_recall": 0.7,
+        "three_state_accuracy": 0.4,
+        "abstentions": 5,
+        "total_ms": 0.452
+      },
+      "typed": {
+        "cases": 20,
+        "true_support": 10,
+        "false_support": 0,
+        "support_precision": 1.0,
+        "support_recall": 1.0,
+        "three_state_accuracy": 1.0,
+        "abstentions": 3,
+        "total_ms": 2.774
+      }
+    },
+    "challenge": {
+      "baseline": {
+        "cases": 20,
+        "true_support": 8,
+        "false_support": 9,
+        "support_precision": 0.47058823529411764,
+        "support_recall": 1.0,
+        "three_state_accuracy": 0.45,
+        "abstentions": 3,
+        "total_ms": 0.22
+      },
+      "typed": {
+        "cases": 20,
+        "true_support": 4,
+        "false_support": 0,
+        "support_precision": 1.0,
+        "support_recall": 0.5,
+        "three_state_accuracy": 0.8,
+        "abstentions": 14,
+        "total_ms": 0.897
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "wrong_city",
+      "split": "regression",
+      "expected": "contradicted",
+      "baseline": "supported",
+      "typed": "contradicted",
+      "baseline_ms": 0.21610000021610176,
+      "typed_ms": 0.9915999999066116
+    },
+    {
+      "id": "wrong_certificate",
+      "split": "regression",
+      "expected": "unknown",
+      "baseline": "supported",
+      "typed": "unknown",
+      "baseline_ms": 0.020399999812070746,
+      "typed_ms": 0.2268999996886123
+    },
+    {
+      "id": "wrong_amount",
+      "split": "regression",
+      "expected": "contradicted",
+      "baseline": "supported",
+      "typed": "contradicted",
+      "baseline_ms": 0.017099999240599573,
+      "typed_ms": 0.5776999996669474
+    },
+    {
+      "id": "partial_name",
+      "split": "regression",
+      "expected": "unknown",
+      "baseline": "supported",
+      "typed": "unknown",
+      "baseline_ms": 0.017700000171316788,
+      "typed_ms": 0.08440000055998098
+    },
+    {
+      "id": "neighbor_sentence",
+      "split": "regression",
+      "expected": "contradicted",
+      "baseline": "supported",
+      "typed": "contradicted",
+      "baseline_ms": 0.015999999959603883,
+      "typed_ms": 0.10850000035134144
+    },
+    {
+      "id": "neighbor_same_sentence",
+      "split": "regression",
+      "expected": "contradicted",
+      "baseline": "supported",
+      "typed": "contradicted",
+      "baseline_ms": 0.015900000107649248,
+      "typed_ms": 0.04799999987881165
+    },
+    {
+      "id": "negation",
+      "split": "regression",
+      "expected": "contradicted",
+      "baseline": "unknown",
+      "typed": "contradicted",
+      "baseline_ms": 0.00960000033956021,
+      "typed_ms": 0.03339999966556206
+    },
+    {
+      "id": "correct_city",
+      "split": "regression",
+      "expected": "supported",
+      "baseline": "supported",
+      "typed": "supported",
+      "baseline_ms": 0.00960000033956021,
+      "typed_ms": 0.029099999665049836
+    },
+    {
+      "id": "correct_certificate",
+      "split": "regression",
+      "expected": "supported",
+      "baseline": "supported",
+      "typed": "supported",
+      "baseline_ms": 0.01249999968422344,
+      "typed_ms": 0.034300000152143184
+    },
+    {
+      "id": "correct_amount",
+      "split": "regression",
+      "expected": "supported",
+      "baseline": "supported",
+      "typed": "supported",
+      "baseline_ms": 0.011699999959091656,
+      "typed_ms": 0.03699999979289714
+    },
+    {
+      "id": "unit_equivalence",
+      "split": "regression",
+      "expected": "supported",
+      "baseline": "unknown",
+      "typed": "supported",
+      "baseline_ms": 0.0068999997893115506,
+      "typed_ms": 0.03440000000409782
+    },
+    {
+      "id": "zero",
+      "split": "regression",
+      "expected": "supported",
+      "baseline": "unknown",
+      "typed": "supported",
+      "baseline_ms": 0.003099999958067201,
+      "typed_ms": 0.03240000023652101
+    },
+    {
+      "id": "false_boolean",
+      "split": "regression",
+      "expected": "supported",
+      "baseline": "unknown",
+      "typed": "supported",
+      "baseline_ms": 0.0031999998100218363,
+      "typed_ms": 0.09480000062467298
+    },
+    {
+      "id": "correct_date",
+      "split": "regression",
+      "expected": "supported",
+      "baseline": "supported",
+      "typed": "supported",
+      "baseline_ms": 0.015199999324977398,
+      "typed_ms": 0.0911999995878432
+    },
+    {
+      "id": "wrong_date",
+      "split": "regression",
+      "expected": "contradicted",
+      "baseline": "supported",
+      "typed": "contradicted",
+      "baseline_ms": 0.01720000000204891,
+      "typed_ms": 0.03239999932702631
+    },
+    {
+      "id": "industry",
+      "split": "regression",
+      "expected": "supported",
+      "baseline": "supported",
+      "typed": "supported",
+      "baseline_ms": 0.011399999493733048,
+      "typed_ms": 0.1931000006152317
+    },
+    {
+      "id": "missing_revenue",
+      "split": "regression",
+      "expected": "unknown",
+      "baseline": "unknown",
+      "typed": "unknown",
+      "baseline_ms": 0.006199999916134402,
+      "typed_ms": 0.022000000171829015
+    },
+    {
+      "id": "correct_name",
+      "split": "regression",
+      "expected": "supported",
+      "baseline": "supported",
+      "typed": "supported",
+      "baseline_ms": 0.011399999493733048,
+      "typed_ms": 0.020600000425474718
+    },
+    {
+      "id": "wrong_currency_amount",
+      "split": "regression",
+      "expected": "contradicted",
+      "baseline": "supported",
+      "typed": "contradicted",
+      "baseline_ms": 0.01669999983278103,
+      "typed_ms": 0.04650000028050272
+    },
+    {
+      "id": "correct_currency",
+      "split": "regression",
+      "expected": "supported",
+      "baseline": "supported",
+      "typed": "supported",
+      "baseline_ms": 0.014400000509340316,
+      "typed_ms": 0.03569999989849748
+    },
+    {
+      "id": "different_field_same_number",
+      "split": "challenge",
+      "expected": "unknown",
+      "baseline": "supported",
+      "typed": "unknown",
+      "baseline_ms": 0.009399999726156238,
+      "typed_ms": 0.019300000531075057
+    },
+    {
+      "id": "different_relation_same_city",
+      "split": "challenge",
+      "expected": "unknown",
+      "baseline": "supported",
+      "typed": "unknown",
+      "baseline_ms": 0.011199999789823778,
+      "typed_ms": 0.1402000007146853
+    },
+    {
+      "id": "quoted_claim",
+      "split": "challenge",
+      "expected": "unknown",
+      "baseline": "supported",
+      "typed": "unknown",
+      "baseline_ms": 0.013500000022759195,
+      "typed_ms": 0.024899999516492244
+    },
+    {
+      "id": "future_plan",
+      "split": "challenge",
+      "expected": "unknown",
+      "baseline": "supported",
+      "typed": "unknown",
+      "baseline_ms": 0.01269999938813271,
+      "typed_ms": 0.019099999917671084
+    },
+    {
+      "id": "past_location",
+      "split": "challenge",
+      "expected": "unknown",
+      "baseline": "supported",
+      "typed": "unknown",
+      "baseline_ms": 0.010100000508828089,
+      "typed_ms": 0.01629999951546779
+    },
+    {
+      "id": "conditional",
+      "split": "challenge",
+      "expected": "unknown",
+      "baseline": "supported",
+      "typed": "unknown",
+      "baseline_ms": 0.010600000678095967,
+      "typed_ms": 0.017700000171316788
+    },
+    {
+      "id": "ambiguous_range",
+      "split": "challenge",
+      "expected": "unknown",
+      "baseline": "supported",
+      "typed": "unknown",
+      "baseline_ms": 0.010399999155197293,
+      "typed_ms": 0.0396999994336511
+    },
+    {
+      "id": "ambiguous_date",
+      "split": "challenge",
+      "expected": "unknown",
+      "baseline": "supported",
+      "typed": "unknown",
+      "baseline_ms": 0.01739999970595818,
+      "typed_ms": 0.030100000003585592
+    },
+    {
+      "id": "paraphrase_location",
+      "split": "challenge",
+      "expected": "supported",
+      "baseline": "supported",
+      "typed": "unknown",
+      "baseline_ms": 0.009399999726156238,
+      "typed_ms": 0.01759999940986745
+    },
+    {
+      "id": "paraphrase_revenue",
+      "split": "challenge",
+      "expected": "supported",
+      "baseline": "supported",
+      "typed": "unknown",
+      "baseline_ms": 0.012800000149582047,
+      "typed_ms": 0.021300000298651867
+    },
+    {
+      "id": "plural_multi_location",
+      "split": "challenge",
+      "expected": "supported",
+      "baseline": "supported",
+      "typed": "unknown",
+      "baseline_ms": 0.009899999895424116,
+      "typed_ms": 0.02370000038354192
+    },
+    {
+      "id": "label_location",
+      "split": "challenge",
+      "expected": "supported",
+      "baseline": "supported",
+      "typed": "supported",
+      "baseline_ms": 0.007999999979801942,
+      "typed_ms": 0.026900000193563756
+    },
+    {
+      "id": "new_city",
+      "split": "challenge",
+      "expected": "supported",
+      "baseline": "supported",
+      "typed": "supported",
+      "baseline_ms": 0.009399999726156238,
+      "typed_ms": 0.030100000003585592
+    },
+    {
+      "id": "new_number",
+      "split": "challenge",
+      "expected": "supported",
+      "baseline": "supported",
+      "typed": "supported",
+      "baseline_ms": 0.009399999726156238,
+      "typed_ms": 0.1081000000340282
+    },
+    {
+      "id": "zero_wrong",
+      "split": "challenge",
+      "expected": "contradicted",
+      "baseline": "unknown",
+      "typed": "contradicted",
+      "baseline_ms": 0.0033999995139311068,
+      "typed_ms": 0.03870000000461005
+    },
+    {
+      "id": "wrong_boolean",
+      "split": "challenge",
+      "expected": "contradicted",
+      "baseline": "unknown",
+      "typed": "contradicted",
+      "baseline_ms": 0.005599999894911889,
+      "typed_ms": 0.02930000027845381
+    },
+    {
+      "id": "irrelevant_mention",
+      "split": "challenge",
+      "expected": "unknown",
+      "baseline": "supported",
+      "typed": "unknown",
+      "baseline_ms": 0.011299999641778413,
+      "typed_ms": 0.027400000362831634
+    },
+    {
+      "id": "list_identity",
+      "split": "challenge",
+      "expected": "supported",
+      "baseline": "supported",
+      "typed": "unknown",
+      "baseline_ms": 0.011299999641778413,
+      "typed_ms": 0.018599999748403206
+    },
+    {
+      "id": "unknown_profile",
+      "split": "challenge",
+      "expected": "unknown",
+      "baseline": "unknown",
+      "typed": "unknown",
+      "baseline_ms": 0.015900000107649248,
+      "typed_ms": 0.1289000001634122
+    },
+    {
+      "id": "correct_url",
+      "split": "challenge",
+      "expected": "supported",
+      "baseline": "supported",
+      "typed": "supported",
+      "baseline_ms": 0.018000000636675395,
+      "typed_ms": 0.1187999996545841
+    }
+  ]
+}

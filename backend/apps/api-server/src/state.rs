@@ -1,6 +1,6 @@
 use datavault_auth::AuthService;
 use datavault_search::{
-    DuckDuckGoProvider, FederatedSearch, LlmSearchProvider, SearxProvider, WikipediaProvider,
+    DdgsProvider, FederatedSearch, SearxProvider, WikipediaProvider,
 };
 use datavault_storage::{Cache, Db};
 use std::sync::Arc;
@@ -30,14 +30,12 @@ impl AppState {
             .expect("intel http client");
 
         let searx = SearxProvider::new(searxng_url);
-        let llm_search = LlmSearchProvider::new(&intelligence_url);
         let wiki = WikipediaProvider::new();
 
         let search = Arc::new(FederatedSearch::new(vec![
+            Box::new(DdgsProvider::new(std::env::var("SCRAPLING_URL").unwrap_or_else(|_| "http://127.0.0.1:8001".into()))),
             Box::new(searx),
-            Box::new(DuckDuckGoProvider::default()),
             Box::new(wiki),
-            Box::new(llm_search),
         ]));
 
         Self {

@@ -76,7 +76,7 @@ export function DataTable({ data, onSelectEntity }: DataTableProps) {
     if (sorted.length === 0) {
       return ["industry", "location"];
     }
-    return sorted.slice(0, 3);
+    return sorted;
   }, [data]);
 
   const columns = useMemo<ColumnDef<EntityRecord>[]>(() => {
@@ -123,6 +123,7 @@ export function DataTable({ data, onSelectEntity }: DataTableProps) {
     for (const attrKey of dynamicAttributeKeys) {
       cols.push({
         id: attrKey,
+        accessorFn: (row) => row.primary_attributes?.[attrKey] ?? "",
         header: formatAttributeHeader(attrKey),
         cell: ({ row }) => {
           const val = row.original.primary_attributes?.[attrKey];
@@ -156,10 +157,10 @@ export function DataTable({ data, onSelectEntity }: DataTableProps) {
 
     // Confidence metric
     cols.push({
-      accessorKey: "confidence_score",
-      header: "Confidence",
+      id: "field_coverage",
+      header: "Fields supported",
       cell: ({ row }) => {
-        const score = row.original.confidence_score;
+        const score = row.original.verification?.field_coverage;
         const pct = typeof score === "number" ? Math.round(score * 100) : null;
         return (
           <div className="flex items-center gap-2 font-medium text-[#53647c]">
@@ -351,8 +352,8 @@ export function DataTable({ data, onSelectEntity }: DataTableProps) {
               ) : (
                 <tr>
                   <td colSpan={table.getVisibleLeafColumns().length} className="px-5 py-10 text-center">
-                    <p className="font-semibold text-[#23354f]">No records match these filters.</p>
-                    <button
+                    <p className="font-semibold text-[#23354f]">{data.length ? "No records match these filters." : "No records to display."}</p>
+                    {data.length > 0 && <button
                       type="button"
                       onClick={() => {
                         setGlobalFilter("");
@@ -361,7 +362,7 @@ export function DataTable({ data, onSelectEntity }: DataTableProps) {
                       className="mt-2 text-[11px] font-semibold text-[#246bde] hover:underline"
                     >
                       Clear filters
-                    </button>
+                    </button>}
                   </td>
                 </tr>
               )}
@@ -383,7 +384,7 @@ export function DataTable({ data, onSelectEntity }: DataTableProps) {
             <ChevronLeft className="h-3.5 w-3.5" />
           </button>
           <span className="min-w-20 text-center font-medium text-[#3e506a]">
-            Page {filteredCount === 0 ? 0 : pageIndex + 1} of {table.getPageCount()}
+            {filteredCount === 0 ? "No pages" : `Page ${pageIndex + 1} of ${table.getPageCount()}`}
           </span>
           <button
             type="button"

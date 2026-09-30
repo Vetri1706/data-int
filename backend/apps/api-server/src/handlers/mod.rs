@@ -4,6 +4,7 @@ pub mod datasets;
 pub mod health;
 pub mod internal;
 pub mod runs;
+pub mod source_discovery;
 pub mod sources;
 pub mod users;
 pub mod workspace;

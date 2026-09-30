@@ -72,10 +72,13 @@ pub async fn get(
 
 #[derive(Debug, Deserialize)]
 pub struct CreateCollectionRequest {
+    pub source_policy: Option<serde_json::Value>,
+    pub template_contract: Option<serde_json::Value>,
     pub title: String,
     pub prompt: String,
     pub tags: Option<Vec<String>>,
     pub model_selection: Option<serde_json::Value>,
+    pub discovery_sources: Option<Vec<serde_json::Value>>,
 }
 
 pub async fn create(
@@ -98,10 +101,62 @@ pub async fn create(
         .map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or_else(|| err(StatusCode::NOT_FOUND, "workspace not found"))?;
 
+    let mut policy = body.source_policy.unwrap_or(json!({}));
+    let approved = policy["approved_domains"].as_array().ok_or_else(|| {
+        err(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "Choose approved source domains",
+        )
+    })?;
+    if policy["basis"] != "user_confirmed_permission"
+        || approved.is_empty()
+        || approved.iter().any(|v| {
+            v.as_str()
+                .is_none_or(|d| !d.contains('.') || d.contains(['/', ':', '@', '*', ' ', '?', '#']))
+        })
+    {
+        return Err(err(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "Confirm permission for explicit source domains",
+        ));
+    }
+    policy["approved_by"] = json!(user.id);
+    policy["approved_at"] = json!(chrono::Utc::now());
     // Ask LangGraph to parse the requirement into a DataContract
-    let contract = call_intelligence_parse(&state, &body.prompt, body.model_selection.as_ref())
+    let mut contract = call_intelligence_parse(&state, &body.prompt, body.model_selection.as_ref())
         .await
         .map_err(|e| err(StatusCode::UNPROCESSABLE_ENTITY, e.to_string()))?;
+
+    contract["source_policy"] = policy;
+    // Reviewed search metadata seeds retrieval, saving repeated discovery/model
+    // calls. It is still untrusted and goes through relevance and page verification.
+    let seeds: Vec<_> = body.discovery_sources.unwrap_or_default().into_iter().take(25)
+        .filter_map(|s| {
+            let raw = s["url"].as_str()?;
+            let url = url::Url::parse(raw).ok()?;
+            let host = url.host_str()?.to_lowercase();
+            let allowed = contract["source_policy"]["approved_domains"].as_array()?.iter()
+                .filter_map(|d| d.as_str()).any(|d| host == d.to_lowercase() || host.ends_with(&format!(".{}", d.to_lowercase())));
+            if !allowed || !matches!(url.scheme(), "https" | "http") || !url.username().is_empty() { return None; }
+            Some(json!({"url":url.as_str(), "title":s["title"].as_str().unwrap_or("").chars().take(500).collect::<String>(),
+                "snippet":s["snippet"].as_str().unwrap_or("").chars().take(1500).collect::<String>(),
+                "provider":s["provider"].as_str().unwrap_or("reviewed-search").chars().take(80).collect::<String>()}))
+        }).collect();
+    contract["_discovery_sources"] = json!(seeds);
+    if let Some(template) = body.template_contract {
+        for key in [
+            "entity_type",
+            "fields",
+            "target_count",
+            "constraints",
+            "evidence_policy",
+        ] {
+            if !template[key].is_null() {
+                contract[key] = template[key].clone();
+            }
+        }
+    }
+    contract["verification_method"] = json!("typed-claims-v1");
 
     let col = state
         .db
@@ -142,7 +197,13 @@ pub async fn update(
 
     let updated_title = body.title.unwrap_or(col.title);
     let updated_tags = body.tags.unwrap_or(col.tags);
-    let updated_status = body.status.unwrap_or_else(|| col.status.to_string());
+    if body.status.as_ref().is_some_and(|s| s != &col.status) {
+        return Err(err(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "Execution status is managed by runs; use the run cancellation endpoint.",
+        ));
+    }
+    let updated_status = col.status;
 
     let updated = sqlx::query_as!(
         datavault_domain::Collection,
@@ -211,23 +272,52 @@ pub async fn trigger_run(
         .map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or_else(|| err(StatusCode::NOT_FOUND, "collection not found"))?;
 
-    // Create workflow run record
+    if col.data_contract["source_policy"]["basis"] != "user_confirmed_permission" {
+        return Err(err(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "This collection has no source permission policy. Create a collection with approved domains.",
+        ));
+    }
+    let mut tx = state
+        .db
+        .pool
+        .begin()
+        .await
+        .map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    sqlx::query("SELECT id FROM collections WHERE id=$1 FOR UPDATE")
+        .bind(id)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let active: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM workflow_runs WHERE collection_id=$1 AND status NOT IN ('completed','partial','exhausted','failed','cancelled'))")
+        .bind(id).fetch_one(&mut *tx).await.map_err(|e|err(StatusCode::INTERNAL_SERVER_ERROR,e.to_string()))?;
+    if active {
+        return Err(err(
+            StatusCode::CONFLICT,
+            "This collection already has an active run.",
+        ));
+    }
+    // Create the run and set the collection status in the same transaction.
     let run = sqlx::query!(
-        "INSERT INTO workflow_runs (collection_id, triggered_by, status, current_stage)
-         VALUES ($1, $2, 'pending', 'planning')
+        "INSERT INTO workflow_runs (collection_id, triggered_by, status, current_stage, data_contract)
+         VALUES ($1, $2, 'pending', 'planning', $3)
          RETURNING id, status, started_at",
         col.id,
         user.id,
+        col.data_contract,
     )
-    .fetch_one(&state.db.pool)
+    .fetch_one(&mut *tx)
     .await
     .map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // Update collection status
-    let _ = state
-        .db
-        .update_collection_status(id, &datavault_domain::CollectionStatus::Running)
-        .await;
+    sqlx::query("UPDATE collections SET status='running',updated_at=NOW() WHERE id=$1")
+        .bind(id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    tx.commit()
+        .await
+        .map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     // Fire-and-forget: delegate to LangGraph
     let intel_url = state.intel_base_url.clone();
@@ -250,15 +340,15 @@ pub async fn trigger_run(
             .is_ok_and(|response| response.status().is_success());
         if !accepted {
             let _ = sqlx::query(
-                "UPDATE workflow_runs SET status = 'failed', completed_at = NOW() WHERE id = $1",
+                "UPDATE workflow_runs SET status = 'failed', completed_at = NOW() WHERE id = $1 AND status IN ('pending','running')",
             )
             .bind(run_id)
             .execute(&pool)
             .await;
             let _ = sqlx::query(
-                "UPDATE collections SET status = 'failed', updated_at = NOW() WHERE id = $1",
+                "UPDATE collections SET status = 'failed', updated_at = NOW() WHERE id = $1 AND EXISTS (SELECT 1 FROM workflow_runs WHERE id=$2 AND status='failed') AND NOT EXISTS (SELECT 1 FROM workflow_runs WHERE collection_id=$1 AND started_at>(SELECT started_at FROM workflow_runs WHERE id=$2))",
             )
-            .bind(id)
+            .bind(id).bind(run_id)
             .execute(&pool)
             .await;
         }

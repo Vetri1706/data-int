@@ -27,16 +27,16 @@ impl Db {
         .fetch_optional(&self.pool)
         .await?;
         Ok(row.map(|r| User {
-            id:            r.id,
-            email:         r.email,
-            name:          r.name,
+            id: r.id,
+            email: r.email,
+            name: r.name,
             password_hash: r.password_hash,
-            provider:      r.provider.unwrap_or_else(|| "local".to_string()),
-            provider_id:   r.provider_id,
-            avatar_url:    r.avatar_url,
-            is_active:     r.is_active,
-            created_at:    r.created_at,
-            updated_at:    r.updated_at,
+            provider: r.provider.unwrap_or_else(|| "local".to_string()),
+            provider_id: r.provider_id,
+            avatar_url: r.avatar_url,
+            is_active: r.is_active,
+            created_at: r.created_at,
+            updated_at: r.updated_at,
         }))
     }
 
@@ -50,16 +50,16 @@ impl Db {
         .fetch_optional(&self.pool)
         .await?;
         Ok(row.map(|r| User {
-            id:            r.id,
-            email:         r.email,
-            name:          r.name,
+            id: r.id,
+            email: r.email,
+            name: r.name,
             password_hash: r.password_hash,
-            provider:      r.provider.unwrap_or_else(|| "local".to_string()),
-            provider_id:   r.provider_id,
-            avatar_url:    r.avatar_url,
-            is_active:     r.is_active,
-            created_at:    r.created_at,
-            updated_at:    r.updated_at,
+            provider: r.provider.unwrap_or_else(|| "local".to_string()),
+            provider_id: r.provider_id,
+            avatar_url: r.avatar_url,
+            is_active: r.is_active,
+            created_at: r.created_at,
+            updated_at: r.updated_at,
         }))
     }
 
@@ -81,16 +81,16 @@ impl Db {
         .fetch_one(&self.pool)
         .await?;
         Ok(User {
-            id:            row.id,
-            email:         row.email,
-            name:          row.name,
+            id: row.id,
+            email: row.email,
+            name: row.name,
             password_hash: row.password_hash,
-            provider:      row.provider.unwrap_or_else(|| "local".to_string()),
-            provider_id:   row.provider_id,
-            avatar_url:    row.avatar_url,
-            is_active:     row.is_active,
-            created_at:    row.created_at,
-            updated_at:    row.updated_at,
+            provider: row.provider.unwrap_or_else(|| "local".to_string()),
+            provider_id: row.provider_id,
+            avatar_url: row.avatar_url,
+            is_active: row.is_active,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
         })
     }
 
@@ -220,8 +220,7 @@ impl Db {
                     created_at, updated_at
              FROM dataset_records
              WHERE dataset_id = $1
-             ORDER BY confidence_score DESC
-             LIMIT 500",
+             ORDER BY created_at ASC, id ASC",
             dataset_id
         )
         .fetch_all(&self.pool)
@@ -275,7 +274,7 @@ impl Db {
 
 // ─── Redis Cache ──────────────────────────────────────────────────────────────
 
-use deadpool_redis::{redis::AsyncCommands, Pool as RedisPool};
+use deadpool_redis::{Pool as RedisPool, redis::AsyncCommands};
 use std::time::Duration;
 
 #[derive(Clone)]
@@ -307,11 +306,7 @@ impl Cache {
     }
 
     /// Publish a run event to Redis pub/sub for SSE fan-out
-    pub async fn publish_run_event(
-        &self,
-        run_id: uuid::Uuid,
-        event_json: &str,
-    ) -> Result<()> {
+    pub async fn publish_run_event(&self, run_id: uuid::Uuid, event_json: &str) -> Result<()> {
         let mut conn = self.pool.get().await?;
         let channel = format!("run:{}", run_id);
         let _: () = conn.publish(channel, event_json).await?;

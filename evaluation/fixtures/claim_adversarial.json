@@ -1,0 +1,485 @@
+{
+  "scope": "40 synthetic author-labelled cases, including regression and challenge cases. Not independent human adjudication or live-web validation. Challenge labels include supported paraphrases that a conservative verifier may miss.",
+  "cases": [
+    {
+      "id": "wrong_city",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "location",
+        "field_type": "location"
+      },
+      "value": "New Delhi",
+      "text": "Acme Robotics is based in New York.",
+      "expected": "contradicted"
+    },
+    {
+      "id": "wrong_certificate",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "certification",
+        "field_type": "certification"
+      },
+      "value": "ISO 27001",
+      "text": "Acme Robotics holds ISO 9001 certification.",
+      "expected": "unknown"
+    },
+    {
+      "id": "wrong_amount",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "revenue",
+        "field_type": "number"
+      },
+      "value": "500 million",
+      "text": "Acme Robotics revenue is 10 million.",
+      "expected": "contradicted"
+    },
+    {
+      "id": "partial_name",
+      "split": "regression",
+      "entity": "Delhi Robotics",
+      "field": {
+        "name": "name",
+        "field_type": "string"
+      },
+      "value": "Delhi Robotics",
+      "text": "Acme Robotics is headquartered in Chennai.",
+      "expected": "unknown"
+    },
+    {
+      "id": "neighbor_sentence",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "location",
+        "field_type": "location"
+      },
+      "value": "Chennai",
+      "text": "Acme Robotics is based in Mumbai. Beta is based in Chennai.",
+      "expected": "contradicted"
+    },
+    {
+      "id": "neighbor_same_sentence",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "location",
+        "field_type": "location"
+      },
+      "value": "Chennai",
+      "text": "Acme Robotics is based in Mumbai, unlike Beta which is headquartered in Chennai.",
+      "expected": "contradicted"
+    },
+    {
+      "id": "negation",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "location",
+        "field_type": "location"
+      },
+      "value": "Chennai",
+      "text": "Acme Robotics is not based in Chennai.",
+      "expected": "contradicted"
+    },
+    {
+      "id": "correct_city",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "location",
+        "field_type": "location"
+      },
+      "value": "Chennai",
+      "text": "Acme Robotics is based in Chennai.",
+      "expected": "supported"
+    },
+    {
+      "id": "correct_certificate",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "certification",
+        "field_type": "certification"
+      },
+      "value": "ISO 27001",
+      "text": "Acme Robotics holds ISO 27001 certification.",
+      "expected": "supported"
+    },
+    {
+      "id": "correct_amount",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "revenue",
+        "field_type": "number"
+      },
+      "value": "10 million",
+      "text": "Acme Robotics revenue is 10 million.",
+      "expected": "supported"
+    },
+    {
+      "id": "unit_equivalence",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "revenue",
+        "field_type": "number"
+      },
+      "value": 10000000,
+      "text": "Acme Robotics revenue is 10 million.",
+      "expected": "supported"
+    },
+    {
+      "id": "zero",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "revenue",
+        "field_type": "number"
+      },
+      "value": 0,
+      "text": "Acme Robotics revenue is 0.",
+      "expected": "supported"
+    },
+    {
+      "id": "false_boolean",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "active",
+        "field_type": "boolean"
+      },
+      "value": false,
+      "text": "Acme Robotics active: false.",
+      "expected": "supported"
+    },
+    {
+      "id": "correct_date",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "founded",
+        "field_type": "date"
+      },
+      "value": "2020-01-02",
+      "text": "Acme Robotics founded: 2020-01-02.",
+      "expected": "supported"
+    },
+    {
+      "id": "wrong_date",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "founded",
+        "field_type": "date"
+      },
+      "value": "2021-01-02",
+      "text": "Acme Robotics founded: 2020-01-02.",
+      "expected": "contradicted"
+    },
+    {
+      "id": "industry",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "industry",
+        "field_type": "string"
+      },
+      "value": "robotics",
+      "text": "Acme Robotics is a robotics company based in Chennai.",
+      "expected": "supported"
+    },
+    {
+      "id": "missing_revenue",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "revenue",
+        "field_type": "number"
+      },
+      "value": 500,
+      "text": "Acme Robotics is based in Chennai.",
+      "expected": "unknown"
+    },
+    {
+      "id": "correct_name",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "name",
+        "field_type": "string"
+      },
+      "value": "Acme Robotics",
+      "text": "Acme Robotics is a robotics company.",
+      "expected": "supported"
+    },
+    {
+      "id": "wrong_currency_amount",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "revenue",
+        "field_type": "currency"
+      },
+      "value": "USD 500 million",
+      "text": "Acme Robotics revenue is USD 10 million.",
+      "expected": "contradicted"
+    },
+    {
+      "id": "correct_currency",
+      "split": "regression",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "revenue",
+        "field_type": "currency"
+      },
+      "value": "USD 10 million",
+      "text": "Acme Robotics revenue is USD 10 million.",
+      "expected": "supported"
+    },
+    {
+      "id": "different_field_same_number",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "revenue",
+        "field_type": "number"
+      },
+      "value": 500,
+      "text": "Acme Robotics employee count: 500.",
+      "expected": "unknown"
+    },
+    {
+      "id": "different_relation_same_city",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "headquarters",
+        "field_type": "location"
+      },
+      "value": "Chennai",
+      "text": "Acme Robotics hosted a conference in Chennai.",
+      "expected": "unknown"
+    },
+    {
+      "id": "quoted_claim",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "location",
+        "field_type": "location"
+      },
+      "value": "Chennai",
+      "text": "Beta falsely claims that Acme Robotics is based in Chennai.",
+      "expected": "unknown"
+    },
+    {
+      "id": "future_plan",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "location",
+        "field_type": "location"
+      },
+      "value": "Chennai",
+      "text": "Acme Robotics plans to be based in Chennai next year.",
+      "expected": "unknown"
+    },
+    {
+      "id": "past_location",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "location",
+        "field_type": "location"
+      },
+      "value": "Chennai",
+      "text": "Acme Robotics was based in Chennai until 2020.",
+      "expected": "unknown"
+    },
+    {
+      "id": "conditional",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "location",
+        "field_type": "location"
+      },
+      "value": "Chennai",
+      "text": "Acme Robotics would be based in Chennai if funding succeeds.",
+      "expected": "unknown"
+    },
+    {
+      "id": "ambiguous_range",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "revenue",
+        "field_type": "number"
+      },
+      "value": 10,
+      "text": "Acme Robotics revenue is 10 to 20 million.",
+      "expected": "unknown"
+    },
+    {
+      "id": "ambiguous_date",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "founded",
+        "field_type": "date"
+      },
+      "value": "2020-01-02",
+      "text": "Acme Robotics founded: 01/02/2020.",
+      "expected": "unknown"
+    },
+    {
+      "id": "paraphrase_location",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "location",
+        "field_type": "location"
+      },
+      "value": "Chennai",
+      "text": "Chennai is home to Acme Robotics.",
+      "expected": "supported"
+    },
+    {
+      "id": "paraphrase_revenue",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "revenue",
+        "field_type": "number"
+      },
+      "value": "10 million",
+      "text": "Acme Robotics generated revenue of 10 million.",
+      "expected": "supported"
+    },
+    {
+      "id": "plural_multi_location",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "location",
+        "field_type": "location"
+      },
+      "value": "Chennai",
+      "text": "Acme Robotics has offices in Chennai and Mumbai.",
+      "expected": "supported"
+    },
+    {
+      "id": "label_location",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "location",
+        "field_type": "location"
+      },
+      "value": "Chennai",
+      "text": "Acme Robotics location: Chennai.",
+      "expected": "supported"
+    },
+    {
+      "id": "new_city",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "location",
+        "field_type": "location"
+      },
+      "value": "London",
+      "text": "Acme Robotics is headquartered in London.",
+      "expected": "supported"
+    },
+    {
+      "id": "new_number",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "employee_count",
+        "field_type": "integer"
+      },
+      "value": 73,
+      "text": "Acme Robotics employee count: 73.",
+      "expected": "supported"
+    },
+    {
+      "id": "zero_wrong",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "revenue",
+        "field_type": "number"
+      },
+      "value": 0,
+      "text": "Acme Robotics revenue is 900.",
+      "expected": "contradicted"
+    },
+    {
+      "id": "wrong_boolean",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "active",
+        "field_type": "boolean"
+      },
+      "value": true,
+      "text": "Acme Robotics active: false.",
+      "expected": "contradicted"
+    },
+    {
+      "id": "irrelevant_mention",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "industry",
+        "field_type": "string"
+      },
+      "value": "robotics",
+      "text": "Acme Robotics purchases robotics equipment for its restaurant.",
+      "expected": "unknown"
+    },
+    {
+      "id": "list_identity",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "name",
+        "field_type": "string"
+      },
+      "value": "Acme Robotics",
+      "text": "Companies: Acme Robotics, Beta Industries.",
+      "expected": "supported"
+    },
+    {
+      "id": "unknown_profile",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "profile_url",
+        "field_type": "url"
+      },
+      "value": "https://acme.example/person",
+      "text": "Acme Robotics profile URL is unavailable.",
+      "expected": "unknown"
+    },
+    {
+      "id": "correct_url",
+      "split": "challenge",
+      "entity": "Acme Robotics",
+      "field": {
+        "name": "website",
+        "field_type": "url"
+      },
+      "value": "https://acme.example/about",
+      "text": "Acme Robotics website: https://acme.example/about",
+      "expected": "supported"
+    }
+  ]
+}

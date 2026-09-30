@@ -80,7 +80,7 @@ export interface Collection {
   created_by: string;
   title: string;
   prompt: string;
-  status: "draft" | "planning" | "running" | "paused" | "needs_review" | "completed" | "failed" | "cancelled";
+  status: "draft" | "planning" | "running" | "paused" | "needs_review" | "completed" | "partial" | "exhausted" | "failed" | "cancelled";
   data_contract: DataContract;
   tags: string[];
   created_at: string;
@@ -96,6 +96,7 @@ export interface DataContract {
   freshness_days?: number;
   evidence_policy: EvidencePolicy;
   allowed_domains: string[];
+  source_policy?: SourcePolicy;
 }
 
 export interface FieldDefinition {
@@ -118,17 +119,40 @@ export interface EvidencePolicy {
   require_date: boolean;
 }
 
+export interface SourcePolicy { basis: "user_confirmed_permission"; approved_domains: string[]; blocked_domains?: string[]; domain_filters?: string[]; }
+
+export interface SourceCandidate {
+  domain: string;
+  pages: { title: string; url: string; provider: string; snippet?: string | null }[];
+}
+
+export const sourceDiscovery = {
+  discover: (prompt: string, domainFilters: string[], signal: AbortSignal) =>
+    apiFetch<{ domains: SourceCandidate[]; total: number }>("/me/source-discovery", {
+      method: "POST", body: JSON.stringify({ prompt, domain_filters: domainFilters }),
+      signal: AbortSignal.any([signal, AbortSignal.timeout(25000)]),
+    }),
+};
+
 export interface ModelSelection {
-  provider: "local" | "nvidia";
+  provider: "local" | "nvidia" | "glm" | "groq" | "gemini" | "openrouter" | "huggingface";
   model: string;
   allow_external: boolean;
 }
 
 export interface ModelCatalog {
-  default: ModelSelection;
-  providers: { id: ModelSelection["provider"]; label: string; available: boolean; reason?: string | null;
-    models: { id: string; label: string; available: boolean; reason?: string | null }[] }[];
+  default: ModelSelection | null;
+  providers: { id: ModelSelection["provider"]; label: string; available: boolean; configured?: boolean; external?: boolean; reason?: string | null; default_model?: string | null;
+    models: { id: string; label: string; available: boolean; reason?: string | null;
+      context_length?: number | null; catalog_source?: "live" | "documented";
+      cost?: { kind: "free" | "free_tier" | "local" | "credits" | "paid" | "unknown"; label: string; note: string; source_url: string };
+    }[] }[];
 }
+
+export const providerLabels: Record<ModelSelection["provider"], string> = {
+  local: "Local Ollama", nvidia: "NVIDIA", glm: "GLM (Z.ai)", groq: "Groq",
+  gemini: "Gemini", openrouter: "OpenRouter", huggingface: "Hugging Face",
+};
 
 export const models = {
   list: (signal?: AbortSignal) => apiFetch<ModelCatalog>("/me/models", { signal }),
@@ -141,10 +165,10 @@ export const collections = {
   get: (id: string) =>
     apiFetch<Collection>(`/collections/${id}`),
 
-  create: (title: string, prompt: string, tags?: string[], modelSelection?: ModelSelection) =>
+  create: (title: string, prompt: string, tags?: string[], modelSelection?: ModelSelection, sourcePolicy?: SourcePolicy, templateContract?: Partial<DataContract>, discoverySources?: SourceCandidate["pages"]) =>
     apiFetch<Collection>("/collections", {
       method: "POST",
-      body: JSON.stringify({ title, prompt, tags, model_selection: modelSelection }),
+      body: JSON.stringify({ title, prompt, tags, model_selection: modelSelection, source_policy: sourcePolicy, template_contract: templateContract, discovery_sources: discoverySources }),
     }),
 
   triggerRun: (id: string) =>
@@ -189,10 +213,14 @@ export interface WorkflowRun {
   avg_confidence?: number;
   started_at: string;
   completed_at?: string;
+  error_message?: string | null;
   steps: WorkflowStep[];
 }
 
+export interface RunEvent { id: number; type: string; payload: Record<string, unknown>; created_at: string; }
 export const runs = {
+  list: (collectionId: string) => apiFetch<{ data: WorkflowRun[] }>(`/collections/${collectionId}/runs`),
+  history: (id: string) => apiFetch<{ data: RunEvent[]; review_candidates: Record<string, unknown>[] }>(`/runs/${id}/history`),
   get: (id: string) =>
     apiFetch<WorkflowRun>(`/runs/${id}`),
 
@@ -200,7 +228,7 @@ export const runs = {
     apiFetch<void>(`/runs/${id}/pause`, { method: "POST" }),
 
   cancel: (id: string) =>
-    apiFetch<void>(`/runs/${id}/cancel`, { method: "POST" }),
+    apiFetch<{status: string; worker_notified?: boolean; already_terminal?: boolean}>(`/runs/${id}/cancel`, { method: "POST" }),
 
   /** Returns an EventSource for SSE run events */
   events: (runId: string): EventSource => {
@@ -212,6 +240,7 @@ export const runs = {
 
 export interface Dataset {
   id: string;
+  run_id?: string;
   collection_id: string;
   name: string;
   entity_type: string;
@@ -239,7 +268,7 @@ export interface DatasetRecord {
   entity_id?: string;
   canonical_name: string;
   status: "verified" | "needs_review" | "draft" | "rejected" | "conflicting";
-  confidence_score: number;
+  confidence_score: number | null;
   confidence_breakdown: ConfidenceBreakdown;
   primary_attributes: Record<string, unknown>;
   created_at: string;
@@ -271,8 +300,8 @@ export interface Source {
   display_name?: string;
   source_type: string;
   trust_tier: "tier1" | "tier2" | "tier3";
-  extraction_success_rate: number;
-  freshness_score: number;
+  extraction_success_rate: number | null;
+  freshness_score: number | null;
   enabled: boolean;
   last_success_at?: string;
   last_checked_at?: string;
@@ -333,39 +362,21 @@ export function toEntityRecord(record: DatasetRecord): EntityRecord {
   const explicitProvenance = raw.provenance as EntityRecord["provenance"] | undefined;
   
   const sourceUrl = (raw.source_url || raw.website || raw.url || raw.link) as string | undefined;
-  const evidenceExcerpt = raw.evidence_excerpt as string | undefined;
   
   const sourceUrls = explicitProvenance?.source_urls?.length 
     ? explicitProvenance.source_urls 
     : (sourceUrl ? [sourceUrl] : []);
     
-  const fieldEvidence = explicitProvenance?.field_evidence?.length
-    ? explicitProvenance.field_evidence
-    : (evidenceExcerpt && sourceUrl
-        ? [{
-            field_name: "Source evidence",
-            verbatim_quote: evidenceExcerpt,
-            source_url: sourceUrl,
-            extracted_value: record.canonical_name,
-          }]
-        : []);
-
-  const breakdown = ((record.confidence_breakdown ?? raw.confidence_breakdown ?? {}) as unknown) as Record<string, number>;
-  const reachability = breakdown.reachability ?? (raw.reachability !== undefined ? Number(raw.reachability) : 1.0);
-  const authority = breakdown.source_authority ?? 0.8;
-  const agreement = breakdown.agreement ?? 0.0;
-
+  const fieldEvidence = explicitProvenance?.field_evidence ?? [];
+  const breakdown = (record.confidence_breakdown ?? raw.confidence_breakdown ?? {}) as unknown as Record<string, number>;
   const provenance: EntityProvenance = {
+    ...explicitProvenance,
     source_urls: sourceUrls,
     field_evidence: fieldEvidence,
-    authority_score: explicitProvenance?.authority_score ?? authority,
-    agreement_rate: explicitProvenance?.agreement_rate ?? agreement,
-    reachability: explicitProvenance?.reachability ?? reachability,
-    http_status: explicitProvenance?.http_status ?? (reachability >= 0.5 ? 200 : undefined),
-    freshness_basis: explicitProvenance?.freshness_basis ?? "crawl",
   };
 
   const reserved = new Set([
+    "claims", "verification", "accepted",
     "provenance",
     "confidence_breakdown",
     "canonical_name",
@@ -384,10 +395,12 @@ export function toEntityRecord(record: DatasetRecord): EntityRecord {
     canonical_name: record.canonical_name,
     primary_attributes: Object.fromEntries(
       Object.entries(raw)
-        .filter(([key, value]) => !reserved.has(key) && value !== null && ["string", "number", "boolean"].includes(typeof value))
-        .map(([key, value]) => [key, String(value)])
+        .filter(([key, value]) => !reserved.has(key) && (value === null || Array.isArray(value) || ["string", "number", "boolean"].includes(typeof value)))
+        .map(([key, value]) => [key, value === null ? "" : Array.isArray(value) ? JSON.stringify(value) : String(value)])
     ),
-    confidence_score: Number.isFinite(record.confidence_score) ? record.confidence_score : 0,
+    confidence_score: typeof record.confidence_score === "number" && Number.isFinite(record.confidence_score) ? record.confidence_score : null,
+    claims: raw.claims as EntityRecord["claims"],
+    verification: raw.verification as EntityRecord["verification"],
     confidence_breakdown: breakdown,
     status: record.status === "verified" || record.status === "draft" ? record.status : "needs_review",
     provenance,
@@ -399,6 +412,9 @@ export async function fetchTasks(): Promise<TaskSummary[]> {
   return collectionList.data.map((collection) => {
     const dataset = datasetList.data.find((item) => item.collection_id === collection.id);
     const status: TaskSummary["status"] = collection.status === "completed" ? "Completed"
+      : collection.status === "partial" ? "Partial"
+      : collection.status === "exhausted" ? "Exhausted"
+      : collection.status === "cancelled" ? "Cancelled"
       : collection.status === "failed" ? "Failed"
       : ["running", "planning"].includes(collection.status) ? "Running" : "Draft";
     return {
@@ -412,15 +428,33 @@ export async function fetchTasks(): Promise<TaskSummary[]> {
 }
 
 export async function fetchTaskById(id: string): Promise<GroundingResponse> {
-  const [collection, datasetList] = await Promise.all([collections.get(id), datasets.list()]);
-  const dataset = datasetList.data.filter((item) => item.collection_id === id)
+  const [collection, datasetList, runList] = await Promise.all([collections.get(id), datasets.list(), runs.list(id)]);
+  const run = runList.data[0] ? await runs.get(runList.data[0].id) : null;
+  const history = run ? await runs.history(run.id) : null;
+  const dataset = datasetList.data.filter((item) => item.collection_id === id && (!run || item.run_id === run.id))
     .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
   const response = dataset ? await datasets.records(dataset.id) : { data: [] };
   const records = response.data.map(toEntityRecord);
   const contract = collection.data_contract;
   const sourceMap = new Map<string, GroundingResponse["sources"][number]>();
+  // Retrieved pages remain inspectable even when no record is accepted.
+  for (const event of history?.data ?? []) {
+    const sources = event.payload.sources;
+    if (!Array.isArray(sources)) continue;
+    for (const raw of sources) {
+      if (!raw || typeof raw !== "object" || typeof raw.url !== "string") continue;
+      let url: URL;
+      try { url = new URL(raw.url); } catch { continue; }
+      if (!["http:", "https:"].includes(url.protocol)) continue;
+      sourceMap.set(raw.url, { url: raw.url, domain: url.hostname,
+        title: typeof raw.title === "string" ? raw.title : url.hostname,
+        live_status_code: typeof raw.http_status === "number" ? raw.http_status : undefined,
+        fetched_at: typeof raw.fetched_at === "string" ? raw.fetched_at : undefined });
+    }
+  }
   for (const record of records) {
     for (const url of record.provenance.source_urls ?? []) {
+      if (sourceMap.has(url)) continue;
       let domain: string;
       try { domain = new URL(url).hostname; } catch { continue; }
       const isPrimary = record.provenance.field_evidence.some((field) => field.source_url === url);
@@ -431,36 +465,44 @@ export async function fetchTaskById(id: string): Promise<GroundingResponse> {
       });
     }
   }
+  const terminalEvent = history?.data.filter(event => event.type.startsWith("run.")).at(-1);
+  const stopReason = run?.error_message || (typeof terminalEvent?.payload.reason === "string" ? terminalEvent.payload.reason : undefined);
   return {
-    task_id: id, dataset_id: dataset?.id, title: collection.title,
+    task_id: id, dataset_id: dataset?.id, title: collection.title === collection.prompt.slice(0, 100) ? collection.prompt : collection.title,
     status: collection.status, updated_at: collection.updated_at,
     intent: { category: contract?.entity_type ?? "entity", target_entity: contract?.entity_type ?? "entity",
-      needs_external_search: true, confidence: 0, explanation: collection.prompt },
+      needs_external_search: true, confidence: null, explanation: collection.prompt },
     contract: { target_entity_type: contract?.entity_type ?? "entity",
       fields: (contract?.fields ?? []).map((field) => ({ ...field, description: field.description ?? "" })),
       constraints: contract?.constraints ?? [], allowed_domains: contract?.allowed_domains ?? [] },
-    sub_queries: [], records, sources: [...sourceMap.values()],
-    summary_briefing: dataset ? `${records.length} records loaded with their stored source evidence.` : "This collection has no completed dataset yet.",
-    workflow: { workflow_id: id, stages: [], total_duration_ms: 0 },
+    sub_queries: [], records, sources: [...sourceMap.values()], run_id: run?.id,
+    stop_reason: stopReason, extracted_count: run?.records_found,
+    review_candidates: history?.review_candidates.map((raw, index) => toEntityRecord({ id: `review-${index}`, canonical_name: String(raw.canonical_name), status: "needs_review", confidence_score: null, confidence_breakdown: {} as ConfidenceBreakdown, primary_attributes: raw } as DatasetRecord)),
+    summary_briefing: dataset ? `${records.length} records loaded with their stored source evidence.` : stopReason || "No records have met the evidence requirements yet.",
+    workflow: { workflow_id: run?.id ?? id, stages: (run?.steps ?? []).map((s, i) => ({ stage_id: i + 1, stage_name: s.step_type,
+      status: s.status as "pending" | "running" | "completed" | "failed" | "cancelled", duration_ms: s.duration_ms ?? null,
+      details: s.started_at ? `Started ${new Date(s.started_at).toLocaleString()}` : "" })),
+      total_duration_ms: run?.completed_at ? Date.parse(run.completed_at) - Date.parse(run.started_at) : 0 },
     total_records: records.length, verified_count: records.filter((r) => r.status === "verified").length,
-    average_confidence: records.length ? records.reduce((sum, record) => sum + record.confidence_score, 0) / records.length : 0,
+    average_confidence: null,
   };
 }
 
-export async function executeGroundedSearch(prompt: string, modelSelection?: ModelSelection, onProgress?: (stage: string) => void): Promise<GroundingResponse> {
+export async function executeGroundedSearch(prompt: string, modelSelection?: ModelSelection, onProgress?: (stage: string, run?: WorkflowRun) => void, sourcePolicy?: SourcePolicy, templateContract?: Partial<DataContract>, onStarted?: (runId: string) => void, discoverySources?: SourceCandidate["pages"]): Promise<GroundingResponse> {
   onProgress?.("planning");
-  const collection = await collections.create(prompt.slice(0, 100), prompt, undefined, modelSelection);
+  const collection = await collections.create(prompt.slice(0, 100), prompt, undefined, modelSelection, sourcePolicy, templateContract, discoverySources);
   const run = await collections.triggerRun(collection.id);
-  const deadline = Date.now() + 195_000;
+  onStarted?.(run.run_id);
+  const deadline = Date.now() + 360_000;
   while (Date.now() < deadline) {
     const current = await runs.get(run.run_id);
-    onProgress?.(current.current_stage);
-    if (current.status === "completed") {
+    onProgress?.(current.current_stage, current);
+    if (["completed", "partial", "exhausted"].includes(current.status)) {
       const result = await fetchTaskById(collection.id);
-      if (result.dataset_id) return result;
+      return result;
     }
     if (["failed", "cancelled"].includes(current.status)) {
-      throw new Error(`Collection run ${current.status}. Open Collections to inspect the run.`);
+      throw new Error(current.error_message || `Collection run ${current.status}. Inspect the run for details.`);
     }
     await new Promise((resolve) => setTimeout(resolve, 1500));
   }

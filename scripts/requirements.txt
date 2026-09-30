@@ -1,0 +1,4 @@
+# Local development launcher only; service requirements remain in services/.
+python-dotenv>=1.0,<2
+psutil>=6,<8
+psycopg[binary]>=3.2,<4

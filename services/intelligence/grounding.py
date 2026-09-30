@@ -17,12 +17,16 @@ import tldextract
 from bs4 import BeautifulSoup
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from claims import quantity, verify_claim, entity_key, exact, typed_equal, text_key, field_kind
+from pathlib import Path
+import sys
+from urllib.robotparser import RobotFileParser
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from source_policy import permission_decision
 
 MAX_BYTES = 1_000_000
 DOMAIN_EXTRACTOR = tldextract.TLDExtract(suffix_list_urls=(), cache_dir=None)
-WEIGHTS = {"source_authority": .10, "grounding_score": .25,
-           "ml_validation_score": .20, "agreement": .15,
-           "freshness": .10, "completeness": .20}
+
 
 
 def sanitize_query(query):
@@ -56,10 +60,10 @@ async def public_url(url):
         return False
 
 
-async def fetch_source(client, result, url_guard=public_url):
+async def fetch_source(client, result, url_guard=public_url, source_policy=None):
     """Fetch actual text, never a generated snippet. Failed candidates are discarded.
 
-    A 403/404 may fall back to the root, but only that root's fetched content can
+    A 404 may fall back to the root, but only that root's fetched content can
     provide evidence. A working home page does not validate the rejected deep URL.
     """
     original = result.get("original_url") or result.get("url", "")
@@ -68,7 +72,16 @@ async def fetch_source(client, result, url_guard=public_url):
     redirects = int(bool(result.get("redirected")))
     try:
         for _ in range(7):
-            if not await url_guard(url):
+            if not permission_decision(url, source_policy)[0] or not await url_guard(url):
+                return None
+            parsed = urlsplit(url)
+            robots = await client.get(f"{parsed.scheme}://{parsed.netloc}/robots.txt", follow_redirects=False, timeout=1.5)
+            if robots.status_code == 200:
+                rules = RobotFileParser()
+                rules.parse(robots.text.splitlines())
+                if not rules.can_fetch("Datavault", url):
+                    return None
+            elif robots.status_code != 404:
                 return None
             async with client.stream("GET", url, follow_redirects=False, timeout=1.5) as response:
                 status = response.status_code
@@ -79,7 +92,7 @@ async def fetch_source(client, result, url_guard=public_url):
                     url = urljoin(url, location)
                     redirects += 1
                     continue
-                if status in {403, 404} and not used_root:
+                if status == 404 and not used_root:
                     parsed = urlsplit(url)
                     root = f"{parsed.scheme}://{parsed.netloc}/"
                     if root == url:
@@ -112,7 +125,7 @@ async def fetch_source(client, result, url_guard=public_url):
                     "content_sha256": hashlib.sha256(text.encode()).hexdigest(),
                     "http_status": status, "redirect_count": redirects,
                     "root_fallback": used_root,
-                    "reachability": .7 if redirects or used_root else 1.,
+                    "reachability": 1.,
                     "published_at": published,
                     "fetched_at": datetime.now(timezone.utc).isoformat(),
                 }
@@ -121,17 +134,17 @@ async def fetch_source(client, result, url_guard=public_url):
     return None
 
 
-async def collect_sources(results, client=None, url_guard=public_url):
+async def collect_sources(results, client=None, url_guard=public_url, source_policy=None):
     limit = asyncio.Semaphore(8)
     async def one(result):
         async with limit:
             try:
-                return await asyncio.wait_for(fetch_source(client, result, url_guard), timeout=8)
+                return await asyncio.wait_for(fetch_source(client, result, url_guard, source_policy), timeout=8)
             except asyncio.TimeoutError:
                 return None
     if client is None:
         async with httpx.AsyncClient(headers={"User-Agent": "Datavault/1.0 (source verification)"}) as shared:
-            return await collect_sources(results, shared, url_guard)
+            return await collect_sources(results, shared, url_guard, source_policy)
     fetched = await asyncio.gather(*(one(r) for r in results[:50]))
     unique = {}
     for source in fetched:
@@ -200,128 +213,31 @@ def normalized(value):
     return " ".join(re.findall(r"\w+", str(value).casefold()))
 
 
-COMMON_SUFFIXES = {
-    "inc", "incorporated", "ltd", "limited", "corp", "corporation",
-    "llc", "technologies", "technology", "solutions", "group", "labs", "ai", "co"
-}
-
-
 def supported_name(name, text):
-    if supported(name, text):
-        return True
-    tokens = [t for t in re.findall(r"\w+", str(name).casefold()) if t not in COMMON_SUFFIXES]
-    if tokens:
-        haystack = f" {normalized(text)} "
-        if all(f" {t} " in haystack for t in tokens):
-            return True
-    return False
+    return exact(name, text)
 
 
 def supported(value, text):
-    if value is None or value == "":
-        return False
-    values = value if isinstance(value, list) else [value]
-    haystack = f" {normalized(text)} "
-    for v in values:
-        if not v:
-            return False
-        norm_v = normalized(v)
-        if not norm_v:
-            return False
-        # Exact multi-token match
-        is_match = f" {norm_v} " in haystack
-        if not is_match:
-            tokens = [t for t in re.findall(r"\w+", str(v).casefold()) if len(t) >= 2]
-            if not tokens:
-                return False
-            if len(tokens) == 1:
-                t = tokens[0]
-                is_match = (
-                    f" {t} " in haystack
-                    or (len(t) >= 4 and (f" {t}n " in haystack or f" {t}an " in haystack or f" {t[:-1]} " in haystack))
-                )
-            else:
-                matched_count = sum(
-                    1 for t in tokens
-                    if f" {t} " in haystack or f" {t}s " in haystack or (len(t) >= 4 and f" {t}n " in haystack)
-                )
-                is_match = matched_count >= (len(tokens) + 1) // 2
-        if not is_match:
-            return False
-
-        # A matching keyword in an explicitly negated claim is not support.
-        for sentence in re.split(r"[.!?;]", text):
-            clean = normalized(sentence)
-            for token in re.findall(r"\w+", norm_v):
-                position = clean.find(token)
-                if position >= 0 and re.search(r"\b(?:not|never|without|no longer)\b", " ".join(clean[:position].split()[-5:])):
-                    return False
-    return True
-
-
-def entity_coherence(name, text, entity_type):
-    kind = normalized(entity_type)
-    if any(token in kind for token in ("company", "startup", "business", "person")) and re.search(
-        r"\b(?:phone case|replacement cable|accessory|accessories|search portal)\b", name, re.I
-    ):
-        return 0.
-    descriptions = {
-        "company": "company business firm startup corporation develops manufactures headquartered founded",
-        "startup": "startup company business founded develops technology funding",
-        "job": "job role position hiring employment responsibilities qualifications",
-        "person": "person researcher founder engineer director biography",
-        "product": "product model specifications manufacturer features price",
-        "hotel": "hotel resort accommodation rooms hospitality located",
-    }
-    label = next((description for key, description in descriptions.items() if key in kind), None)
-    return min(1., similarities(label, [text])[0] * 4) if label else .5
-
-
-def entity_context(text, name):
-    """Avoid attributing one company's nearby location to another company."""
-    sentences = re.split(r"(?<=[.!?;])\s+(?=[A-Z])", text)
-    selected = []
-    pattern = r"(?:It|They|The company|The firm|Founded|Headquartered|Headquarters|Location|Based|Office|Address|Products?|Services?|Contact|Plant|Facility|Manufacturing)\b"
-    for index, sentence in enumerate(sentences):
-        if supported_name(name, sentence):
-            selected.append(sentence)
-            if index + 1 < len(sentences) and re.match(pattern, sentences[index + 1], re.I):
-                selected.append(sentences[index + 1])
-    return " ".join(selected)
+    """Compatibility helper: exact occurrence only; never a claim verdict."""
+    return value is not None and exact(value, text)
 
 
 def fresh_score(source, freshness_days, require_date=False, now=None):
+    """Only an actual publication date can establish freshness."""
     now = now or datetime.now(timezone.utc)
-    timestamp = source.get("published_at")
-    basis = "publication"
-    if not timestamp:
-        if require_date:
-            return 0., "unknown"
-        timestamp, basis = source.get("fetched_at"), "crawl"
     try:
-        date = datetime.fromisoformat(str(timestamp).replace("Z", "+00:00"))
+        date = datetime.fromisoformat(str(source.get("published_at")).replace("Z", "+00:00"))
         if date.tzinfo is None:
             date = date.replace(tzinfo=timezone.utc)
         age = (now - date).total_seconds() / 86400
         if age < -1:
-            return 0., "invalid"
-        score = max(0., 1. - max(age, 0.) / max(float(freshness_days or 365), 1.))
-        # A recent crawl says nothing about how recently the facts changed.
-        return min(score, .5) if basis == "crawl" else score, basis
+            return None, "invalid"
+        return max(0., 1. - max(age, 0.) / max(float(freshness_days or 365), 1.)), "publication"
     except (TypeError, ValueError, OverflowError):
-        return 0., "unknown"
+        return None, "unknown"
 
 
-def source_authority(url, allowed_domains):
-    host = domain_of(url)
-    if any(host == d or host.endswith("." + d) for d in (domain_of("https://" + d) for d in allowed_domains)):
-        return .85
-    if host.endswith((".gov", ".gov.in", ".edu", ".ac.in")):
-        return .85
-    return .5  # explicitly a prior, never a measured verification result
-
-
-def constraint_passes(value, operator, target):
+def constraint_passes(value, operator, target, kind="string"):
     if value is None:
         return False
     op = str(operator).lower().strip()
@@ -329,47 +245,43 @@ def constraint_passes(value, operator, target):
         return bool(str(value).strip())
     if op in {"is_empty", "empty", "null", "is_null"}:
         return not bool(str(value).strip())
-    left = normalized(value)
+    left = text_key(value)
     if not left:
         return False
     if op in {"eq", "equals", "=="}:
-        right = normalized(target) if target is not None else ""
-        return left == right
+        right = text_key(target) if target is not None else ""
+        return typed_equal(value, target, kind)
     if op in {"ne", "neq", "!=", "not_equals"}:
-        right = normalized(target) if target is not None else ""
-        return left != right
+        right = text_key(target) if target is not None else ""
+        return target is not None and not typed_equal(value, target, kind)
     if op in {"contains", "like"}:
-        right = normalized(target) if target is not None else ""
+        right = text_key(target) if target is not None else ""
         return f" {right} " in f" {left} " or (bool(right) and right in left)
     if op in {"not_contains", "not_like"}:
-        right = normalized(target) if target is not None else ""
+        right = text_key(target) if target is not None else ""
         return right not in left
     if op in {"in"}:
         targets = target if isinstance(target, (list, tuple, set)) else [target]
-        return any(left == normalized(t) or f" {normalized(t)} " in f" {left} " or (normalized(t) and normalized(t) in left) for t in targets if t is not None)
+        return any(typed_equal(value, t, kind) for t in targets if t is not None)
     if op in {"not_in"}:
         targets = target if isinstance(target, (list, tuple, set)) else [target]
-        return not any(left == normalized(t) or f" {normalized(t)} " in f" {left} " or (normalized(t) and normalized(t) in left) for t in targets if t is not None)
+        return not any(typed_equal(value, t, kind) for t in targets if t is not None)
     if op in {"gte", "lte", "gt", "lt", ">=", "<=", ">", "<"}:
-        def numeric(v):
-            match = re.fullmatch(r"[$₹€£]?\s*(-?\d+(?:\.\d+)?)\s*([kmb]?)", str(v).replace(",", ""), re.I)
-            if not match:
-                raise ValueError("not numeric")
-            return float(match[1]) * {"": 1, "k": 1e3, "m": 1e6, "b": 1e9}[match[2].lower()]
-        try:
-            a, b = numeric(value), numeric(target)
-        except ValueError:
+        qa, qb = quantity(value), quantity(target)
+        if qa is not None and qb is not None:
+            if qa[1:] != qb[1:]:
+                return False  # no implicit currency / unit conversion
+            a, b = qa[0], qb[0]
+        else:
             try:
                 a, b = datetime.fromisoformat(str(value)), datetime.fromisoformat(str(target))
-            except ValueError:
+            except (TypeError, ValueError):
                 return False
         try:
             return {"gte": a >= b, ">=": a >= b, "lte": a <= b, "<=": a <= b,
                     "gt": a > b, ">": a > b, "lt": a < b, "<": a < b}[op]
         except TypeError:
             return False
-    if target is None:
-        return bool(str(value).strip())
     return False
 
 
@@ -377,6 +289,11 @@ def extract_canonical_name(record: dict, contract: dict = None) -> str:
     """Universally extract the canonical entity name from any record structure."""
     if not isinstance(record, dict):
         return ""
+    identity_field = {"job":"job_title", "job_opening":"job_title", "job_posting":"job_title",
+                      "person":"person_name", "product":"product_name", "company":"company_name", "supplier":"company_name"}.get((contract or {}).get("entity_type"))
+    for key in ("canonical_name", identity_field):
+        if key and isinstance(record.get(key), str) and record[key].strip():
+            return record[key].strip()
     # 1. Direct standard keys
     for k in ("canonical_name", "name", "title", "entity_name", "company_name", "company", "supplier_name", "supplier", "label"):
         val = record.get(k)
@@ -401,118 +318,121 @@ def extract_canonical_name(record: dict, contract: dict = None) -> str:
 
 
 def validate_candidates(records, chunks, contract, now=None):
-    """Bind claims to retrieved chunks; reject ungrounded identity and constraints."""
-    by_id = {c["chunk_id"]: c for c in chunks}
-    chunks_by_url = {}
-    for c in chunks:
-        chunks_by_url.setdefault(c.get("url"), []).append(c)
+    """Keep review candidates separate; acceptance requires explicit supported claims.
 
-    fields = contract.get("fields", [])
-    required = [f["name"] for f in fields if isinstance(f, dict) and f.get("required")]
+    A missing field or conflicting claim is retained as a diagnostic, not promoted
+    by a confidence average. Only supported values can populate accepted rows.
+    """
+    fields = [f for f in contract.get("fields", []) if isinstance(f, dict) and f.get("name")]
     policy = contract.get("evidence_policy") or {}
-    output = {}
-    for candidate in records:
-        if not isinstance(candidate, dict):
+    by_id = {c["chunk_id"]: c for c in chunks if c.get("http_status") == 200}
+    candidates = []
+    for raw in records:
+        if not isinstance(raw, dict):
             continue
-        record = dict(candidate)
-        name = extract_canonical_name(record, contract)
-        if len(name) < 2 or len(name) > 160 or name.startswith("http") or re.search(
-            r"\b(search results?|directory|listing|top \d+|best \d+|click here|access denied)\b", name, re.I
-        ):
+        name = extract_canonical_name(raw, contract)
+        if not name or len(name) > 160:
             continue
+        # Explicit fabricated chunk identifiers cannot be repaired using another page.
+        if raw.get("chunk_id") and raw["chunk_id"] not in by_id:
+            continue
+        anchor = by_id.get(raw.get("chunk_id"))
+        eligible = [anchor] if anchor else [c for c in by_id.values() if c.get("url") == raw.get("source_url")]
+        identity_field = {"name": "canonical_name", "identity": True}
+        eligible = [c for c in eligible if verify_claim(name, identity_field, name, c)["state"] == "supported"]
+        if not eligible:
+            continue
+        anchor = eligible[0]
+        claims = {}
+        for field in fields:
+            value = raw.get(field["name"])
+            if field["name"] in {"name", "canonical_name"} and value is None:
+                value = name
+            decisions = [verify_claim(name, field, value, c) for c in eligible]
+            states = {d["state"] for d in decisions}
+            state = "contradicted" if "contradicted" in states else "supported" if "supported" in states else "unknown"
+            evidence = [e for d in decisions for e in d["evidence"]]
+            claims[field["name"]] = {"field_name": field["name"], "value": value, "state": state,
+                                    "reason": next((d["reason"] for d in decisions if d["state"] == state), "Missing evidence"), "evidence": evidence}
+        row = {f["name"]: claims[f["name"]]["value"] if claims[f["name"]]["state"] == "supported" else None for f in fields}
+        row.update(canonical_name=name, source_url=anchor["url"], chunk_id=anchor["chunk_id"], claims=claims,
+                   evidence_excerpt=anchor["text"], _sources=eligible)
+        candidates.append(row)
 
-        raw_cid = record.get("chunk_id")
-        chunk = by_id.get(raw_cid)
-        if not chunk and raw_cid is not None:
-            cid_str = str(raw_cid).strip().strip("[]").strip()
-            if cid_str.isdigit() and 1 <= int(cid_str) <= len(chunks):
-                chunk = chunks[int(cid_str) - 1]
-        if not chunk and record.get("source_url"):
-            for candidate_chunk in chunks_by_url.get(record.get("source_url"), []):
-                if supported_name(name, candidate_chunk["text"]):
-                    chunk = candidate_chunk
-                    break
-        if not chunk and (raw_cid is None or raw_cid == "") and record.get("source_url"):
-            url_chunks = chunks_by_url.get(record.get("source_url"), [])
-            if url_chunks:
-                chunk = url_chunks[0]
-        # If no explicit chunk_id was provided or was invalid format, check if any chunk supports the name
-        if not chunk and (raw_cid is None or raw_cid == ""):
-            for candidate_chunk in chunks:
-                if candidate_chunk.get("http_status") == 200 and supported_name(name, candidate_chunk["text"]):
-                    chunk = candidate_chunk
-                    break
+    groups = {}
+    for row in candidates:
+        key = entity_key(row, contract)
+        if key not in groups:
+            groups[key] = row
+            continue
+        current = groups[key]
+        current["_sources"].extend(row["_sources"])
+        for field, incoming in row["claims"].items():
+            existing = current["claims"][field]
+            if existing["state"] == "unknown" and incoming["state"] == "supported":
+                current["claims"][field] = incoming
+            elif existing["state"] == "supported" and incoming["state"] == "supported":
+                spec = next(f for f in fields if f["name"] == field)
+                if not typed_equal(existing["value"], incoming["value"], spec.get("field_type", "string")):
+                    existing.update(state="contradicted", reason="Conflicting values across records", alternatives=[existing["value"], incoming["value"]])
+                existing["evidence"].extend(incoming["evidence"])
+            elif incoming["state"] == "contradicted":
+                existing.update(state="contradicted", reason=incoming["reason"])
+                existing["evidence"].extend(incoming["evidence"])
 
-        if not chunk or chunk.get("http_status") != 200 or not supported_name(name, chunk["text"]):
-            continue
-
-        attributes = {f["name"]: record.get(f["name"]) for f in fields if isinstance(f, dict) and "name" in f}
-        if "name" in attributes and not attributes["name"]:
-            attributes["name"] = name
-        if "canonical_name" in attributes and not attributes["canonical_name"]:
-            attributes["canonical_name"] = name
-        context = entity_context(chunk["text"], name)
-        eval_text = context if context else chunk["text"]
-        verified_fields = [
-            f for f, value in attributes.items()
-            if supported(value, eval_text)
-        ]
-        if any(c.get("is_hard") and (c["field"] not in verified_fields or not constraint_passes(
-            attributes.get(c["field"]), str(c.get("operator", "eq")).lower(), c.get("target_value")
-        )) for c in contract.get("constraints", [])):
-            continue
-        claim = " ".join([name, *[str(v) for v in attributes.values() if v is not None]])
-        grounding = similarities(claim, [chunk["text"]])[0]
-        completeness = sum(f in verified_fields for f in required) / len(required) if required else 1.
-        field_ratio = len(verified_fields) / max(len(attributes), 1)
-        coherence = entity_coherence(name, chunk["text"], contract.get("entity_type", "entity"))
-        ml_score = .4 * grounding + .4 * field_ratio + .2 * coherence
-        if grounding < .01 or coherence == 0:
-            continue
-        # Corroborate the same identity AND supported claims; mirrored pages do
-        # not become independent confirmations merely through a different host.
-        citations, seen_domains, seen_text = [], set(), set()
-        for other in [chunk, *chunks]:
-            host = independent_domain(other["url"])
-            if (other.get("http_status") != 200 or host in seen_domains
-                    or other.get("content_sha256") in seen_text or not supported_name(name, other["text"])):
-                continue
-            compared = [f for f in verified_fields if normalized(attributes[f]) != normalized(name)]
-            other_context = entity_context(other["text"], name) or other["text"]
-            if compared and not all(supported(attributes[f], other_context) for f in compared):
-                continue
-            seen_domains.add(host)
-            seen_text.add(other.get("content_sha256"))
-            citations.append(other)
-        agreement = min(max(len(citations) - 1, 0) / 2, 1.)
-        freshness, freshness_basis = fresh_score(chunk, contract.get("freshness_days"), policy.get("require_date", False), now)
-        reachability = float(chunk.get("reachability", 0))
-        scores = {"source_authority": source_authority(chunk["url"], contract.get("allowed_domains", [])),
-                  "grounding_score": grounding, "ml_validation_score": ml_score,
-                  "agreement": agreement, "freshness": freshness, "completeness": completeness}
-        confidence = reachability * sum(scores[k] * weight for k, weight in WEIGHTS.items())
-        enough_sources = len(citations) >= max(int(policy.get("min_sources", 1)), 1)
-        status = "verified" if confidence >= .75 and completeness == 1 and enough_sources and (freshness_basis == "publication" or not policy.get("require_date")) else "needs_review" if confidence >= .5 else "draft"
-        evidence = [{"field_name": field, "verbatim_quote": chunk["text"],
-                     "source_url": chunk["url"], "extracted_value": str(attributes[field]),
-                     "chunk_id": chunk["chunk_id"], "char_start": chunk["char_start"], "char_end": chunk["char_end"]}
-                    for field in verified_fields]
-        grounded_attributes = {field: value if field in verified_fields else None for field, value in attributes.items()}
-        value = {**grounded_attributes, "canonical_name": name, "source_url": chunk["url"], "chunk_id": chunk["chunk_id"],
-                 "evidence_excerpt": chunk["text"], "grounding_score": round(grounding, 6),
-                 "confidence_score": round(confidence, 4), "status": status,
-                 "confidence_breakdown": {**{k: round(v, 6) for k, v in scores.items()},
-                                          "reachability": reachability, "extraction_certainty": round(field_ratio, 6)},
-                 "provenance": {"authority_score": scores["source_authority"], "agreement_rate": agreement,
-                    "source_urls": [c["url"] for c in citations], "field_evidence": evidence,
-                    "http_status": chunk["http_status"], "reachability": reachability,
-                    "freshness_basis": freshness_basis, "fetched_at": chunk.get("fetched_at"),
-                    "published_at": chunk.get("published_at"), "content_sha256": chunk.get("content_sha256"),
-                    "chunk_id": chunk["chunk_id"], "char_start": chunk["char_start"], "char_end": chunk["char_end"],
-                    "retrieval_score": chunk.get("retrieval_score"), "validation_method": "tfidf-evidence-v1",
-                    "factors": [{"factor_name": k, "score": round(scores[k], 6), "weight": weight,
-                                 "contribution": round(scores[k] * weight * reachability, 6)} for k, weight in WEIGHTS.items()]}}
-        key = normalized(name)
-        if key not in output or value["confidence_score"] > output[key]["confidence_score"]:
-            output[key] = value
-    return sorted(output.values(), key=lambda r: r["confidence_score"], reverse=True)
+    output = []
+    for key, row in groups.items():
+        sources = row.pop("_sources")
+        claims = row["claims"]
+        # Corroborate or contradict each field independently; exact mirrors do not vote twice.
+        for field in fields:
+            claim = claims[field["name"]]
+            seen = {(e["source_url"], e["chunk_id"], e["char_start"]) for e in claim["evidence"]}
+            for chunk in sources:
+                decision = verify_claim(row["canonical_name"], field, claim["value"], chunk)
+                for ev in decision["evidence"]:
+                    ident = (ev["source_url"], ev["chunk_id"], ev["char_start"])
+                    if ident not in seen:
+                        claim["evidence"].append(ev)
+                        seen.add(ident)
+                if decision["state"] == "contradicted":
+                    claim.update(state="contradicted", reason="Contradictory source evidence")
+            row[field["name"]] = claim["value"] if claim["state"] == "supported" else None
+        reasons = []
+        required = {f["name"] for f in fields if f.get("required")}
+        required.update(c["field"] for c in contract.get("constraints", []) if c.get("is_hard"))
+        for name in required:
+            claim = claims.get(name, {})
+            if claim.get("state") != "supported":
+                reasons.append({"field": name, "state": claim.get("state", "unknown"), "reason": claim.get("reason", "Missing field")})
+        for constraint in contract.get("constraints", []):
+            if constraint.get("is_hard") and not constraint_passes(row.get(constraint["field"]), constraint.get("operator"), constraint.get("target_value"), field_kind(next((f for f in fields if f["name"] == constraint["field"]), {"name":constraint["field"]}))):
+                reasons.append({"field": constraint["field"], "state": "unknown" if row.get(constraint["field"]) is None else "contradicted", "reason": "Hard constraint not satisfied"})
+        for name, claim in claims.items():
+            independent = set()
+            hashes = set()
+            for ev in claim["evidence"]:
+                if ev.get("state") != "supported" or ev.get("content_sha256") in hashes:
+                    continue
+                independent.add(independent_domain(ev["source_url"]))
+                hashes.add(ev.get("content_sha256"))
+            claim["distinct_source_domains"] = len(independent)
+            if name in required and len(independent) < max(1, int(policy.get("min_sources", 1))):
+                reasons.append({"field": name, "state": "unknown", "reason": "Insufficient distinct source domains"})
+            if name in required and (policy.get("require_date") or contract.get("freshness_days")):
+                dated = [fresh_score({"published_at": e.get("published_at")}, contract.get("freshness_days"), True, now)[0] for e in claim["evidence"] if e.get("state") == "supported"]
+                if not any(d is not None and d > 0 for d in dated):
+                    reasons.append({"field": name, "state": "unknown", "reason": "No evidence within required publication window"})
+        supported_fields = sum(c["state"] == "supported" for c in claims.values())
+        coverage = supported_fields / len(fields) if fields else 0.
+        # Empty schemas and no supported business attributes never form accepted datasets.
+        accepted = bool(fields) and supported_fields > 0 and not reasons
+        citations = [{"field_name": n, "extracted_value": str(c["value"]), **e} for n, c in claims.items() if c["state"] == "supported" for e in c["evidence"] if e["state"] == "supported"]
+        row.update(accepted=accepted, status="verified" if accepted else "needs_review", confidence_score=None,
+                   confidence_breakdown={}, verification={"version": "typed-claims-v1", "accepted": accepted,
+                   "field_coverage": coverage, "acceptance_failures": reasons},
+                   provenance={"validation_method": "typed-claims-v1", "source_urls": sorted({e["source_url"] for e in citations}),
+                               "field_evidence": citations, "http_status": sources[0].get("http_status"),
+                               "fetched_at": sources[0].get("fetched_at"), "content_sha256": sources[0].get("content_sha256")})
+        output.append(row)
+    return output

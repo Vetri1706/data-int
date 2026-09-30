@@ -1,4 +1,6 @@
 fastapi>=0.110.0
 uvicorn>=0.29.0
 pydantic>=2.7.0
+httpx>=0.27.0
 scrapling[fetchers,rag]>=0.4.15,<0.5.0
+ddgs==9.16.0

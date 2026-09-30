@@ -6,13 +6,11 @@ import { useSearchParams } from "next/navigation";
 import {
   CheckSquare,
   Edit2,
-  Filter,
   Loader2,
   Play,
   Plus,
   RotateCw,
   Search,
-  Square,
   Trash2,
   X,
 } from "lucide-react";
@@ -22,7 +20,7 @@ import { formatDate } from "@/lib/utils";
 import { DeleteCollectionDialog } from "@/components/collection/DeleteCollectionDialog";
 import { RenameCollectionDialog } from "@/components/collection/RenameCollectionDialog";
 
-type StatusTab = "all" | "completed" | "running" | "needs_review" | "failed";
+type StatusTab = "all" | "completed" | "running" | "needs_review" | "failed" | "partial" | "exhausted" | "cancelled";
 
 function CollectionsContent() {
   const searchParams = useSearchParams();
@@ -58,17 +56,21 @@ function CollectionsContent() {
 
   useEffect(() => {
     document.title = "Collections — Datavault";
-    loadData();
+    const timer = setTimeout(() => { void loadData(); }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Compute status counts
   const counts = useMemo(() => {
-    const c = { all: tasks.length, completed: 0, running: 0, needs_review: 0, failed: 0 };
+    const c = { all: tasks.length, completed: 0, running: 0, needs_review: 0, failed: 0, partial: 0, exhausted: 0, cancelled: 0 };
     for (const t of tasks) {
       const s = t.status.toLowerCase();
       if (s === "completed") c.completed++;
       else if (s === "running") c.running++;
       else if (s === "failed") c.failed++;
+      else if (s === "partial") c.partial++;
+      else if (s === "exhausted") c.exhausted++;
+      else if (s === "cancelled") c.cancelled++;
       else c.needs_review++;
     }
     return c;
@@ -78,16 +80,8 @@ function CollectionsContent() {
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
       const s = task.status.toLowerCase();
-      const matchesTab =
-        statusTab === "all"
-          ? true
-          : statusTab === "completed"
-          ? s === "completed"
-          : statusTab === "running"
-          ? s === "running"
-          : statusTab === "failed"
-          ? s === "failed"
-          : s !== "completed" && s !== "running" && s !== "failed";
+      const matchesTab = statusTab === "all" || (statusTab === "needs_review"
+        ? ["draft", "needsreview", "needs_review"].includes(s) : s === statusTab);
 
       if (!matchesTab) return false;
 
@@ -244,6 +238,9 @@ function CollectionsContent() {
             { id: "completed", label: "Completed", count: counts.completed },
             { id: "running", label: "Running", count: counts.running },
             { id: "needs_review", label: "Draft / Review", count: counts.needs_review },
+            { id: "partial", label: "Partial", count: counts.partial },
+            { id: "exhausted", label: "Exhausted", count: counts.exhausted },
+            { id: "cancelled", label: "Cancelled", count: counts.cancelled },
             { id: "failed", label: "Failed", count: counts.failed },
           ].map((tab) => (
             <button

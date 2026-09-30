@@ -1,5 +1,6 @@
 """Workflow integration uses deterministic source and model fixtures, never API keys."""
 import json
+import copy
 import os
 import unittest
 from types import SimpleNamespace
@@ -12,10 +13,26 @@ from test_grounding import CONTRACT, document, candidate
 
 
 class WorkflowTests(unittest.IsolatedAsyncioTestCase):
+    async def test_local_extraction_bounds_batches_and_processes_every_chunk(self):
+        state = self.state()
+        state['data_contract']['_model_config'] = {'provider': 'local', 'model': 'fixture'}
+        state['retrieved_chunks'] = [{**chunk_sources([document()])[0], 'chunk_id': str(i)} for i in range(11)]
+        model = SimpleNamespace(ainvoke=AsyncMock(return_value=SimpleNamespace(content='{"records":[]}')))
+        with patch.object(workflow, 'post_run_event', AsyncMock()), patch.object(workflow, 'llm', model):
+            result = await workflow.extract_and_normalize(state)
+        self.assertEqual(model.ainvoke.await_count, 3)
+        self.assertEqual(set(result['processed_chunks']), {str(i) for i in range(11)})
+        for call in model.ainvoke.call_args_list:
+            self.assertLessEqual(call.args[0][1].content.count('CHUNK_ID:'), 4)
+            self.assertEqual(call.kwargs['response_schema']['properties']['records']['maxItems'], 2)
+
     async def asyncSetUp(self):
         # Catalog HTTP behavior is covered separately; workflow tests never use keys.
         patcher = patch.object(workflow.provider_catalog, "validate", AsyncMock())
         patcher.start()
+        control = patch.object(workflow, "rust_get", AsyncMock(return_value={"status":"running"}))
+        control.start()
+        self.addCleanup(control.stop)
         self.addCleanup(patcher.stop)
 
     async def test_parse_checks_live_catalog_before_sending_collection_inputs(self):
@@ -71,8 +88,8 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
             workflow, "graph", SimpleNamespace(ainvoke=slow)), patch.object(
             workflow, "post_run_event", AsyncMock()) as events:
             await workflow._execute_run(workflow.RunRequest(run_id="test", prompt="test"))
-        self.assertEqual(events.call_args.args[1], "run.failed")
-        self.assertIn("time limit", events.call_args.kwargs["error"])
+        self.assertEqual(events.call_args.args[1], "run.exhausted")
+        self.assertIn("time budget", events.call_args.kwargs["payload"]["reason"])
 
     async def test_discovery_uses_shared_model_and_caps_suggestions(self):
         model = SimpleNamespace(ainvoke=AsyncMock(return_value=SimpleNamespace(content=json.dumps({"results": [
@@ -83,7 +100,7 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
         model.ainvoke.assert_awaited_once()
 
     def state(self):
-        return {"run_id": "test-run", "prompt": "robotics companies in Chennai", "data_contract": CONTRACT,
+        return {"run_id": "test-run", "prompt": "robotics companies in Chennai", "data_contract": {**copy.deepcopy(CONTRACT), "target_count": 1, "freshness_days": None, "evidence_policy": {"min_sources":1}, "source_policy": {"basis":"user_confirmed_permission", "approved_domains":["keep.example","reject.example"]}},
                 "queries": ["robotics Chennai"], "candidate_sources": [], "source_relevance": [],
                 "relevant_sources": [], "search_results": [], "retrieved_chunks": [],
                 "extracted_records": [], "validated_records": [], "iteration": 0, "max_iterations": 1}
@@ -112,8 +129,8 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
             state = await workflow.extract_and_normalize(self.state())
             state = await workflow.validate_records(state)
             state = await workflow.semantic_verify(state)
-        self.assertEqual(state["status"], "FAILED")
-        self.assertEqual(events.call_args.args[1], "run.failed")
+        self.assertEqual(state["status"], "EXHAUSTED")
+        self.assertEqual(events.call_args.args[1], "run.exhausted")
 
     async def test_terminal_storage_failure_is_not_reported_as_success(self):
         with patch.object(workflow, "rust_post", AsyncMock(return_value={})):
@@ -131,7 +148,7 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
             state = await workflow.execute_search(state)
         self.assertEqual(len(state["candidate_sources"]), 2)
         self.assertEqual(state["retrieved_chunks"], chunk_sources([old]))
-        self.assertEqual(search.call_args.args[1]["domain_filters"], [])
+        self.assertEqual(search.call_args.args[1]["domain_filters"], ["keep.example","reject.example"])
 
     async def test_source_relevance_gate_only_passes_keep_sources(self):
         state = self.state()
@@ -166,6 +183,7 @@ class WorkflowTests(unittest.IsolatedAsyncioTestCase):
         source = document()
         all_chunks = chunk_sources([source])
         state["retrieved_chunks"] = all_chunks
+        state["laya_enabled"] = True
         kept = all_chunks[:1]
         metrics = {"chunks_before": len(all_chunks), "chunks_after": 1,
                    "chunks_filtered": len(all_chunks) - 1, "latency_ms": 2.0}

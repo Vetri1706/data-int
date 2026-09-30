@@ -10,6 +10,7 @@ frontend/out/
 node_modules/
 **/node_modules/
 .npm
+**/.npm-cache/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -41,6 +42,7 @@ build/
 # Logs
 *.log
 logs/
+.runtime/
 
 # OS and Editor files
 .DS_Store

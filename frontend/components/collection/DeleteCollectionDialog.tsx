@@ -12,7 +12,11 @@ interface DeleteCollectionDialogProps {
   isBulk?: boolean;
 }
 
-export function DeleteCollectionDialog({
+export function DeleteCollectionDialog(props: DeleteCollectionDialogProps) {
+  return props.isOpen ? <OpenDeleteCollectionDialog {...props} /> : null;
+}
+
+function OpenDeleteCollectionDialog({
   isOpen,
   onClose,
   onConfirm,
@@ -26,8 +30,6 @@ export function DeleteCollectionDialog({
 
   useEffect(() => {
     if (!isOpen) return;
-    setError(null);
-    setLoading(false);
     const timer = setTimeout(() => cancelButtonRef.current?.focus(), 50);
 
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { ArrowRight, Check, Eye, EyeOff, FileCheck2, Link2, Loader2 } from "lucide-react";
+import { ArrowRight, Check, Eye, EyeOff, Link2, Loader2 } from "lucide-react";
 import { useAuth } from "./AuthProvider";
 import { ApiError } from "@/lib/api";
 import { safeReturnPath } from "@/lib/auth-navigation";
+import { BrandMark } from "@/components/BrandMark";
 
 type Values = { name: string; email: string; password: string; confirm: string };
 
@@ -58,7 +59,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     <main className="auth-page flex min-h-dvh flex-col bg-[var(--background)] px-5 py-7 sm:px-8 sm:py-9">
       <header className="mx-auto flex w-full max-w-[1200px] items-center justify-between gap-4">
         <Link href="/login" aria-label="Datavault home" className="flex items-center gap-2.5 rounded-md text-[17px] font-bold tracking-tight">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-[var(--primary)] text-white"><FileCheck2 className="size-[18px]" aria-hidden="true" /></span>Datavault
+          <BrandMark />Datavault
         </Link>
         <Link href={authLink(isRegister ? "/login" : "/register")} className="flex min-h-11 items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3.5 text-xs font-semibold text-[var(--foreground)] transition-colors hover:bg-[var(--primary-soft)] sm:px-4 sm:text-[13px]">
           {isRegister ? "Sign in" : "Create account"}<ArrowRight aria-hidden="true" className="size-3.5" />

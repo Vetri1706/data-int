@@ -26,7 +26,7 @@ LAYA_MAX_LEN = max(1, int(os.getenv("LAYA_MAX_LEN", "512")))
 
 
 def _enabled() -> bool:
-    return os.getenv("LAYA_ENABLED", "1").strip().lower() not in {"0", "false", "no", "off"}
+    return os.getenv("LAYA_ENABLED", "0").strip().lower() not in {"0", "false", "no", "off"}
 
 
 def build_questions(contract: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:

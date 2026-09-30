@@ -1,0 +1,48 @@
+# Local, private instance. See https://docs.searxng.org/admin/settings/settings.html
+use_default_settings:
+  engines:
+    keep_only:
+      - google
+      - bing
+      - duckduckgo
+      - brave
+      - wikipedia
+
+general:
+  instance_name: Datavault Search
+  debug: false
+
+server:
+  # Docker exposes this on host loopback only. Secrets come from SEARXNG_SECRET.
+  limiter: false
+  public_instance: false
+  image_proxy: false
+
+search:
+  formats:
+    - html
+    - json
+  safe_search: 1
+  autocomplete: ""
+
+outgoing:
+  # Leave headroom inside the Rust SearxProvider's five-second deadline.
+  request_timeout: 3.0
+  max_request_timeout: 4.0
+
+valkey:
+  url: valkey://valkey:6379/0
+
+engines:
+  - name: google
+    disabled: false
+  - name: bing
+    disabled: false
+  - name: duckduckgo
+    # Local smoke check returned a CAPTCHA; do not retry it on every search.
+    disabled: true
+  - name: brave
+    # Local smoke check returned HTTP 429; enable only when access is restored.
+    disabled: true
+  - name: wikipedia
+    disabled: false

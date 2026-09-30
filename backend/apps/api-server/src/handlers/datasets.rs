@@ -16,7 +16,7 @@ pub async fn list(
     >,
 ) -> ApiResult<Json<Value>> {
     let datasets = sqlx::query!(
-        "SELECT id, collection_id, name, entity_type, record_count, avg_confidence, created_at
+        "SELECT id, run_id, collection_id, name, entity_type, record_count, avg_confidence, created_at
          FROM datasets WHERE workspace_id = $1 ORDER BY created_at DESC LIMIT 50",
         workspace_id
     )
@@ -29,6 +29,7 @@ pub async fn list(
         .map(|d| {
             json!({
                 "id": d.id,
+                "run_id": d.run_id,
                 "collection_id": d.collection_id,
                 "name": d.name,
                 "entity_type": d.entity_type,
@@ -44,7 +45,7 @@ pub async fn list(
 
 pub async fn get(State(state): State<AppState>, Path(id): Path<Uuid>) -> ApiResult<Json<Value>> {
     let ds = sqlx::query!(
-        "SELECT id, collection_id, name, entity_type, record_count, avg_confidence,
+        "SELECT id, run_id, collection_id, name, entity_type, record_count, avg_confidence,
                 schema, created_at, updated_at
          FROM datasets WHERE id = $1",
         id
@@ -56,6 +57,7 @@ pub async fn get(State(state): State<AppState>, Path(id): Path<Uuid>) -> ApiResu
 
     Ok(Json(json!({
         "id": ds.id,
+        "run_id": ds.run_id,
         "collection_id": ds.collection_id,
         "name": ds.name,
         "entity_type": ds.entity_type,

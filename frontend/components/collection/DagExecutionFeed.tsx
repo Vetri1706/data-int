@@ -13,7 +13,7 @@ export function DagExecutionFeed({ currentStageId, stages }: DagExecutionFeedPro
   return (
     <ol className="mx-auto mt-6 max-w-[760px] divide-y divide-[#e1e7ee] border-y border-[#dce4ed] text-left">
       {stages.map((stage) => {
-        const isDone = stage.stage_id < currentStageId;
+        const isDone = stage.status === "completed";
         const isCurrent = stage.stage_id === currentStageId;
 
         return (
@@ -42,7 +42,7 @@ export function DagExecutionFeed({ currentStageId, stages }: DagExecutionFeedPro
                 <span className="font-semibold text-[#23354f]">
                   {String(stage.stage_id).padStart(2, "0")} · {stage.stage_name}
                 </span>
-                {isDone && stage.duration_ms > 0 && (
+                {isDone && stage.duration_ms !== null && stage.duration_ms > 0 && (
                   <span className="font-mono text-[10px] text-[#7c899c]">
                     {stage.duration_ms}ms
                   </span>

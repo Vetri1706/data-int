@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use, useEffect, useState } from "react";
+import React, { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import {
   collections,
+  runs,
   fetchTaskById,
   getExportCsvUrl,
   getExportJsonUrl,
@@ -56,7 +57,7 @@ export default function CollectionDetailPage({
   const [isRerunning, setIsRerunning] = useState(false);
   const [banner, setBanner] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const loadDetails = async () => {
+  const loadDetails = useCallback(async () => {
     try {
       const response = await fetchTaskById(id);
       setCollection(response);
@@ -65,11 +66,12 @@ export default function CollectionDetailPage({
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
-    loadDetails();
-  }, [id]);
+    const task = setTimeout(() => { void loadDetails(); }, 0);
+    return () => clearTimeout(task);
+  }, [loadDetails]);
 
   useEffect(() => {
     if (collection?.status?.toLowerCase() === "running") {
@@ -78,9 +80,10 @@ export default function CollectionDetailPage({
       }, 2000);
       return () => clearInterval(interval);
     }
-  }, [id, collection?.status]);
+  }, [loadDetails, collection?.status]);
 
   const records = collection?.records ?? [];
+  const review = collection?.review_candidates ?? [];
   const title = collection?.title ?? "Collection";
 
   useEffect(() => {
@@ -104,6 +107,12 @@ export default function CollectionDetailPage({
     } finally {
       setIsRerunning(false);
     }
+  };
+
+  const handleCancel = async () => {
+    if (!collection?.run_id) return;
+    try { await runs.cancel(collection.run_id); await loadDetails(); }
+    catch (e) { setBanner({ type: "error", text: e instanceof Error ? e.message : "Cancellation failed" }); }
   };
 
   const handleRename = async (newTitle: string) => {
@@ -139,6 +148,10 @@ export default function CollectionDetailPage({
 
   const isCompleted = collection?.status?.toLowerCase() === "completed";
   const isRunning = isRerunning || collection?.status?.toLowerCase() === "running";
+  const statusLabel = collection?.status === "exhausted" ? "No verified results" : collection?.status ?? "Unknown";
+  const statusStyle = isCompleted ? "bg-[#e9f6ef] text-[#197248]" : isRunning ? "bg-blue-50 text-blue-700"
+    : collection?.status === "failed" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-800";
+  const stopped = ["exhausted", "partial", "failed", "cancelled"].includes(collection?.status ?? "");
 
   return (
     <div className="mx-auto w-full max-w-[1680px] 2xl:max-w-none">
@@ -159,14 +172,14 @@ export default function CollectionDetailPage({
             <h1 className="text-[23px] font-bold tracking-[-0.035em] text-[#10213a] 2xl:text-[30px]">
               {title}
             </h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e9f6ef] px-2 py-1 text-[10px] font-semibold text-[#197248]">
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-semibold ${statusStyle}`}>
               <span
                 className={`h-1.5 w-1.5 rounded-full ${
                   isCompleted ? "bg-[#2aa36b]" : isRunning ? "bg-[#2d78e8] animate-pulse" : "bg-[#8290a3]"
                 }`}
                 aria-hidden="true"
               />
-              <span className="capitalize">{collection?.status ?? "Unknown"}</span>
+              <span className="capitalize">{statusLabel}</span>
             </span>
           </div>
           <p className="mt-1 text-[11px] text-[#607089]">
@@ -178,7 +191,7 @@ export default function CollectionDetailPage({
         </div>
 
         {/* Action Controls */}
-        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+        <div className="flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-auto">
           {/* Rerun Button */}
           <button
             type="button"
@@ -271,8 +284,18 @@ export default function CollectionDetailPage({
       )}
 
       {/* Tabs */}
+      {stopped && <section aria-label="Run outcome" className="mb-5 rounded-lg border border-amber-200 bg-amber-50/60 p-4 text-sm">
+        <h2 className="font-semibold text-[#23354f]">{collection?.status === "partial" ? "Some results met the evidence requirements" : records.length ? "Collection stopped" : "No records met the evidence requirements"}</h2>
+        {collection?.stop_reason && <p className="mt-1 leading-6 text-[#53647c]">{collection.stop_reason}</p>}
+        <p className="mt-2 text-xs text-[#607089]">{collection?.sources.length ?? 0} source pages · {review.length} {review.length === 1 ? "candidate" : "candidates"} for review · {records.length} accepted records</p>
+        <button type="button" className="mt-3 font-semibold text-[#246bde] hover:underline" onClick={() => setActiveTab("sources")}>Inspect source pages</button>
+      </section>}
       <div className="mb-4 overflow-x-auto">
-        <SmoothTab
+        {collection?.run_id && <div className="mb-4 flex items-center gap-4 text-sm">
+        <Link href={`/runs/${collection.run_id}`} className="text-blue-700">Execution history</Link>
+        {collection.status === "running" && <button className="rounded border px-3 py-2" onClick={handleCancel}>Cancel run</button>}
+      </div>}
+      <SmoothTab
           ariaLabel="Collection detail views"
           items={TABS.map((tab) => ({
             id: tab.id,
@@ -286,7 +309,11 @@ export default function CollectionDetailPage({
 
       {/* Tab Panels */}
       <div id={`panel-${activeTab}`} role="tabpanel" aria-labelledby={`tab-${activeTab}`} tabIndex={0}>
-        {activeTab === "results" && <DataTable data={records} onSelectEntity={setSelectedEntity} />}
+        {activeTab === "results" && (records.length ? <DataTable data={records} onSelectEntity={setSelectedEntity} /> :
+          <div className="rounded-lg border bg-white px-5 py-8 text-sm text-[#607089]">
+            <h2 className="font-semibold text-[#23354f]">No accepted records yet</h2>
+            <p className="mt-1">{review.length ? "The candidates below need more evidence before they can enter a dataset or export." : "Source pages and run history show what was collected and why no records were accepted."}</p>
+          </div>)}
 
         {activeTab === "briefing" && (
           <section className="rounded-[9px] border border-[#dce4ed] bg-white p-5 sm:p-6" aria-labelledby="briefing-heading">
@@ -309,7 +336,8 @@ export default function CollectionDetailPage({
 
         {activeTab === "sources" && (
           <section className="rounded-[9px] border border-[#dce4ed] bg-white p-5 sm:p-6" aria-labelledby="sources-panel-heading">
-            <h2 id="sources-panel-heading" className="text-[15px] font-bold text-[#10213a]">Permitted sources</h2>
+            <h2 id="sources-panel-heading" className="text-[15px] font-bold text-[#10213a]">Source pages</h2>
+            <p className="mt-1 text-xs text-[#66758a]">Pages recorded by this run, including those that did not yield accepted records. Retrieval does not mean every claim is verified.</p>
             {collection?.sources?.length ? (
               <ul className="mt-3 divide-y divide-[#e8edf3] border-y border-[#e8edf3]">
                 {collection.sources.map((source) => (
@@ -322,7 +350,7 @@ export default function CollectionDetailPage({
                       </a>
                     </div>
                     <div className="flex shrink-0 gap-4 text-[#66758a]">
-                      <span>Authority {typeof source.authority_score === "number" ? `${Math.round(source.authority_score * 100)}%` : "Not measured"}</span>
+                      {source.fetched_at && <span>Read {new Date(source.fetched_at).toLocaleString()}</span>}
                       <span className="font-mono font-semibold text-[#197248]">{source.live_status_code ? `HTTP ${source.live_status_code}` : "Not checked"}</span>
                     </div>
                   </li>
@@ -349,7 +377,7 @@ export default function CollectionDetailPage({
                         <p className="mt-0.5 leading-4 text-[#66758a]">{stage.details}</p>
                       </div>
                     </div>
-                    <span className="shrink-0 font-mono text-[#7c899c]">{stage.duration_ms} ms</span>
+                    <span className="shrink-0 font-mono text-[#7c899c]">{stage.duration_ms === null ? "Duration unknown" : `${stage.duration_ms} ms`}</span>
                   </li>
                 ))}
               </ol>
@@ -360,6 +388,7 @@ export default function CollectionDetailPage({
         )}
       </div>
 
+      {review.length > 0 && <section className="mt-6 rounded-lg border border-amber-200 bg-white p-4"><h2 className="font-semibold">Review candidates ({review.length})</h2><p className="mb-3 text-sm text-[#607089]">Open a candidate to inspect its missing or unsupported fields. These candidates are excluded from accepted datasets and exports.</p><DataTable data={review} onSelectEntity={setSelectedEntity} /></section>}
       <EvidenceDrawer entity={selectedEntity} onClose={() => setSelectedEntity(null)} />
 
       {/* Delete Confirmation Modal */}

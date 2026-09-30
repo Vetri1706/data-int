@@ -61,6 +61,11 @@ def chunk(index, text):
 
 
 class LayaFilterTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        patcher = patch.dict("os.environ", {"LAYA_ENABLED":"1"})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     async def test_relevant_and_irrelevant_chunks_are_filtered_in_batch(self):
         client = FakeClient([[0.91, 0.04]])
         chunks = [chunk(1, "Supplier location and company name"), chunk(2, "Unrelated weather report")]

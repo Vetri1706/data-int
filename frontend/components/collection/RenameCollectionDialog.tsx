@@ -10,7 +10,11 @@ interface RenameCollectionDialogProps {
   initialTitle: string;
 }
 
-export function RenameCollectionDialog({
+export function RenameCollectionDialog(props: RenameCollectionDialogProps) {
+  return props.isOpen ? <OpenRenameCollectionDialog {...props} /> : null;
+}
+
+function OpenRenameCollectionDialog({
   isOpen,
   onClose,
   onSave,
@@ -23,9 +27,6 @@ export function RenameCollectionDialog({
 
   useEffect(() => {
     if (!isOpen) return;
-    setTitle(initialTitle);
-    setError(null);
-    setLoading(false);
     const timer = setTimeout(() => {
       inputRef.current?.focus();
       inputRef.current?.select();

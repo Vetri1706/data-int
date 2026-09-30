@@ -5,10 +5,118 @@ import unittest
 
 import httpx
 
-from model_catalog import ProviderCatalog
+from model_catalog import ProviderCatalog, normalize_rows
+from providers import PROVIDERS
 
 
 class CatalogTests(unittest.IsolatedAsyncioTestCase):
+    async def test_configured_local_default_and_disabled_model(self):
+        rows = [{"name": "a-reasoning"}, {"name": "z-instruction", "details": {"context_length": 32768}}]
+        catalog = self.catalog(lambda _: httpx.Response(200, json={"models": rows}), {
+            "NVIDIA_API_KEY": "", "LOCAL_LLM_MODEL": "z-instruction", "LOCAL_LLM_DISABLED_MODELS": "a-reasoning"})
+        result = await catalog.get("local")
+        self.assertEqual(result["default_model"], "z-instruction")
+        self.assertEqual((await catalog.list())["default"]["model"], "z-instruction")
+        self.assertEqual(next(m for m in result["models"] if m["id"] == "z-instruction")["context_length"], 32768)
+        with self.assertRaisesRegex(ValueError, "Disabled for collections"):
+            await catalog.validate({"provider": "local", "model": "a-reasoning"})
+
+    async def test_configured_default_overrides_alphabetical_order_but_not_cost_sort(self):
+        catalog = self.catalog(lambda _: httpx.Response(200, json={"models": [{"name": "a-first"}, {"name": "z-configured"}]}),
+                               {"LOCAL_LLM_MODEL": "z-configured"})
+        result = await catalog.get("local")
+        self.assertEqual(result["default_model"], "z-configured")
+        self.assertEqual([m["id"] for m in result["models"]], ["a-first", "z-configured"])
+
+    async def test_each_hosted_provider_fails_closed_without_key(self):
+        env = {spec.key_env: " " for spec in PROVIDERS.values() if spec.key_env}
+        catalog = self.catalog(lambda _: self.fail("Unexpected network call"), env)
+        for name, spec in PROVIDERS.items():
+            if name != "local":
+                result = await catalog.get(name)
+                self.assertFalse(result["available"])
+                self.assertFalse(result["configured"])
+                self.assertEqual(result["models"], [])
+                self.assertIn(spec.key_env, result["reason"])
+
+    async def test_cached_availability_is_revoked_and_rotated_keys_refetch(self):
+        catalog = self.catalog(lambda _: httpx.Response(200, json={"data": [{"id": "chat"}]}))
+        self.assertTrue((await catalog.get("nvidia"))["available"])
+        catalog.env["NVIDIA_API_KEY"] = "rotated-secret"
+        await catalog.get("nvidia")
+        self.assertEqual(len(self.requests), 2)
+        self.assertEqual(self.requests[-1].headers["authorization"], "Bearer rotated-secret")
+        catalog.env["NVIDIA_API_KEY"] = ""
+        self.assertFalse((await catalog.get("nvidia"))["available"])
+        self.assertEqual(len(self.requests), 2)
+
+    async def test_glm_documented_free_models_lead_live_paid_catalog(self):
+        catalog = self.catalog(lambda _: httpx.Response(200, json={"data": [{"id": "glm-5"}]}), {"GLM_API_KEY": "fixture-secret"})
+        result = await catalog.get("glm")
+        self.assertEqual([m["id"] for m in result["models"]], ["glm-4.5-flash", "glm-4.7-flash", "glm-5"])
+        self.assertEqual(result["models"][0]["catalog_source"], "documented")
+        self.assertIsNone(result["models"][0]["context_length"])
+        self.assertEqual([m["cost"]["kind"] for m in result["models"]], ["free", "free", "paid"])
+
+    def test_openrouter_free_requires_explicit_valid_zero_prices(self):
+        rows = [{"id": "z-free", "pricing": {"prompt": "0", "completion": "0", "request": "0"}},
+                {"id": "a-paid", "pricing": {"prompt": "0", "completion": "0.5"}},
+                {"id": "b-request-fee", "pricing": {"prompt": "0", "completion": "0", "request": "1"}},
+                {"id": "unknown:free"}, {"id": "missing-output", "pricing": {"prompt": "0"}},
+                {"id": "invalid", "pricing": {"prompt": "NaN", "completion": "0"}},
+                {"id": "negative", "pricing": {"prompt": "-1", "completion": "0"}}]
+        result = normalize_rows("openrouter", rows)
+        self.assertEqual(result[0]["id"], "z-free")
+        self.assertEqual(sum(m["cost"]["kind"] == "free" for m in result), 1)
+        self.assertEqual(sum(m["cost"]["kind"] == "paid" for m in result), 2)
+
+    def test_huggingface_free_route_is_pinned_and_other_routes_are_not_free(self):
+        rows = [{"id": "org/chat", "providers": [
+            {"provider": "free-host", "status": "live", "is_free": True, "context_length": 8192},
+            {"provider": "paid-host", "status": "live", "pricing": {"input": 1, "output": 2}},
+            {"provider": "zero-rounded", "status": "live", "is_free": False, "pricing": {"input": 0, "output": 0}},
+            {"provider": "down", "status": "error", "is_free": True}]}]
+        result = normalize_rows("huggingface", rows)
+        self.assertEqual(result[0]["id"], "org/chat:free-host")
+        self.assertEqual(result[0]["context_length"], 8192)
+        self.assertEqual([m["cost"]["kind"] for m in result], ["free", "credits", "credits"])
+        self.assertNotIn("org/chat", [m["id"] for m in result])
+
+    def test_groq_free_tier_and_unsupported_models_are_honest(self):
+        result = normalize_rows("groq", [{"id": "allam-2-7b"}, {"id": "openai/gpt-oss-20b"},
+            {"id": "image-maker", "output_modalities": ["image"]}, {"id": "whisper-large-v3"},
+            {"id": "meta-llama/llama-prompt-guard-2-86m"}, {"id": "inactive", "active": False}])
+        self.assertEqual(result[0]["id"], "openai/gpt-oss-20b")
+        self.assertEqual(result[0]["cost"]["kind"], "free_tier")
+        self.assertEqual(sum(m["available"] for m in result), 2)
+        self.assertFalse(any(m["cost"]["kind"] == "free" for m in result))
+
+    async def test_gemini_pagination_and_key_never_in_url(self):
+        def handler(request):
+            self.assertEqual(request.headers["x-goog-api-key"], "fixture-secret")
+            self.assertNotIn("fixture-secret", str(request.url))
+            self.assertNotIn("authorization", request.headers)
+            if request.url.params.get("pageToken") == "next":
+                return httpx.Response(200, json={"models": [{"name": "models/embedding-001", "supportedGenerationMethods": ["embedContent"]}]})
+            return httpx.Response(200, json={"models": [{"name": "models/gemini-2.5-flash", "supportedGenerationMethods": ["generateContent"], "inputTokenLimit": 1000000}], "nextPageToken": "next"})
+        catalog = self.catalog(handler, {"GEMINI_API_KEY": "fixture-secret"})
+        result = await catalog.get("gemini")
+        self.assertEqual(len(self.requests), 2)
+        self.assertEqual(result["models"][0]["id"], "gemini-2.5-flash")
+        self.assertEqual(result["models"][0]["cost"]["kind"], "free_tier")
+        self.assertFalse(result["models"][1]["available"])
+
+    async def test_catalog_default_is_available_and_never_approves_hosted_processing(self):
+        def handler(request):
+            if request.url.host == "127.0.0.1":
+                raise httpx.ConnectError("unreachable")
+            return httpx.Response(200, json={"data": [{"id": "glm-5"}]})
+        catalog = self.catalog(handler, {"GLM_API_KEY": "fixture-secret", "NVIDIA_API_KEY": ""})
+        result = await catalog.list()
+        self.assertEqual(result["default"], {"provider": "glm", "model": "glm-4.5-flash", "allow_external": False})
+        self.assertEqual(len(result["providers"]), 7)
+        self.assertEqual(len(self.requests), 2)
+
     def catalog(self, handler, env=None):
         self.requests = []
 

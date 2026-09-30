@@ -67,6 +67,8 @@ pub enum CollectionStatus {
     Paused,
     NeedsReview,
     Completed,
+    Partial,
+    Exhausted,
     Failed,
     Cancelled,
 }
@@ -80,6 +82,8 @@ impl std::fmt::Display for CollectionStatus {
             Self::Paused => write!(f, "paused"),
             Self::NeedsReview => write!(f, "needs_review"),
             Self::Completed => write!(f, "completed"),
+            Self::Partial => write!(f, "partial"),
+            Self::Exhausted => write!(f, "exhausted"),
             Self::Failed => write!(f, "failed"),
             Self::Cancelled => write!(f, "cancelled"),
         }
@@ -173,8 +177,8 @@ pub struct Source {
     pub display_name: Option<String>,
     pub source_type: String,
     pub trust_tier: String,
-    pub extraction_success_rate: f32,
-    pub freshness_score: f32,
+    pub extraction_success_rate: Option<f32>,
+    pub freshness_score: Option<f32>,
     pub last_success_at: Option<DateTime<Utc>>,
     pub last_checked_at: Option<DateTime<Utc>>,
     pub last_status_code: Option<i32>,
@@ -225,7 +229,7 @@ pub struct Claim {
     pub field_name: String,
     pub field_value: serde_json::Value,
     pub extraction_method: String,
-    pub confidence: f32,
+    pub confidence: Option<f32>,
     pub created_at: DateTime<Utc>,
 }
 
@@ -275,42 +279,12 @@ pub struct DatasetRecord {
     pub entity_id: Option<Uuid>,
     pub canonical_name: String,
     pub status: String,
-    pub confidence_score: f32,
+    pub confidence_score: Option<f32>,
     pub confidence_breakdown: serde_json::Value,
     pub primary_attributes: serde_json::Value,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConfidenceBreakdown {
-    pub source_authority: f32,
-    pub extraction_certainty: f32,
-    pub agreement: f32,
-    pub freshness: f32,
-    pub completeness: f32,
-    #[serde(default)]
-    pub reachability: f32,
-    #[serde(default)]
-    pub grounding_score: f32,
-    #[serde(default)]
-    pub ml_validation_score: f32,
-}
-
-impl ConfidenceBreakdown {
-    /// Same measured evidence formula as services/intelligence/grounding.py.
-    pub fn composite_score(&self) -> f32 {
-        self.reachability
-            * (self.source_authority * 0.10
-                + self.grounding_score * 0.25
-                + self.ml_validation_score * 0.20
-                + self.agreement * 0.15
-                + self.freshness * 0.10
-                + self.completeness * 0.20)
-    }
-}
-
-// ─── Search ───────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchRequest {

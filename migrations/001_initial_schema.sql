@@ -163,8 +163,8 @@ CREATE TABLE sources (
     -- 'official_company' | 'news' | 'academic' | 'regulatory'
     -- | 'social' | 'api' | 'general'
     trust_tier              TEXT NOT NULL DEFAULT 'tier2',  -- 'tier1' | 'tier2' | 'tier3'
-    extraction_success_rate REAL NOT NULL DEFAULT 0.0,
-    freshness_score         REAL NOT NULL DEFAULT 0.0,
+    extraction_success_rate REAL,
+    freshness_score         REAL,
     last_success_at         TIMESTAMPTZ,
     last_checked_at         TIMESTAMPTZ,
     last_status_code        INTEGER,
@@ -269,7 +269,7 @@ CREATE TABLE claims (
     field_value           JSONB NOT NULL,
     extraction_method     TEXT NOT NULL DEFAULT 'rule_based',
     -- 'api' | 'json_ld' | 'html_selector' | 'table' | 'regex' | 'llm'
-    confidence            REAL NOT NULL DEFAULT 0.0,
+    confidence            REAL,
     created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -323,7 +323,7 @@ CREATE TABLE dataset_records (
     canonical_name  TEXT NOT NULL,
     status          TEXT NOT NULL DEFAULT 'needs_review',
     -- 'verified' | 'needs_review' | 'draft' | 'rejected' | 'conflicting'
-    confidence_score REAL NOT NULL DEFAULT 0.0,
+    confidence_score REAL,
     confidence_breakdown JSONB NOT NULL DEFAULT '{}',
     -- { source_authority, extraction_certainty, agreement, freshness, completeness }
     primary_attributes JSONB NOT NULL DEFAULT '{}',

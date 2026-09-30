@@ -1,0 +1,42 @@
+{
+  "tested_at": "2026-09-30T17:41:34.926397Z",
+  "ollama_version": "0.34.0",
+  "request_comparison": {
+    "passages": 4,
+    "max_output_tokens": 1024,
+    "context_tokens": 8192,
+    "thinking": false,
+    "json_schema": true,
+    "models": {
+      "deepseek-r1:1.5b": {
+        "done_reason": "length",
+        "prompt_tokens": 965,
+        "output_tokens": 1024,
+        "valid_json": false,
+        "ollama_total_seconds": 14.69
+      },
+      "qwen2.5:3b": {
+        "done_reason": "stop",
+        "prompt_tokens": 974,
+        "output_tokens": 367,
+        "valid_json": true,
+        "ollama_total_seconds": 11.26
+      }
+    }
+  },
+  "live_workflow": {
+    "prompt": "List EV battery and component suppliers in India with direct catalog links, locations, and certifications.",
+    "provider": "local",
+    "model": "qwen2.5:3b",
+    "elapsed_seconds": 108.02,
+    "status": "exhausted",
+    "error": null,
+    "raw_drafts": 18,
+    "accepted_records": 0,
+    "review_candidates": 4,
+    "source_pages": 10,
+    "stop_reason": "Search budget exhausted before acceptance target was met",
+    "test_workspace_removed": true
+  },
+  "limitation": "Single deployment smoke test. No accepted records; this verifies timeout recovery, not dataset quality or general model reliability."
+}

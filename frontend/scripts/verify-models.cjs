@@ -1,131 +1,130 @@
-// Browser fixtures intercept every API call: never send collection data to NVIDIA.
+// Browser integration fixtures only. No keys, provider calls or collected data.
 (async () => {
-  const { default: assert } = await import("node:assert/strict");
-  const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ? `${process.env.PLAYWRIGHT_MODULE}/index.mjs` : "playwright");
-  const browser = await chromium.launch({ headless: true, timeout: 30000 });
-  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, reducedMotion: "reduce" });
-  page.setDefaultTimeout(12000);
-  const errors = [];
-  page.on("pageerror", (error) => errors.push(error.message));
-  const id = "11111111-1111-4111-8111-111111111111";
-  const ds = "22222222-2222-4222-8222-222222222222";
-  let submitted, failCreate = false, failModels = false, completed = false, catalogRequests = 0;
-  let catalog = { default: { provider: "local", model: "qwen2.5-coder:1.5b-instruct", allow_external: false }, providers: [
-    { id: "local", label: "Local · Ollama", available: true, models: [
-      { id: "qwen2.5-coder:1.5b-instruct", label: "Qwen 2.5 Coder 1.5B · lightweight", available: true },
-      { id: "qwen2.5-coder:7b", label: "Qwen 2.5 Coder 7B · larger", available: true },
-      { id: "qwen2.5-coder:1.5b-base", label: "qwen2.5-coder:1.5b-base", available: true }] },
-    { id: "nvidia", label: "NVIDIA · hosted", available: true, models: [
-      { id: "meta/llama-3.3-70b-instruct", label: "Llama 3.3 70B", available: true },
-      { id: "meta/llama-3.1-8b-instruct", label: "Llama 3.1 8B", available: true },
-      { id: "qwen/new-chat-model", label: "qwen/new-chat-model", available: true },
-      { id: "nvidia/embed-qa-4", label: "nvidia/embed-qa-4", available: false, reason: "Embedding or reranking model; cannot run a collection." }] },
-  ] };
-  if (process.env.VERIFY_LIVE_MODEL_CATALOG === "1") {
-    // Only GET catalog metadata. All collection writes/inference remain intercepted.
-    const response = await fetch("http://127.0.0.1:7000/models");
-    assert(response.ok);
-    catalog = await response.json();
-  }
-  const localModels = catalog.providers.find((provider) => provider.id === "local").models;
-  const nvidiaModels = catalog.providers.find((provider) => provider.id === "nvidia").models;
-  const chosenNvidia = nvidiaModels.find((model, index) => index > 0 && model.available && !["meta/llama-3.1-8b-instruct", "meta/llama-3.3-70b-instruct"].includes(model.id)).id;
-  const collection = { id, title: "Provider selection fixture", prompt: "Find robotics companies", status: "completed", updated_at: new Date().toISOString(), data_contract: { entity_type: "company", fields: [], constraints: [], allowed_domains: [] } };
-  await page.route("**/api/v1/**", async (route) => {
-    const path = new URL(route.request().url()).pathname;
-    let status = 200, data = {};
-    if (path === "/api/v1/auth/me") data = { id: "fixture-user", name: "Fixture User", email: "fixture@example.test" };
-    else if (path === "/api/v1/me/models") { catalogRequests++; status = failModels ? 503 : 200; data = failModels ? { error: "Model catalog unavailable" } : catalog; }
-    else if (path === "/api/v1/collections" && route.request().method() === "POST") {
-      submitted = route.request().postDataJSON(); status = failCreate ? 422 : 201;
-      data = failCreate ? { error: "Selected provider unavailable. Try another model." } : collection;
-    } else if (path === `/api/v1/collections/${id}/run`) data = { run_id: "fixture-run", status: "pending" };
-    else if (path === "/api/v1/runs/fixture-run") data = { status: completed ? "completed" : "pending", current_stage: "extracting" };
-    else if (path === `/api/v1/collections/${id}`) data = collection;
-    else if (path === "/api/v1/collections") data = { data: [collection] };
-    else if (path === "/api/v1/datasets") data = { data: [{ id: ds, collection_id: id, name: "Fixture results", created_at: new Date().toISOString(), record_count: 1 }] };
-    else if (path === `/api/v1/datasets/${ds}/records`) data = { data: [{ id: "record", canonical_name: "Fixture Robotics", status: "draft", primary_attributes: {} }] };
-    await route.fulfill({ status, contentType: "application/json", body: JSON.stringify(data) });
-  });
-  const base = process.env.VERIFY_BASE_URL || "http://127.0.0.1:3001";
+  const { default: assert } = await import('node:assert/strict');
+  const { pathToFileURL } = await import('node:url');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const modulePath = process.env.PLAYWRIGHT_MODULE;
+  const { chromium } = await import(modulePath ? pathToFileURL(`${modulePath}/index.mjs`).href : 'playwright');
+  const browser = await chromium.launch({ channel: 'chrome', headless: true });
   try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    page.setDefaultTimeout(12000);
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    const modelRow = (id, kind, label) => ({ id, label: id, available: true, cost: { kind, label, note: 'Fixture pricing; not a billing guarantee.', source_url: 'https://example.com/pricing' } });
+    const catalog = { default: { provider: 'glm', model: 'glm-4.5-flash', allow_external: false }, providers: [
+      { id: 'glm', label: 'GLM (Z.ai)', available: true, models: [modelRow('glm-5', 'paid', 'Paid'), modelRow('glm-4.7-flash', 'free', 'Free'), modelRow('glm-4.5-flash', 'free', 'Free')] },
+      { id: 'groq', label: 'Groq', available: true, models: [modelRow('openai/gpt-oss-20b', 'free_tier', 'Free tier available')] },
+      { id: 'huggingface', label: 'Hugging Face', available: true, models: [modelRow('org/paid:host', 'credits', 'Credits / paid'), modelRow('org/free:host', 'free', 'Free')] },
+      { id: 'local', label: 'Local Ollama', available: false, reason: 'Cannot reach Ollama.', models: [] },
+      ...['nvidia', 'gemini', 'openrouter'].map(id => ({ id, label: id, available: false, reason: `Add ${id.toUpperCase()}_API_KEY to .env.`, models: [] })),
+    ] };
+    let failModels = false, catalogRequests = 0, submitted = null;
+    await page.route('**/api/v1/**', async route => {
+      const path = new URL(route.request().url()).pathname;
+      let status = 200, data = {};
+      if (path === '/api/v1/auth/me') data = { id: 'fixture-user', email: 'fixture@example.test', name: 'Fixture' };
+      else if (path === '/api/v1/runs/failed-local') data = { id: 'failed-local', collection_id: 'retry-source', status: 'failed', records_verified: 0, error_message: 'Local inference timed out' };
+      else if (path === '/api/v1/runs/failed-local/history') data = { data: [], review_candidates: [] };
+      else if (path === '/api/v1/datasets') data = { data: [] };
+      else if (path === '/api/v1/collections/retry-source') data = { prompt: 'Find EV component suppliers in India', data_contract: { source_policy: { domain_filters: ['example.com'] } } };
+      else if (path === '/api/v1/me/models') {
+        catalogRequests++;
+        status = failModels ? 503 : 200;
+        data = failModels ? { error: 'Model catalog unavailable' } : catalog;
+      } else if (path === '/api/v1/me/source-discovery') {
+        data = { domains: [{ domain: 'example.com', pages: [{ title: 'Fixture source', url: 'https://example.com/source', provider: 'fixture' }] }], total: 1 };
+      } else if (path === '/api/v1/collections' && route.request().method() === 'POST') {
+        submitted = route.request().postDataJSON();
+        // The chosen route disappears while collection creation is failing.
+        catalog.providers.find(p => p.id === 'huggingface').models.pop();
+        status = 422;
+        data = { error: 'Fixture provider unavailable. Try another model.' };
+      }
+      await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(data) });
+    });
+    const base = process.env.VERIFY_BASE_URL || 'http://127.0.0.1:3107';
     await page.goto(`${base}/collections/new`);
-    const provider = page.getByLabel("Provider", { exact: true });
-    const model = page.getByLabel("Model", { exact: true });
-    const next = page.getByRole("button", { name: "Continue", exact: true });
-    await page.getByText(`${localModels.length} installed models · ${localModels.filter((item) => item.available).length} for collections`, { exact: true }).waitFor();
-    assert.equal(await model.inputValue(), "qwen2.5-coder:1.5b-instruct");
-    assert.equal(await model.locator("option").count(), localModels.length);
-    await model.selectOption("qwen2.5-coder:1.5b-base");
-    assert.equal(await model.inputValue(), "qwen2.5-coder:1.5b-base");
-    const requestsBeforeRefresh = catalogRequests;
-    const refresh = page.getByRole("button", { name: "Refresh models", exact: true });
-    localModels.push({ id: "newly-installed:latest", label: "newly-installed:latest", available: true });
-    await refresh.click();
-    await page.waitForFunction(() => document.querySelector('option[value="newly-installed:latest"]'));
-    assert.equal(catalogRequests, requestsBeforeRefresh + 1);
-    assert.equal(await model.inputValue(), "qwen2.5-coder:1.5b-base");
-    await model.selectOption("newly-installed:latest");
-    localModels.pop();
-    await refresh.click();
-    await page.waitForFunction(() => document.querySelector('option[value="newly-installed:latest"]')?.disabled);
-    assert.equal(await model.inputValue(), "newly-installed:latest");
+    const provider = page.getByLabel('Provider', { exact: true });
+    const model = page.getByLabel('Model', { exact: true });
+    const next = page.getByRole('button', { name: 'Continue', exact: true });
+    await page.waitForFunction(() => [...document.querySelectorAll('select')].some(s => s.value === 'glm'));
+    assert.equal(await model.inputValue(), 'glm-4.5-flash');
+    assert.equal(await provider.locator('option').count(), 7);
+    assert.equal(await provider.locator('option:disabled').count(), 4);
+    assert.deepEqual(await model.locator('option').evaluateAll(options => options.map(o => o.value)), ['glm-4.5-flash', 'glm-4.7-flash', 'glm-5']);
+    assert((await model.locator('option').first().innerText()).includes('Free'));
+    await page.getByLabel('Collection requirement').fill('Find robotics companies with official source evidence');
+    // Domains and source permission are not prerequisites for Continue.
+    assert.equal(await page.getByLabel('Limit search to domains (optional)').inputValue(), '');
+    assert.equal(await page.getByLabel(/I have permission/).count(), 0);
     assert(await next.isDisabled());
-    await model.selectOption("qwen2.5-coder:1.5b-base");
-    await provider.focus();
-    await provider.press("Space");
-    await provider.press("Escape");
-    assert.equal(await provider.evaluate((el) => document.activeElement === el), true);
-    await provider.selectOption("nvidia");
-    assert.equal(await model.locator("option").count(), nvidiaModels.length);
-    assert.equal(await model.locator("option:disabled").count(), nvidiaModels.filter((item) => !item.available).length);
-    assert(await next.isDisabled());
-    await page.getByRole("checkbox", { name: /Allow NVIDIA/ }).check();
+    await page.getByRole('checkbox', { name: /Allow GLM/ }).check();
     assert(await next.isEnabled());
-    await model.selectOption(chosenNvidia);
+    await model.selectOption('glm-4.7-flash');
     assert(await next.isDisabled());
-    await page.getByRole("checkbox", { name: /Allow NVIDIA/ }).check();
-    await page.screenshot({ path: "/tmp/datavault-model-selector-desktop.png", fullPage: true });
+    await provider.selectOption('groq');
+    assert((await model.locator('option').innerText()).includes('Free tier available'));
+    await page.getByRole('checkbox', { name: /Allow Groq/ }).check();
+    await provider.selectOption('huggingface');
+    assert(await next.isDisabled());
+    assert.equal(await model.inputValue(), 'org/free:host');
+    assert.equal(await model.locator('option').first().getAttribute('value'), 'org/free:host');
+    await model.selectOption('org/free:host');
+    await page.getByRole('checkbox', { name: /Allow Hugging Face/ }).check();
     await next.click();
-    assert((await page.locator("main").innerText()).includes(chosenNvidia));
-    failCreate = true;
-    await page.getByRole("button", { name: "Run collection", exact: true }).click();
-    await page.getByRole("alert").filter({ hasText: "Selected provider unavailable" }).waitFor();
-    assert.equal(submitted.model_selection.provider, "nvidia");
-    assert.equal(submitted.model_selection.model, chosenNvidia);
-    assert.equal(submitted.model_selection.allow_external, true);
-    assert.equal(await model.inputValue(), chosenNvidia);
-    await provider.selectOption("local");
-    failCreate = false;
-    await next.click();
-    await page.getByRole("button", { name: "Run collection", exact: true }).click();
-    await page.locator("li").filter({ hasText: "Extract records" }).locator("svg.animate-spin").waitFor();
-    await page.waitForTimeout(5500);
-    assert.equal(await page.locator("li").filter({ hasText: "Save results" }).locator("svg").count(), 0);
-    assert.equal(submitted.model_selection.provider, "local");
-    assert.equal(submitted.model_selection.allow_external, false);
-    completed = true;
-    await page.waitForURL(`**/collections/${id}`);
+    await page.getByText('Processing: Hugging Face', { exact: false }).waitFor();
+    await page.getByLabel(/I have permission/).check();
+    await page.getByRole('button', { name: 'Run collection', exact: true }).click();
+    await page.getByRole('alert').filter({ hasText: 'Fixture provider unavailable' }).waitFor();
+    await page.waitForFunction(() => [...document.querySelectorAll('select')].some(s => s.value === 'huggingface' && !s.disabled));
+    assert.deepEqual(submitted.model_selection, { provider: 'huggingface', model: 'org/free:host', allow_external: true });
+    assert.equal(await provider.inputValue(), 'huggingface');
+    // A disappearing selection is blocked, never silently switched to another model.
+    assert.equal(await model.inputValue(), 'org/free:host');
+    assert.equal(await model.locator('option[value="org/free:host"]').isDisabled(), true);
+    const beforeRefresh = catalogRequests;
+    await page.getByRole('button', { name: 'Refresh models', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('option[value="org/free:host"]')?.disabled);
+    assert.equal(catalogRequests, beforeRefresh + 1);
+    assert(await next.isDisabled());
+    assert.equal(await model.inputValue(), 'org/free:host');
+    // Local Ollama is available only when its catalog reports installed models.
+    const local = catalog.providers.find(p => p.id === 'local');
+    local.available = true; local.reason = null; local.default_model = 'z-instruction:latest';
+    local.models = [modelRow('a-first:latest', 'local', 'Local / no API fee'), modelRow('z-instruction:latest', 'local', 'Local / no API fee')];
+    await page.getByRole('button', { name: 'Refresh models', exact: true }).click();
+    await page.waitForFunction(() => !document.querySelector('option[value="local"]').disabled);
+    await provider.selectOption('local');
+    assert.equal(await model.inputValue(), 'z-instruction:latest');
+    assert.equal(await page.getByRole('checkbox', { name: /^Allow / }).count(), 0);
+    assert(await next.isEnabled());
     failModels = true;
-    await page.goto(`${base}/collections/new`);
-    await page.getByRole("alert").filter({ hasText: "Model catalog unavailable" }).waitFor();
+    await page.getByRole('button', { name: 'Refresh models', exact: true }).click();
+    await page.getByRole('alert').filter({ hasText: 'Model catalog unavailable' }).waitFor();
     assert(await next.isDisabled());
     failModels = false;
-    await page.getByRole("button", { name: "Retry models" }).click();
-    await provider.selectOption("nvidia");
-    assert(await next.isDisabled()); // no consent persisted across visits
+    await page.getByRole('button', { name: 'Retry models', exact: true }).click();
+    await page.waitForFunction(() => !document.querySelector('select').disabled);
+    await provider.selectOption('glm');
+    await model.selectOption('glm-4.5-flash');
+    await page.screenshot({ path: join(tmpdir(), 'datavault-providers-desktop.png'), fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.screenshot({ path: "/tmp/datavault-model-selector-mobile.png", fullPage: true });
+    // Wait for the existing sidebar's responsive exit transition before capture.
+    await page.waitForFunction(() => document.querySelector('aside').getBoundingClientRect().right <= 1);
+    await page.screenshot({ path: join(tmpdir(), 'datavault-providers-mobile.png'), fullPage: true });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);
-    await model.focus();
-    await model.press("Space");
-    await model.press("Escape");
+    await model.focus(); await model.press('Space'); await model.press('Escape');
+    await page.goto(`${process.env.VERIFY_BASE_URL || 'http://127.0.0.1:3001'}/runs/failed-local`);
+    await page.getByRole('button', { name: 'Retry with configured local model' }).click();
+    await page.waitForURL('**/collections/new?**');
+    await page.waitForFunction(() => [...document.querySelectorAll('select')].some(s => s.value === 'z-instruction:latest'));
+    assert.equal(await page.getByLabel('Provider', { exact: true }).inputValue(), 'local');
+    assert.equal(await page.getByLabel('Limit search to domains (optional)').inputValue(), 'example.com');
+    assert.equal(await page.locator('textarea').inputValue(), 'Find EV component suppliers in India');
+    assert.equal(await page.getByRole('checkbox', { name: /^Allow / }).count(), 0);
     assert.deepEqual(errors, []);
-    console.log(`PASS: all ${nvidiaModels.length} NVIDIA and ${localModels.length} Ollama models rendered, refresh/add/remove, new model payload, consent/reset, recovery, progress, keyboard and mobile`);
-  } catch (error) {
-    console.error("Rendered UI:", (await page.locator("body").innerText()).slice(0, 5000));
-    console.error("Page errors:", errors);
-    await page.screenshot({ path: "/tmp/datavault-model-selector-failure.png", fullPage: true });
-    throw error;
+    console.log('PASS: seven providers, configuration gates, free-first order, tier labels, consent/reset, pinned HF payload, removed-model blocking, local Ollama, refresh/recovery and mobile width');
   } finally { await browser.close(); }
-})().catch((error) => { console.error(error); process.exitCode = 1; });
+})().catch(error => { console.error(error); process.exitCode = 1; });

@@ -1,0 +1,46 @@
+{
+  "checked_at": "2026-09-30",
+  "prompt": "List EV battery and component suppliers in India with direct catalog links, locations, and certifications.",
+  "production_search": [
+    "DDGS DuckDuckGo",
+    "DDGS Yahoo",
+    "SearXNG",
+    "Wikipedia"
+  ],
+  "llm_url_fallback_enabled": false,
+  "retrieval_smoke": {
+    "candidates": 10,
+    "http_200_usable_pages": 8,
+    "robots_denied_or_unavailable": 1,
+    "missing_browser_at_time_of_check": 1
+  },
+  "browser_dependency": "Chromium installed after initial smoke check; some dynamic pages still return unusable content",
+  "last_full_groq_run": {
+    "model": "openai/gpt-oss-120b",
+    "drafts": 8,
+    "accepted": 0,
+    "terminal": "failed",
+    "reason": "HTTP 429 during replanning",
+    "evidence_gaps": [
+      "direct catalog links",
+      "supplier location",
+      "certifications"
+    ],
+    "note": "Short Retry-After handling and failed-run review persistence were added afterward and regression-tested."
+  },
+  "local_ollama_parse": {
+    "model": "qwen2.5:3b",
+    "http_status": 200,
+    "elapsed_seconds": 10.38,
+    "end_to_end_collection_tested": false
+  },
+  "regression_checks": {
+    "intelligence_python": 102,
+    "scrapling_python": 15,
+    "rust": 15,
+    "database_integration": "passed with real local PostgreSQL",
+    "browser": "source approval, seed payload, actual failure text, inspect-run link, model picker",
+    "typescript": "passed",
+    "eslint": "0 errors, 2 existing compatibility warnings"
+  }
+}

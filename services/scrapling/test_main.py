@@ -1,3 +1,5 @@
+import asyncio
+import httpx
 import json
 import sys
 import unittest
@@ -6,6 +8,7 @@ from unittest.mock import AsyncMock, patch
 
 sys.path.insert(0, ".")
 import main
+REAL_ROBOTS_ALLOWED = main.robots_allowed
 
 
 class Values(list):
@@ -56,8 +59,13 @@ class Page:
 
 
 class ScraplingServiceTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        gate=patch.object(main,"robots_allowed",AsyncMock(return_value=True))
+        self.robots=gate.start()
+        self.addCleanup(gate.stop)
+
     def request(self, **kwargs):
-        return main.ExtractRequest(urls=["https://example.com/page"], **kwargs)
+        return main.ExtractRequest(urls=["https://example.com/page"], source_policy={"basis":"user_confirmed_permission","approved_domains":["example.com"]}, **kwargs)
 
     async def test_static_scrapling_page_is_normalized_with_structured_data(self):
         page = Page(
@@ -107,6 +115,63 @@ class ScraplingServiceTests(unittest.IsolatedAsyncioTestCase):
             result = await main.retrieve_page("http://127.0.0.1:3000/private", request)
         self.assertEqual(result["error_code"], "ssrf_blocked")
         fetch.assert_not_awaited()
+
+    async def test_real_robots_policy_distinguishes_rules_absence_and_failure(self):
+        policy=self.request().source_policy
+        for status,text,expected in [(200,"User-agent: *\nDisallow: /page",False),
+                                     (200,"User-agent: *\nAllow: /",True),(404,"",True),(403,"",False),(503,"",False)]:
+            client=httpx.AsyncClient(transport=httpx.MockTransport(lambda req:httpx.Response(status,text=text)))
+            with patch.object(main,"public_url",AsyncMock(return_value=True)),patch.object(main.httpx,"AsyncClient",return_value=client):
+                self.assertEqual(await REAL_ROBOTS_ALLOWED("https://example.com/page",policy),expected)
+
+    async def test_permission_required_before_fetch(self):
+        with patch.object(main,"public_url",AsyncMock(return_value=True)),patch.object(main,"_fetch_static",AsyncMock()) as fetch:
+            result=await main.retrieve_page("https://example.com/page",main.ExtractRequest(urls=["https://example.com/page"]))
+        self.assertEqual(result["error_code"],"permission_denied")
+        fetch.assert_not_awaited()
+
+    async def test_robots_denied_never_fetches(self):
+        self.robots.return_value=False
+        with patch.object(main,"public_url",AsyncMock(return_value=True)),patch.object(main,"_fetch_static",AsyncMock()) as fetch:
+            result=await main.retrieve_page("https://example.com/page",self.request())
+        self.assertEqual(result["error_code"],"robots_denied")
+        fetch.assert_not_awaited()
+
+    async def test_anti_bot_response_never_escalates(self):
+        for page in [Page("Forbidden",status=403),Page("Verify you are human. captcha challenge",status=200),Page("rate limited",status=429)]:
+            with patch.object(main,"public_url",AsyncMock(return_value=True)),patch.object(main,"_fetch_static",AsyncMock(return_value=page)),patch.object(main,"_fetch_dynamic",AsyncMock()) as dynamic:
+                result=await main.retrieve_page("https://example.com/page",self.request())
+            self.assertEqual(result["error_code"],"access_restricted")
+            dynamic.assert_not_awaited()
+
+    async def test_redirect_to_unapproved_host_is_not_contacted(self):
+        page=Page("redirect",status=302)
+        page.headers={"location":"https://unapproved.example/secret"}
+        with patch.object(main,"public_url",AsyncMock(return_value=True)),patch.object(main.AsyncFetcher,"get",AsyncMock(return_value=page)) as fetch:
+            with self.assertRaises(PermissionError):
+                await main._fetch_static("https://example.com/page",self.request())
+            self.assertEqual(fetch.await_count,1)
+            self.assertFalse(fetch.call_args.kwargs["follow_redirects"])
+
+    async def test_explicit_stealth_request_is_blocked(self):
+        with self.assertRaises(PermissionError):
+            await main._fetch_dynamic("https://example.com/page",self.request(),stealth=True)
+
+    async def test_cancel_stops_active_extraction(self):
+        ready=asyncio.Event()
+        stopped=asyncio.Event()
+        async def retrieve(*args,**kwargs):
+            ready.set()
+            try: await asyncio.sleep(30)
+            finally: stopped.set()
+        with patch.object(main,"retrieve_page",retrieve):
+            task=asyncio.create_task(main.extract_endpoint(self.request(run_id="cancel-test")))
+            await asyncio.wait_for(ready.wait(),1)
+            result=await main.cancel_extraction("cancel-test")
+            with self.assertRaises(asyncio.CancelledError): await task
+        self.assertEqual(result["cancelled_requests"],1)
+        self.assertTrue(stopped.is_set())
+        self.assertNotIn("cancel-test",main.ACTIVE_EXTRACTIONS)
 
     def test_contract_selectors_are_dynamic(self):
         page = Page("Example Company")

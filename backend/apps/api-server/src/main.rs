@@ -34,6 +34,11 @@ async fn main() -> Result<()> {
     // ── PostgreSQL ────────────────────────────────────────────────────────────
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = PgPool::connect(&database_url).await?;
+    sqlx::raw_sql(include_str!(
+        "../../../../migrations/002_trust_and_workflow.sql"
+    ))
+    .execute(&pool)
+    .await?;
     info!("PostgreSQL connected");
 
     // ── Redis ─────────────────────────────────────────────────────────────────
@@ -74,7 +79,9 @@ async fn main() -> Result<()> {
             post(handlers::collections::trigger_run),
         )
         // Runs
+        .route("/collections/{id}/runs", get(handlers::runs::list_runs))
         .route("/runs/{id}", get(handlers::runs::get_run))
+        .route("/runs/{id}/history", get(handlers::runs::history))
         .route("/runs/{id}/events", get(sse::sse_handler))
         .route("/runs/{id}/pause", post(handlers::runs::pause))
         .route("/runs/{id}/cancel", post(handlers::runs::cancel))
@@ -95,6 +102,10 @@ async fn main() -> Result<()> {
         .route("/me/preferences", get(handlers::users::get_preferences))
         .route("/me/models", get(handlers::users::get_models))
         .route(
+            "/me/source-discovery",
+            post(handlers::source_discovery::discover),
+        )
+        .route(
             "/me/preferences",
             patch(handlers::users::update_preferences),
         )
@@ -112,6 +123,10 @@ async fn main() -> Result<()> {
         .route("/auth/logout", post(handlers::auth::logout))
         // Service-only routes are not exposed by the frontend API bridge.
         .route("/internal/search", post(handlers::internal::search))
+        .route(
+            "/internal/runs/{id}/control",
+            get(handlers::internal::run_control),
+        )
         .route(
             "/internal/intelligence/run",
             post(handlers::internal::intelligence_run),

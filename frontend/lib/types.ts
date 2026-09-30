@@ -39,7 +39,9 @@ export interface EntityRecord {
   canonical_name: string;
   primary_attributes: Record<string, string>;
   status: "verified" | "needs_review" | "draft" | "running";
-  confidence_score: number;
+  confidence_score: number | null;
+  claims?: Record<string, { field_name: string; value: unknown; state: "supported" | "contradicted" | "unknown"; reason: string; evidence: FieldEvidence[] }>;
+  verification?: { field_coverage: number; accepted: boolean; acceptance_failures: { field: string; state: string; reason: string }[] };
   provenance: EntityProvenance;
   confidence_breakdown?: Record<string, number>;
 }
@@ -50,13 +52,14 @@ export interface SourceInfo {
   title: string;
   authority_score?: number;
   live_status_code?: number;
+  fetched_at?: string;
 }
 
 export interface WorkflowStage {
   stage_id: number;
   stage_name: string;
-  status: "pending" | "running" | "completed" | "failed";
-  duration_ms: number;
+  status: "pending" | "running" | "completed" | "failed" | "cancelled";
+  duration_ms: number | null;
   details: string;
 }
 
@@ -97,7 +100,7 @@ export interface GroundingResponse {
     category: string;
     target_entity: string;
     needs_external_search: boolean;
-    confidence: number;
+    confidence: number | null;
     explanation: string;
   };
   contract: DataContract;
@@ -108,7 +111,11 @@ export interface GroundingResponse {
   workflow: WorkflowExecution;
   total_records: number;
   verified_count: number;
-  average_confidence: number;
+  average_confidence: number | null;
+  run_id?: string;
+  review_candidates?: EntityRecord[];
+  stop_reason?: string;
+  extracted_count?: number;
 }
 
 export interface TaskSummary {
@@ -121,5 +128,6 @@ export interface TaskSummary {
   total_latency_ms: number;
   triggered_grounding: boolean;
   workflow_summary: string;
-  status: "Completed" | "Running" | "Draft" | "Failed";
+  status: "Completed" | "Running" | "Draft" | "Failed" | "Partial" | "Exhausted" | "Cancelled";
+  collection_id?: string;
 }

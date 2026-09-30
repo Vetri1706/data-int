@@ -1,10 +1,13 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use datavault_domain::{SearchRequest, SearchResult};
+#[cfg(test)]
 use futures_util::{StreamExt, stream};
 use serde::Deserialize;
 use serde_json::json;
-use std::{collections::HashSet, net::IpAddr, time::Duration};
+use std::net::IpAddr;
+#[cfg(test)]
+use std::{collections::HashSet, time::Duration};
 use tracing::{debug, warn};
 use url::Url;
 mod duckduckgo;
@@ -61,21 +64,7 @@ fn public_web_url(url: &Url) -> bool {
     true
 }
 
-fn verification_client() -> reqwest::Client {
-    reqwest::Client::builder()
-        .timeout(Duration::from_millis(1500))
-        .redirect(reqwest::redirect::Policy::custom(|attempt| {
-            if attempt.previous().len() >= 4 || !public_web_url(attempt.url()) {
-                attempt.stop()
-            } else {
-                attempt.follow()
-            }
-        }))
-        .user_agent("Datavault/1.0 (source verification)")
-        .build()
-        .expect("verification client")
-}
-
+#[cfg(test)]
 async fn check_url(
     client: &reqwest::Client,
     url: &str,
@@ -112,6 +101,7 @@ async fn check_url(
     None
 }
 
+#[cfg(test)]
 async fn verified_results(
     client: &reqwest::Client,
     results: Vec<SearchResult>,
@@ -151,6 +141,26 @@ async fn verified_results(
 pub trait SearchProvider: Send + Sync {
     async fn search(&self, req: SearchRequest) -> Result<Vec<SearchResult>>;
     fn name(&self) -> &'static str;
+}
+
+/// Maintained DDGS search adapters, hosted beside Scrapling.
+pub struct DdgsProvider { client: reqwest::Client, base_url: String }
+impl DdgsProvider {
+    pub fn new(base_url: impl Into<String>) -> Self {
+        Self { client: reqwest::Client::builder().timeout(std::time::Duration::from_secs(17)).build().unwrap_or_default(),
+            base_url: base_url.into().trim_end_matches('/').to_owned() }
+    }
+}
+#[async_trait]
+impl SearchProvider for DdgsProvider {
+    fn name(&self) -> &'static str { "ddgs" }
+    async fn search(&self, req: SearchRequest) -> Result<Vec<SearchResult>> {
+        #[derive(Deserialize)]
+        struct Response { results: Vec<SearchResult> }
+        Ok(self.client.post(format!("{}/search", self.base_url))
+            .json(&json!({"query": req.query, "domain_filters": req.domain_filters, "max_results": req.max_results.min(20)}))
+            .send().await?.error_for_status()?.json::<Response>().await?.results)
+    }
 }
 
 // ─── SearXNG ─────────────────────────────────────────────────────────────────
@@ -425,27 +435,44 @@ impl SearchProvider for LlmSearchProvider {
 
 pub struct FederatedSearch {
     providers: Vec<Box<dyn SearchProvider>>,
-    verifier: reqwest::Client,
 }
 
 impl FederatedSearch {
     pub fn new(providers: Vec<Box<dyn SearchProvider>>) -> Self {
-        Self {
-            providers,
-            verifier: verification_client(),
-        }
+        Self { providers }
     }
 
     pub async fn search(&self, mut req: SearchRequest) -> Result<Vec<SearchResult>> {
+        self.search_candidates(&mut req, true).await
+    }
+
+    /// Search-engine candidates only: no result-page fetches and no model calls.
+    /// Used before the user has selected/approved sources for collection.
+    pub async fn discover_sources(&self, mut req: SearchRequest) -> Result<Vec<SearchResult>> {
+        req.model_config = None;
+        self.search_candidates(&mut req, false).await
+    }
+
+    async fn search_candidates(
+        &self,
+        req: &mut SearchRequest,
+        allow_llm: bool,
+    ) -> Result<Vec<SearchResult>> {
         req.query = sanitize_query(&req.query);
         req.max_results = req.max_results.min(30);
         if req.query.is_empty() || req.max_results == 0 {
             return Ok(vec![]);
         }
         for provider in &self.providers {
+            if !allow_llm && provider.name() == "llm_grounded" {
+                continue;
+            }
             match provider.search(req.clone()).await {
                 Ok(results) if !results.is_empty() => {
-                    let mut results = verified_results(&self.verifier, results, true).await;
+                    // Discovery never fetches result destinations. Retrieval owns permission,
+                    // robots checks, redirect enforcement and observed HTTP evidence.
+                    let mut results = results;
+                    results.retain(|r| Url::parse(&r.url).ok().is_some_and(|u| public_web_url(&u)));
                     if !req.domain_filters.is_empty() {
                         let domain_matched: Vec<_> = results
                             .iter()
@@ -460,22 +487,20 @@ impl FederatedSearch {
                             })
                             .cloned()
                             .collect();
-                        if !domain_matched.is_empty() {
-                            results = domain_matched;
-                        }
+                        results = domain_matched;
                     }
                     if !results.is_empty() {
                         results.truncate(req.max_results);
                         debug!(
                             provider = provider.name(),
                             count = results.len(),
-                            "verified search succeeded"
+                            "candidate discovery succeeded"
                         );
                         return Ok(results);
                     }
                     warn!(
                         provider = provider.name(),
-                        "no reachable sources; continuing cascade"
+                        "no candidates within required domains; continuing cascade"
                     );
                 }
                 Ok(_) => {
@@ -673,6 +698,54 @@ mod tests {
     struct FixtureProvider {
         url: String,
     }
+
+    struct ModelMustNotRun;
+    #[async_trait]
+    impl SearchProvider for ModelMustNotRun {
+        fn name(&self) -> &'static str {
+            "llm_grounded"
+        }
+        async fn search(&self, _: SearchRequest) -> Result<Vec<SearchResult>> {
+            panic!("Source review must never invoke a model or invent candidate URLs")
+        }
+    }
+
+    #[tokio::test]
+    async fn source_review_accepts_no_domains_and_never_calls_model_fallback() {
+        let request = SearchRequest {
+            query: "robotics companies".into(),
+            max_results: 5,
+            domain_filters: vec![],
+            freshness_days: None,
+            model_config: None,
+        };
+        let search = FederatedSearch::new(vec![Box::new(ModelMustNotRun)]);
+        assert!(
+            search
+                .discover_sources(request.clone())
+                .await
+                .unwrap()
+                .is_empty()
+        );
+        let search = FederatedSearch::new(vec![
+            Box::new(FixtureProvider {
+                url: "https://unreachable-source.example/candidate".into(),
+            }),
+            Box::new(ModelMustNotRun),
+        ]);
+        // Search metadata is returned without fetching the source page.
+        let results = search.discover_sources(request.clone()).await.unwrap();
+        assert_eq!(results.len(), 1);
+        let mut restricted = request;
+        restricted.domain_filters = vec!["another.example".into()];
+        assert!(
+            search
+                .discover_sources(restricted)
+                .await
+                .unwrap()
+                .is_empty()
+        );
+    }
     #[async_trait]
     impl SearchProvider for FixtureProvider {
         fn name(&self) -> &'static str {
@@ -693,8 +766,37 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn hard_domains_never_relax_for_fallback_or_suffix_spoofs() {
+        let request = SearchRequest {
+            query: "test".into(),
+            max_results: 5,
+            domain_filters: vec!["allowed.example".into()],
+            freshness_days: None,
+            model_config: None,
+        };
+        for url in [
+            "https://outside.example/page",
+            "https://allowed.example.attacker.test/page",
+        ] {
+            let search = FederatedSearch::new(vec![Box::new(FixtureProvider { url: url.into() })]);
+            assert!(search.search(request.clone()).await.unwrap().is_empty());
+        }
+        let search = FederatedSearch::new(vec![
+            Box::new(FixtureProvider {
+                url: "https://outside.example/page".into(),
+            }),
+            Box::new(FixtureProvider {
+                url: "https://news.allowed.example/page".into(),
+            }),
+        ]);
+        let results = search.search(request).await.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].url, "https://news.allowed.example/page");
+    }
+
+    #[tokio::test]
     async fn cascade_skips_unreachable_candidate_and_retains_domain_filters() {
-        let (base, client, task) = server().await;
+        let (base, _client, task) = server().await;
         let search = FederatedSearch {
             providers: vec![
                 Box::new(FixtureProvider {
@@ -704,7 +806,6 @@ mod tests {
                     url: format!("{base}/live"),
                 }),
             ],
-            verifier: client,
         };
         let mut req = SearchRequest {
             query: "Acme robotics".into(),

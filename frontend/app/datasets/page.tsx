@@ -35,11 +35,11 @@ export default function DatasetsPage() {
             <li key={dataset.id} className="flex flex-col gap-4 px-4 py-4 hover:bg-[#f8fafc] sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <div className="min-w-0">
                 <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-[#6d7e94]">Dataset {dataset.id.slice(0, 8)}</div>
-                <Link href={`/collections/${dataset.collection_id}`} className="mt-1.5 block truncate text-[13px] font-semibold text-[#172a44] hover:text-[#246bde]">{dataset.name}</Link>
+                <Link href={`/datasets/${dataset.id}`} className="mt-1.5 block truncate text-[13px] font-semibold text-[#172a44] hover:text-[#246bde]">{dataset.name}</Link>
                 <p className="mt-1 text-[11px] text-[#66758a]">{dataset.record_count} records <span aria-hidden="true">·</span> {formatDate(dataset.created_at)}</p>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
-                <Link href={`/collections/${dataset.collection_id}`} className="flex h-8 items-center gap-1.5 rounded-[6px] border border-[#d6dfe9] bg-white px-3 text-[10px] font-semibold text-[#53647c] hover:bg-[#f3f6f9] hover:text-[#17345f]">
+                <Link href={`/datasets/${dataset.id}`} className="flex h-8 items-center gap-1.5 rounded-[6px] border border-[#d6dfe9] bg-white px-3 text-[10px] font-semibold text-[#53647c] hover:bg-[#f3f6f9] hover:text-[#17345f]">
                   Inspect <ExternalLink className="h-3 w-3" />
                 </Link>
                 <a href={getExportCsvUrl(dataset.id)} download className="flex h-8 items-center gap-1.5 rounded-[6px] border border-[#d6dfe9] bg-white px-3 text-[10px] font-semibold text-[#53647c] hover:bg-[#f3f6f9] hover:text-[#17345f]">
